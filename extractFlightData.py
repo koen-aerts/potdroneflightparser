@@ -8,8 +8,7 @@ import re
 import datetime
 import threading
 import time
-
-#import pandas as pd
+import math
 
 import tkinter as tk
 from tkinter import ttk
@@ -29,7 +28,7 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  defaultDroneZoom = 18
+  defaultDroneZoom = 14
   defaultBlankMapZoom = 1
   zipFilename = None
   tree = None
@@ -43,20 +42,12 @@ class ExtractFlightData(tk.Tk):
   currentRow = None
   labelTimestamp = None
   labelDistance = None
-
-
-  '''
-  Calculate distance between 2 sets of coordinates (lat/lon). Note: Can't find the distance in the flight data itself.
-  '''
-  def haversine(self, lat1: float, long1: float, lat2: float, long2: float):
-    degree_to_rad = float(pi / 180.0)
-    d_lat = (lat2 - lat1) * degree_to_rad
-    d_long = (long2 - long1) * degree_to_rad
-    a = pow(sin(d_lat / 2), 2) + cos(lat1 * degree_to_rad) * cos(lat2 * degree_to_rad) * pow(sin(d_long / 2), 2)
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    km = 6367 * c
-    #mi = 3956 * c
-    return km
+  labelAltitude = None
+  labelSpeed = None
+  labelMaxDistance = None
+  labelMaxAltitude = None
+  labelMaxSpeed = None
+  labelFilename = None
 
 
   '''
@@ -128,6 +119,12 @@ class ExtractFlightData(tk.Tk):
       self.dronemarker.delete()
     self.labelTimestamp['text'] = ''
     self.labelDistance['text'] = ''
+    self.labelAltitude['text'] = ''
+    self.labelSpeed['text'] = ''
+    self.labelMaxDistance['text'] = ''
+    self.labelMaxAltitude['text'] = ''
+    self.labelMaxSpeed['text'] = ''
+    self.labelFilename['text'] = ''
     self.zipFilename = None
 
 
@@ -137,10 +134,10 @@ class ExtractFlightData(tk.Tk):
   def setMarkers(self, row):
     item = self.tree.item(row)
     record = item['values']
-    homelat = float(record[2])
-    homelon = float(record[3])
-    dronelat = float(record[4])
-    dronelon = float(record[5])
+    homelat = float(record[9])
+    homelon = float(record[10])
+    dronelat = float(record[11])
+    dronelon = float(record[12])
     if (self.homemarker):
       self.homemarker.set_position(homelat, homelon)
     else:
@@ -149,8 +146,10 @@ class ExtractFlightData(tk.Tk):
       self.dronemarker.set_position(dronelat, dronelon)
     else:
       self.dronemarker = self.map_widget.set_marker(dronelat, dronelon, text=self.dronelabel)
-    self.labelTimestamp['text'] = 'Time: ' + record[0]
-    self.labelDistance['text'] = 'Distance: ' + str(record[1])
+    self.labelTimestamp['text'] = 'Time: ' + datetime.datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S.%f').isoformat(sep=' ', timespec='seconds')
+    self.labelDistance['text'] = 'Distance (m): ' + str(record[2])
+    self.labelAltitude['text'] = 'Altitude (m): ' + str(record[1])
+    self.labelSpeed['text'] = 'Speed (m/s): ' + str(record[5])
 
 
   '''
@@ -167,10 +166,10 @@ class ExtractFlightData(tk.Tk):
   '''
   def saveFile(self, csvFilename):
     with open(csvFilename, 'w') as f:
-      f.write("Timestamp,Distance (m),Home Lat,Home Lon,Drone Lat,Drone Lon")
+      f.write("Timestamp,Altitude (m),Distance (m),Distance Lat (m),Distance Lon (m),Speed (m/s),Speed Lat (m/s),Speed Lon (m/s),Satellites,Home Lat,Home Lon,Drone Lat,Drone Lon")
       for rowid in self.tree.get_children():
         vals = self.tree.item(rowid)['values']
-        f.write("\n"+str(vals[0])+","+str(vals[1])+","+str(vals[2])+","+str(vals[3])+","+str(vals[4])+","+str(vals[5]))
+        f.write("\n"+str(vals[0])+","+str(vals[1])+","+str(vals[2])+","+str(vals[3])+","+str(vals[4])+","+str(vals[5])+","+str(vals[6])+","+str(vals[7])+","+str(vals[8])+","+str(vals[9])+","+str(vals[10])+","+str(vals[11])+","+str(vals[12]))
     f.close()
     showinfo(title='Export Completed', message='Data has been exported to ' + csvFilename)
 
@@ -198,40 +197,8 @@ class ExtractFlightData(tk.Tk):
     for file in files:
       self.homelabel = re.sub(r"[0-9]*-(.*)\.[^\.]*", r"\1", PurePath(file).name)
 
-    '''
-    timestampDict = {};
-    files = glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True)
-    for file in files:
-      print("FILE: " + file);
-      totalFCRecords = 0;
-      totOnRecs = 0;
-      with open(file, mode='rb') as fpvFile:
-        recordCount = 0;
-        while True:
-          fpvRecord = fpvFile.readline().decode("utf-8");
-          if not fpvRecord:
-            break
-          recordCount+=1;
-          vals = fpvRecord.split(" ");
-          #packets = int(vals[1][0:8], 16);
-          #if (vals[1][7:8] == '7'):
-          #  totOnRecs+=1;
-          #  packets = int(vals[1][0:8], 16);
-          #else:
-          #  packets = 0;
-          #packets = int(vals[1][2:4], 16);
-          timestampDict[vals[0]] = packets;
-          #totalFCRecords += packets;
-          #print("Line{}: {} {}".format(recordCount, fpvRecord.strip(), packets))
-      fpvFile.close();
-      #print("Total FC Records: {}".format(totalFCRecords))
-      #print("Total FC rec ON: {}".format(totOnRecs))
-    '''
-
-
     # Read the Flight Status files.
     files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True))
-    #df = pd.DataFrame([[i] for i in range(512)], columns =['idx']);
     timestampMarkers = []
 
     # First grab timestamps from the filenames. Those are used to calculate the real timestamps with the elapsed time from each record.
@@ -240,6 +207,9 @@ class ExtractFlightData(tk.Tk):
 
     filenameTs = timestampMarkers[0]
     prevReadingTs = timestampMarkers[0]
+    maxDist = 0;
+    maxAlt = 0;
+    maxSpeed = 0;
     for file in files:
       with open(file, mode='rb') as flightFile:
         prevElapsed = 0
@@ -250,14 +220,24 @@ class ExtractFlightData(tk.Tk):
 
           recordCount = struct.unpack('<I', fcRecord[0:4])[0] # not sure if this is 2 bytes or 4 bytes.
           elapsed = struct.unpack('<Q', fcRecord[5:13])[0]
+          satellites = struct.unpack('<B', fcRecord[46:47])[0];
           dronelat = struct.unpack('<i', fcRecord[53:57])[0]/10000000
           dronelon = struct.unpack('<i', fcRecord[57:61])[0]/10000000
           homelat = struct.unpack('<i', fcRecord[159:163])[0]/10000000
           homelon = struct.unpack('<i', fcRecord[163:167])[0]/10000000
-          dist = round(self.haversine(homelat, homelon, dronelat, dronelon) * 1000, 4) # Don't know if distance is recorded in the data somewhere.
-          if (dist > 10000):
-            # Weed out unrealistic distances, for instance due to invalid GPS coordinates.
-            dist = 0
+          distlat = struct.unpack('f', fcRecord[235:239])[0]
+          distlon = struct.unpack('f', fcRecord[239:243])[0]
+          dist = round(math.sqrt(math.pow(distlat, 2) + math.pow(distlon, 2)), 2) # Pythagoras to calculate real distance.
+          if (dist > maxDist):
+            maxDist = dist
+          alt = round(-struct.unpack('f', fcRecord[243:247])[0], 2)
+          if (alt > maxAlt):
+            maxAlt = alt
+          speedlat = struct.unpack('f', fcRecord[247:251])[0]
+          speedlon = struct.unpack('f', fcRecord[251:255])[0]
+          speed = round(math.sqrt(math.pow(speedlat, 2) + math.pow(speedlon, 2)), 2) # Pythagoras to calculate real speed.
+          if (speed > maxSpeed):
+            maxSpeed = speed
 
           # Line up to the next valid timestamp marker (pulled from the filenames).
           if (elapsed < prevElapsed):
@@ -268,7 +248,7 @@ class ExtractFlightData(tk.Tk):
           readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
           prevElapsed = elapsed
           prevReadingTs = readingTs
-          self.tree.insert('', tk.END, value=(str(readingTs), str(dist), str(homelat), str(homelon), str(dronelat), str(dronelon)))
+          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), f"{alt:.2f}", f"{dist:.2f}", f"{distlat:.2f}", f"{distlon:.2f}", f"{speed:.2f}", f"{speedlat:.2f}", f"{speedlon:.2f}", str(satellites), str(homelat), str(homelon), str(dronelat), str(dronelon)))
           if (sethome and dist > 0):
             self.dronelabel = re.sub(r"[0-9]*-(.*)\.[^\.]*", r"\1", PurePath(selectedFile).name)
             self.map_widget.set_zoom(self.defaultDroneZoom)
@@ -276,46 +256,13 @@ class ExtractFlightData(tk.Tk):
             self.homemarker = self.map_widget.set_marker(homelat, homelon, text=self.homelabel)
             sethome = False
 
-          '''
-          if (dist > 0 and dist < 700 and recordCount % 5 == 0):
-            #print("    " + str(recordCount) + " -- " + str(readingTs) + " -- " + str(elapsed) + " -- " + str(dist) + " -- " + str(homelat) + " ; " + str(homelon) + " ; " + str(dronelat) + " ; " + str(dronelon));
-            if (df.shape[1] < 20):
-              mycol = {}
-              for i in range(505):
-                if (i == 0):
-                  number = dist;
-                elif (i == 1):
-                  number = 0; #dist * 39.37008;
-                elif (i == 2):
-                  number = 0; #dist * 3.28084;
-                else:
-                  #number = int.from_bytes(fcRecord[i:8+i], "little", signed=False);
-                  #number = round(struct.unpack('<f', fcRecord[i:4+i])[0], 2);
-                  number = struct.unpack('<Q', fcRecord[i:8+i])[0];
-                  #number = struct.unpack('<I', fcRecord[i:4+i])[0];
-                  #number = struct.unpack('<L', fcRecord[i:4+i])[0];
-                  #number = struct.unpack('<H', fcRecord[i:2+i])[0];
-                  #number = struct.unpack('<B', fcRecord[i:1+i])[0];
-                mycol[i] = str(number);
-              df[str(recordCount)] = df['idx'].map(mycol);
-          '''
-
       flightFile.close()
 
-    '''    
-    for i in range(df.shape[1]-1, 0, -1):
-      if (i > 1):
-        for j in range(df.shape[0]):
-          #print("'"+str(df.iat[j,i-1])+"'")
-          if (str(df.iat[j,i-1]) != "nan" and str(df.iat[j,i]) != "nan"):
-            if (float(df.iat[j,i-1]) != 0):
-              df.iat[j,i] = str(round(float(df.iat[j,i]) / float(df.iat[j,i-1]), 2));
-          #print(str(df.iloc[j,i]))
-          #df[i][j] = df[i][j] / df[i-1][j];
-    print(df.to_string());
-    '''
-
     shutil.rmtree(binLog)
+    self.labelMaxDistance['text'] = f'Max Distance: {maxDist:.2f}'
+    self.labelMaxAltitude['text'] = f'Max Altitude: {maxAlt:.2f}'
+    self.labelMaxSpeed['text'] = f'Max Speed: {maxSpeed:.2f}'
+    self.labelFilename['text'] = 'File: ' + PurePath(selectedFile).name
 
 
   '''
@@ -364,7 +311,7 @@ class ExtractFlightData(tk.Tk):
     super().__init__()
     self.title("Flight Data Viewer")
     self.protocol("WM_DELETE_WINDOW", self.exitApp)
-    self.geometry('800x600')
+    self.geometry('1200x800')
     self.resizable(True, True)
     style = ttk.Style(self)
     style.theme_use('classic')
@@ -394,13 +341,33 @@ class ExtractFlightData(tk.Tk):
     file_menu.add_command(label='Exit', command=self.exitApp)
     menubar.add_cascade(label='File', menu=file_menu)
     
-    columns = ('timestamp','distance','homelat','homelon','dronelat','dronelon')
+    columns = ('timestamp','altitude','distance','distlat','distlon','speed','speedlat','speedlon','satellites','homelat','homelon','dronelat','dronelon')
     self.tree = ttk.Treeview(dataFrame, columns=columns, show='headings')
+    self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=200)
     self.tree.heading('timestamp', text='Timestamp')
-    self.tree.heading('distance', text='Distance (m)')
+    self.tree.column("altitude", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('altitude', text='Alt (m)')
+    self.tree.column("distance", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('distance', text='Dist (m)')
+    self.tree.column("distlat", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('distlat', text='Lat Dist (m)')
+    self.tree.column("distlon", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('distlon', text='Lon Dist (m)')
+    self.tree.column("speed", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speed', text='Speed (m/s)')
+    self.tree.column("speedlat", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speedlat', text='Lat S (m/s)')
+    self.tree.column("speedlon", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speedlon', text='Lon S (m/s)')
+    self.tree.column("satellites", anchor=tk.E, stretch=tk.NO, width=50)
+    self.tree.heading('satellites', text='Sat')
+    self.tree.column("homelat", anchor=tk.W, stretch=tk.NO, width=100)
     self.tree.heading('homelat', text='Home Lat')
+    self.tree.column("homelon", anchor=tk.W, stretch=tk.NO, width=100)
     self.tree.heading('homelon', text='Home Lon')
+    self.tree.column("dronelat", anchor=tk.W, stretch=tk.NO, width=100)
     self.tree.heading('dronelat', text='Drone Lat')
+    self.tree.column("dronelon", anchor=tk.W, stretch=tk.NO, width=100)
     self.tree.heading('dronelon', text='Drone Lon')
     self.tree.bind('<<TreeviewSelect>>', self.item_selected)
     self.tree.grid(row=0, column=0, sticky=tk.NSEW)
@@ -417,7 +384,7 @@ class ExtractFlightData(tk.Tk):
     #self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google normal
     #self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google satellite
 
-    playbackFrame = ttk.Frame(mapFrame, height=60)
+    playbackFrame = ttk.Frame(mapFrame, height=20)
     playbackFrame.pack(fill=tk.BOTH, expand=False)
     self.selectPlaySpeeds = ttk.Combobox(playbackFrame, textvariable=tk.StringVar())
     self.selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=5, pady=5)
@@ -426,10 +393,25 @@ class ExtractFlightData(tk.Tk):
     buttonPlay.grid(row=0, column=1, sticky=tk.EW, padx=5, pady=5)
     buttonStop = ttk.Button(playbackFrame, text='Stop', command=self.stop)
     buttonStop.grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
-    self.labelTimestamp = ttk.Label(playbackFrame, text='')
-    self.labelTimestamp.grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
     self.labelDistance = ttk.Label(playbackFrame, text='')
-    self.labelDistance.grid(row=0, column=4, sticky=tk.W, padx=5, pady=5)
+    self.labelDistance.grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
+    self.labelAltitude = ttk.Label(playbackFrame, text='')
+    self.labelAltitude.grid(row=0, column=4, sticky=tk.W, padx=5, pady=5)
+    self.labelSpeed = ttk.Label(playbackFrame, text='')
+    self.labelSpeed.grid(row=0, column=5, sticky=tk.W, padx=5, pady=5)
+    self.labelTimestamp = ttk.Label(playbackFrame, text='')
+    self.labelTimestamp.grid(row=0, column=6, sticky=tk.W, padx=5, pady=5)
+
+    fileInfoFrame = ttk.Frame(mapFrame, height=20)
+    fileInfoFrame.pack(fill=tk.BOTH, expand=False)
+    self.labelMaxDistance = ttk.Label(fileInfoFrame, text='')
+    self.labelMaxDistance.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+    self.labelMaxAltitude = ttk.Label(fileInfoFrame, text='')
+    self.labelMaxAltitude.grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
+    self.labelMaxSpeed = ttk.Label(fileInfoFrame, text='')
+    self.labelMaxSpeed.grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+    self.labelFilename = ttk.Label(fileInfoFrame, text='')
+    self.labelFilename.grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
 
     self.reset();
 
