@@ -28,12 +28,22 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
+  version = "v0.3.0-alpha"
   defaultDroneZoom = 14
   defaultBlankMapZoom = 1
+  distanceLimit = 10000
+  altitudeLimit = 500
+  speedLimit = 50
+  homeMarkerColor1 = "#5b96f7"
+  homeMarkerColor2 = "#aaccf6"
+  droneMarkerColor1 = "#f59e00" #"#9B261E"
+  droneMarkerColor2 = "#c6dfb3" #"#C5542D"
   zipFilename = None
   tree = None
   map_widget = None
   selectPlaySpeeds = None
+  flightPaths = None
+  pathCoords = None
   homemarker = None
   dronemarker = None
   homelabel = None
@@ -44,6 +54,8 @@ class ExtractFlightData(tk.Tk):
   labelDistance = None
   labelAltitude = None
   labelSpeed = None
+  selectedTile = None
+  showPath = None
   labelMaxDistance = None
   labelMaxAltitude = None
   labelMaxSpeed = None
@@ -55,6 +67,8 @@ class ExtractFlightData(tk.Tk):
   '''
   def setFrame(self):
     while self.isPlaying and self.currentRow != None:
+      self.tree.see(self.currentRow)
+      self.tree.selection_set(self.currentRow)
       self.setMarkers(self.currentRow)
       speed = self.selectPlaySpeeds.get() # skip frames to play faster.
       skipFrames = 1
@@ -86,6 +100,8 @@ class ExtractFlightData(tk.Tk):
   Start flight playback.
   '''
   def play(self):
+    if (self.isPlaying):
+      return
     self.currentRow = None
     allRows = self.tree.get_children()
     if (len(allRows) == 0):
@@ -113,10 +129,18 @@ class ExtractFlightData(tk.Tk):
     self.tree.delete(*self.tree.get_children())
     self.map_widget.set_zoom(self.defaultBlankMapZoom)
     self.map_widget.set_position(51.50722, -0.1275)
+    if (self.flightPaths):
+      for flightPath in self.flightPaths:
+        flightPath.delete()
+        flightPath = None
+      self.flightPaths = None
     if (self.homemarker):
       self.homemarker.delete()
+      self.homemarker = None
     if (self.dronemarker):
       self.dronemarker.delete()
+      self.dronemarker = None
+    self.pathCoords = None
     self.labelTimestamp['text'] = ''
     self.labelDistance['text'] = ''
     self.labelAltitude['text'] = ''
@@ -138,18 +162,44 @@ class ExtractFlightData(tk.Tk):
     homelon = float(record[10])
     dronelat = float(record[11])
     dronelon = float(record[12])
-    if (self.homemarker):
-      self.homemarker.set_position(homelat, homelon)
-    else:
-      self.homemarker = self.map_widget.set_marker(homelat, homelon, text=self.homelabel)
-    if (self.dronemarker):
-      self.dronemarker.set_position(dronelat, dronelon)
-    else:
-      self.dronemarker = self.map_widget.set_marker(dronelat, dronelon, text=self.dronelabel)
-    self.labelTimestamp['text'] = 'Time: ' + datetime.datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S.%f').isoformat(sep=' ', timespec='seconds')
-    self.labelDistance['text'] = 'Distance (m): ' + str(record[2])
-    self.labelAltitude['text'] = 'Altitude (m): ' + str(record[1])
-    self.labelSpeed['text'] = 'Speed (m/s): ' + str(record[5])
+    try:
+      if (self.homemarker):
+        self.homemarker.set_position(homelat, homelon)
+      else:
+        self.homemarker = self.map_widget.set_marker(
+          homelat, homelon, text=self.homelabel,
+          marker_color_circle=self.homeMarkerColor1,
+          marker_color_outside=self.homeMarkerColor2)
+    except:
+      # Handle bad coordinates.
+      self.homemarker = None
+    try:
+      if (self.dronemarker):
+        self.dronemarker.set_position(dronelat, dronelon)
+      else:
+        self.dronemarker = self.map_widget.set_marker(
+          dronelat, dronelon, text=self.dronelabel,
+          marker_color_circle=self.droneMarkerColor1,
+          marker_color_outside=self.droneMarkerColor2)
+    except:
+      # Handle bad coordinates.
+      self.dronemarker = None
+    dt = None
+    try:
+      dt = datetime.datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S.%f')
+    except:
+      dt = datetime.datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S')
+    dist = record[2]
+    alt = record[1]
+    speed = record[5]
+    validDist = True if float(dist) < self.distanceLimit else False
+    distVal = dist if validDist else '--'
+    altVal = alt if validDist else '--'
+    speedVal = speed if validDist else '--'
+    self.labelTimestamp['text'] = 'Time: ' + dt.isoformat(sep=' ', timespec='seconds')
+    self.labelDistance['text'] = f'Distance (m): {distVal}'
+    self.labelAltitude['text'] = f'Altitude (m): {altVal}'
+    self.labelSpeed['text'] = f'Speed (m/s): {speedVal}'
 
 
   '''
@@ -159,6 +209,38 @@ class ExtractFlightData(tk.Tk):
     for selected_item in self.tree.selection():
       self.setMarkers(selected_item)
       break
+
+
+  '''
+  Called when Map Tile choice selection changes.
+  '''
+  def setTileSource(self, event):
+    tileSource = self.selectedTile.get()
+    if (tileSource == 'Google Standard'):
+      self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google normal
+    elif (tileSource == 'Google Satellite'):
+      self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google satellite
+    else:
+      self.map_widget.set_tile_server("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png")  # OpenStreetMap (default)
+
+
+  '''
+  Called when checkbox for Path view is selected (to show or hide drone path on the map).
+  '''
+  def setPathView(self):
+    if (self.showPath.get() == 'Y'):
+      colors = ["#417dd6","#ab27a9","#e54f14","#ffa900","#00a31f"]
+      self.flightPaths = []
+      idx = 0
+      for pathCoord in self.pathCoords:
+        self.flightPaths.append(self.map_widget.set_path(width=1, position_list=pathCoord, color=colors[idx%len(colors)]))
+        idx = idx + 1
+    else:
+      if (self.flightPaths):
+        for flightPath in self.flightPaths:
+          flightPath.delete()
+          flightPath = None
+        self.flightPaths = None
 
 
   '''
@@ -210,9 +292,10 @@ class ExtractFlightData(tk.Tk):
     maxDist = 0;
     maxAlt = 0;
     maxSpeed = 0;
+    self.pathCoords = []
+    pathCoord = []
     for file in files:
       with open(file, mode='rb') as flightFile:
-        prevElapsed = 0
         while True:
           fcRecord = flightFile.read(512)
           if (len(fcRecord) < 512):
@@ -228,37 +311,51 @@ class ExtractFlightData(tk.Tk):
           distlat = struct.unpack('f', fcRecord[235:239])[0]
           distlon = struct.unpack('f', fcRecord[239:243])[0]
           dist = round(math.sqrt(math.pow(distlat, 2) + math.pow(distlon, 2)), 2) # Pythagoras to calculate real distance.
-          if (dist > maxDist):
+
+          validDist = True if dist < self.distanceLimit else False
+          if (validDist and dist > maxDist):
             maxDist = dist
           alt = round(-struct.unpack('f', fcRecord[243:247])[0], 2)
-          if (alt > maxAlt):
+          if (validDist and alt < self.altitudeLimit and alt > maxAlt):
             maxAlt = alt
           speedlat = struct.unpack('f', fcRecord[247:251])[0]
           speedlon = struct.unpack('f', fcRecord[251:255])[0]
           speed = round(math.sqrt(math.pow(speedlat, 2) + math.pow(speedlon, 2)), 2) # Pythagoras to calculate real speed.
-          if (speed > maxSpeed):
+          if (validDist and speed < self.speedLimit and speed > maxSpeed):
             maxSpeed = speed
 
-          # Line up to the next valid timestamp marker (pulled from the filenames).
-          if (elapsed < prevElapsed):
-            while (timestampMarkers[0] < prevReadingTs):
-              timestampMarkers.pop(0)
-            filenameTs = timestampMarkers.pop(0)
+          # Build paths for each flight.
+          if (satellites == 0):
+            if (len(pathCoord) > 0):
+              self.pathCoords.append(pathCoord)
+              pathCoord = []
+          elif (dist < self.distanceLimit):
+            pathCoord.append((dronelat, dronelon))
 
           readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
-          prevElapsed = elapsed
+          while (readingTs < prevReadingTs):
+            # Line up to the next valid timestamp marker (pulled from the filenames).
+            filenameTs = timestampMarkers.pop(0)
+            readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
+
           prevReadingTs = readingTs
           self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), f"{alt:.2f}", f"{dist:.2f}", f"{distlat:.2f}", f"{distlon:.2f}", f"{speed:.2f}", f"{speedlat:.2f}", f"{speedlon:.2f}", str(satellites), str(homelat), str(homelon), str(dronelat), str(dronelon)))
-          if (sethome and dist > 0):
+          if (sethome and dist > 0 and validDist):
             self.dronelabel = re.sub(r"[0-9]*-(.*)\.[^\.]*", r"\1", PurePath(selectedFile).name)
             self.map_widget.set_zoom(self.defaultDroneZoom)
             self.map_widget.set_position(homelat, homelon)
-            self.homemarker = self.map_widget.set_marker(homelat, homelon, text=self.homelabel)
+            self.homemarker = self.map_widget.set_marker(
+              homelat, homelon, text=self.homelabel,
+              marker_color_circle=self.homeMarkerColor1,
+              marker_color_outside=self.homeMarkerColor2)
             sethome = False
 
       flightFile.close()
 
     shutil.rmtree(binLog)
+    if (len(pathCoord) > 0):
+      self.pathCoords.append(pathCoord)
+    self.setPathView()
     self.labelMaxDistance['text'] = f'Max Distance: {maxDist:.2f}'
     self.labelMaxAltitude['text'] = f'Max Altitude: {maxAlt:.2f}'
     self.labelMaxSpeed['text'] = f'Max Speed: {maxSpeed:.2f}'
@@ -309,7 +406,7 @@ class ExtractFlightData(tk.Tk):
   '''
   def __init__(self):
     super().__init__()
-    self.title("Flight Data Viewer")
+    self.title(f"Flight Data Viewer - {self.version}")
     self.protocol("WM_DELETE_WINDOW", self.exitApp)
     self.geometry('1200x800')
     self.resizable(True, True)
@@ -342,7 +439,7 @@ class ExtractFlightData(tk.Tk):
     menubar.add_cascade(label='File', menu=file_menu)
     
     columns = ('timestamp','altitude','distance','distlat','distlon','speed','speedlat','speedlon','satellites','homelat','homelon','dronelat','dronelon')
-    self.tree = ttk.Treeview(dataFrame, columns=columns, show='headings')
+    self.tree = ttk.Treeview(dataFrame, columns=columns, show='headings', selectmode='browse')
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=200)
     self.tree.heading('timestamp', text='Timestamp')
     self.tree.column("altitude", anchor=tk.E, stretch=tk.NO, width=70)
@@ -386,32 +483,42 @@ class ExtractFlightData(tk.Tk):
 
     playbackFrame = ttk.Frame(mapFrame, height=20)
     playbackFrame.pack(fill=tk.BOTH, expand=False)
-    self.selectPlaySpeeds = ttk.Combobox(playbackFrame, textvariable=tk.StringVar())
-    self.selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=5, pady=5)
+    self.selectPlaySpeeds = ttk.Combobox(playbackFrame)
+    self.selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=7, pady=2)
     self.selectPlaySpeeds['values'] = ('Real-Time', 'Fast', 'Fast 2x', 'Fast 4x', 'Fast 10x', 'Fast 25x')
     buttonPlay = ttk.Button(playbackFrame, text='Play', command=self.play)
-    buttonPlay.grid(row=0, column=1, sticky=tk.EW, padx=5, pady=5)
+    buttonPlay.grid(row=0, column=1, sticky=tk.EW, padx=2, pady=2)
     buttonStop = ttk.Button(playbackFrame, text='Stop', command=self.stop)
-    buttonStop.grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+    buttonStop.grid(row=0, column=2, sticky=tk.W, padx=2, pady=2)
     self.labelDistance = ttk.Label(playbackFrame, text='')
-    self.labelDistance.grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
+    self.labelDistance.grid(row=0, column=3, sticky=tk.W, padx=2, pady=2)
     self.labelAltitude = ttk.Label(playbackFrame, text='')
-    self.labelAltitude.grid(row=0, column=4, sticky=tk.W, padx=5, pady=5)
+    self.labelAltitude.grid(row=0, column=4, sticky=tk.W, padx=2, pady=2)
     self.labelSpeed = ttk.Label(playbackFrame, text='')
-    self.labelSpeed.grid(row=0, column=5, sticky=tk.W, padx=5, pady=5)
+    self.labelSpeed.grid(row=0, column=5, sticky=tk.W, padx=2, pady=2)
     self.labelTimestamp = ttk.Label(playbackFrame, text='')
-    self.labelTimestamp.grid(row=0, column=6, sticky=tk.W, padx=5, pady=5)
+    self.labelTimestamp.grid(row=0, column=6, sticky=tk.W, padx=2, pady=2)
 
     fileInfoFrame = ttk.Frame(mapFrame, height=20)
     fileInfoFrame.pack(fill=tk.BOTH, expand=False)
+    self.selectedTile = tk.StringVar()
+    selectTileSource = ttk.Combobox(fileInfoFrame, textvariable=self.selectedTile)
+    selectTileSource.grid(row=0, column=0, sticky=tk.E, padx=7, pady=2)
+    selectTileSource['values'] = ('OpenStreetMap', 'Google Standard', 'Google Satellite')
+    selectTileSource.bind('<<ComboboxSelected>>', self.setTileSource)
+    self.selectedTile.set('OpenStreetMap')
+    self.showPath = tk.StringVar()
+    pathView = ttk.Checkbutton(fileInfoFrame, text='Show Path', command=self.setPathView, variable=self.showPath, onvalue='Y', offvalue='N')
+    pathView.grid(row=0, column=1, sticky=tk.E, padx=2, pady=2)
+    self.showPath.set('Y')
     self.labelMaxDistance = ttk.Label(fileInfoFrame, text='')
-    self.labelMaxDistance.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+    self.labelMaxDistance.grid(row=0, column=2, sticky=tk.W, padx=2, pady=2)
     self.labelMaxAltitude = ttk.Label(fileInfoFrame, text='')
-    self.labelMaxAltitude.grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
+    self.labelMaxAltitude.grid(row=0, column=3, sticky=tk.W, padx=2, pady=2)
     self.labelMaxSpeed = ttk.Label(fileInfoFrame, text='')
-    self.labelMaxSpeed.grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+    self.labelMaxSpeed.grid(row=0, column=4, sticky=tk.W, padx=2, pady=2)
     self.labelFilename = ttk.Label(fileInfoFrame, text='')
-    self.labelFilename.grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
+    self.labelFilename.grid(row=0, column=5, sticky=tk.W, padx=2, pady=2)
 
     self.reset();
 
