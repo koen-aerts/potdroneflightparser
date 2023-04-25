@@ -20,7 +20,6 @@ import tkintermapview
 
 from pathlib import Path, PurePath
 from zipfile import ZipFile
-from math import pi,sqrt,sin,cos,atan2,modf
 
 class ExtractFlightData(tk.Tk):
 
@@ -94,8 +93,8 @@ class ExtractFlightData(tk.Tk):
         self.isPlaying = False
     self.currentRow = None
     self.isPlaying = False
-  
-  
+
+
   '''
   Start flight playback.
   '''
@@ -260,7 +259,7 @@ class ExtractFlightData(tk.Tk):
         vals = self.tree.item(rowid)['values']
         f.write("\n"+str(vals[0])+","+str(vals[1])+","+str(vals[2])+","+str(vals[3])+","+str(vals[4])+","+str(vals[5])+","+str(vals[6])+","+str(vals[7])+","+str(vals[8])+","+str(vals[9])+","+str(vals[10])+","+str(vals[11])+","+str(vals[12]))
     f.close()
-    showinfo(title='Export Completed', message='Data has been exported to ' + csvFilename)
+    showinfo(title='Export Completed', message=f'Data has been exported to {csvFilename}')
 
 
   '''
@@ -270,7 +269,7 @@ class ExtractFlightData(tk.Tk):
     sethome = True
     zipFile = Path(selectedFile);
     if (not zipFile.is_file()):
-      showerror(title='Invalid File', message='Not a valid file specified: ' + selectedFile)
+      showerror(title='Invalid File', message=f'Not a valid file specified: {selectedFile}')
       return
 
     binLog = os.path.join(tempfile.gettempdir(), "flightdata")

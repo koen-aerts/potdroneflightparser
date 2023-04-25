@@ -6,7 +6,7 @@ Flight Data Viewer that can read from Potensic flight-log files.
 This project is based on reverse engineering of the Potensic flight bin files and by trial and error. Only some of the basic metrics are currently pulled from this proprietary file format as not everything has been identified yet.
 
 # How to run
-On Windows or MacOS (x64) you can download and run one of the executables from the [Releases](<releases> "Releases") section.
+On Windows or MacOS (x64) you can download and run one of the executables from the [Releases](<../../releases> "Releases") section.
 
 On any platform or if you don't want or can't run the executables:
 ```sh
