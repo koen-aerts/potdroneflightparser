@@ -83,7 +83,7 @@ class ExtractFlightData(tk.Tk):
       if (len(rows) > nextIdx+1):
         nextRow = rows[nextIdx]
         if (pause):
-          diff = datetime.datetime.strptime(self.tree.item(nextRow)['values'][0], '%Y-%m-%d %H:%M:%S.%f') - datetime.datetime.strptime(self.tree.item(self.currentRow)['values'][0], '%Y-%m-%d %H:%M:%S.%f')
+          diff = self.getDatetime(self.tree.item(nextRow)['values'][0]) - self.getDatetime(self.tree.item(self.currentRow)['values'][0])
           seconds = diff.total_seconds()/1000;
           if (seconds > 1):
             seconds = 1
@@ -110,8 +110,8 @@ class ExtractFlightData(tk.Tk):
     self.currentRow = allRows[0] if len(selectedRows) == 0 else selectedRows[0]
     self.isPlaying = True;
     threading.Thread(target=self.setFrame, args=()).start()
-  
-  
+
+
   '''
   Stop flight playback.
   '''
@@ -184,11 +184,6 @@ class ExtractFlightData(tk.Tk):
     except:
       # Handle bad coordinates.
       self.dronemarker = None
-    dt = None
-    try:
-      dt = datetime.datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S.%f')
-    except:
-      dt = datetime.datetime.strptime(record[0], '%Y-%m-%d %H:%M:%S')
     dist = record[2]
     alt = record[1]
     speed = record[5]
@@ -196,10 +191,22 @@ class ExtractFlightData(tk.Tk):
     distVal = dist if validDist else '--'
     altVal = alt if validDist else '--'
     speedVal = speed if validDist else '--'
-    self.labelTimestamp['text'] = 'Time: ' + dt.isoformat(sep=' ', timespec='seconds')
+    self.labelTimestamp['text'] = 'Time: ' + self.getDatetime(record[0]).isoformat(sep=' ', timespec='seconds')
     self.labelDistance['text'] = f'Distance (m): {distVal}'
     self.labelAltitude['text'] = f'Altitude (m): {altVal}'
     self.labelSpeed['text'] = f'Speed (m/s): {speedVal}'
+
+
+  '''
+  Convenience function to return the datetime from a string.
+  '''
+  def getDatetime(self, stringVal):
+    dt = None
+    try:
+      dt = datetime.datetime.strptime(stringVal, '%Y-%m-%d %H:%M:%S.%f')
+    except:
+      dt = datetime.datetime.strptime(stringVal, '%Y-%m-%d %H:%M:%S')
+    return dt
 
 
   '''
@@ -475,11 +482,6 @@ class ExtractFlightData(tk.Tk):
 
     self.map_widget = tkintermapview.TkinterMapView(mapFrame, corner_radius=0)
     self.map_widget.pack(fill=tk.BOTH, expand=True)
-
-    # TODO - integrate these as selectable options.
-    #self.map_widget.set_tile_server("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png")  # OpenStreetMap (default)
-    #self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google normal
-    #self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google satellite
 
     playbackFrame = ttk.Frame(mapFrame, height=20)
     playbackFrame.pack(fill=tk.BOTH, expand=False)
