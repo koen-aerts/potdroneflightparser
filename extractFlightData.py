@@ -389,9 +389,9 @@ class ExtractFlightData(tk.Tk):
     if (len(pathCoord) > 0):
       self.pathCoords.append(pathCoord)
     self.setPathView()
-    self.labelMaxDistance['text'] = f'Max Distance: {maxDist:.2f}'
-    self.labelMaxAltitude['text'] = f'Max Altitude: {maxAlt:.2f}'
-    self.labelMaxSpeed['text'] = f'Max Speed: {maxSpeed:.2f}'
+    self.labelMaxDistance['text'] = f'Max Distance (m): {maxDist:.2f}'
+    self.labelMaxAltitude['text'] = f'Max Altitude (m): {maxAlt:.2f}'
+    self.labelMaxSpeed['text'] = f'Max Speed (m/s): {maxSpeed:.2f}'
     self.labelFilename['text'] = 'File: ' + PurePath(selectedFile).name
     pathNames = list(self.flightStarts.keys())
     self.selectPath['values'] = pathNames
@@ -509,52 +509,51 @@ class ExtractFlightData(tk.Tk):
     self.tree.configure(yscroll=scrollbar.set)
     scrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-
     self.map_widget = tkintermapview.TkinterMapView(mapFrame, corner_radius=0)
     self.map_widget.pack(fill=tk.BOTH, expand=True)
 
-    playbackFrame = ttk.Frame(mapFrame, height=20)
+    playbackFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 0))
     playbackFrame.pack(fill=tk.BOTH, expand=False)
     self.selectPlaySpeeds = ttk.Combobox(playbackFrame, width=14)
-    self.selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=7, pady=2)
+    self.selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=7, pady=0)
     self.selectPlaySpeeds['values'] = ('Real-Time', 'Fast', 'Fast 2x', 'Fast 4x', 'Fast 10x', 'Fast 25x')
-    buttonPlay = ttk.Button(playbackFrame, text='Play', command=self.play)
-    buttonPlay.grid(row=0, column=1, sticky=tk.EW, padx=2, pady=2)
-    buttonStop = ttk.Button(playbackFrame, text='Stop', command=self.stop)
-    buttonStop.grid(row=0, column=2, sticky=tk.W, padx=2, pady=2)
-    self.labelDistance = ttk.Label(playbackFrame, text='')
-    self.labelDistance.grid(row=0, column=3, sticky=tk.W, padx=2, pady=2)
-    self.labelAltitude = ttk.Label(playbackFrame, text='')
-    self.labelAltitude.grid(row=0, column=4, sticky=tk.W, padx=2, pady=2)
-    self.labelSpeed = ttk.Label(playbackFrame, text='')
-    self.labelSpeed.grid(row=0, column=5, sticky=tk.W, padx=2, pady=2)
+    buttonPlay = ttk.Button(playbackFrame, text='Play', command=self.play, width=4)
+    buttonPlay.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
+    buttonStop = ttk.Button(playbackFrame, text='Stop', command=self.stop, width=4)
+    buttonStop.grid(row=0, column=2, sticky=tk.W, padx=0, pady=0)
+    self.labelDistance = ttk.Label(playbackFrame, text='', width=17)
+    self.labelDistance.grid(row=0, column=3, sticky=tk.W, padx=2, pady=0)
+    self.labelAltitude = ttk.Label(playbackFrame, text='', width=16)
+    self.labelAltitude.grid(row=0, column=4, sticky=tk.W, padx=2, pady=0)
+    self.labelSpeed = ttk.Label(playbackFrame, text='', width=16)
+    self.labelSpeed.grid(row=0, column=5, sticky=tk.W, padx=2, pady=0)
     self.labelTimestamp = ttk.Label(playbackFrame, text='')
-    self.labelTimestamp.grid(row=0, column=6, sticky=tk.W, padx=2, pady=2)
+    self.labelTimestamp.grid(row=0, column=6, sticky=tk.W, padx=2, pady=0)
 
-    fileInfoFrame = ttk.Frame(mapFrame, height=20)
+    fileInfoFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
     fileInfoFrame.pack(fill=tk.BOTH, expand=False)
     self.selectedTile = tk.StringVar()
     selectTileSource = ttk.Combobox(fileInfoFrame, textvariable=self.selectedTile, width=14)
-    selectTileSource.grid(row=0, column=0, sticky=tk.E, padx=7, pady=2)
+    selectTileSource.grid(row=0, column=0, sticky=tk.E, padx=7, pady=0)
     selectTileSource['values'] = ('OpenStreetMap', 'Google Standard', 'Google Satellite', 'Open Topo')
     selectTileSource.bind('<<ComboboxSelected>>', self.setTileSource)
     self.selectedTile.set('OpenStreetMap')
     self.selectedPath = tk.StringVar()
-    self.selectPath = ttk.Combobox(fileInfoFrame, textvariable=self.selectedPath, width=10)
-    self.selectPath.grid(row=0, column=1, sticky=tk.E, padx=7, pady=2)
+    self.selectPath = ttk.Combobox(fileInfoFrame, textvariable=self.selectedPath, width=12)
+    self.selectPath.grid(row=0, column=1, sticky=tk.E, padx=7, pady=0)
     self.selectPath.bind('<<ComboboxSelected>>', self.choosePath)
     self.showPath = tk.StringVar()
     pathView = ttk.Checkbutton(fileInfoFrame, text='Show Path', command=self.setPathView, variable=self.showPath, onvalue='Y', offvalue='N')
-    pathView.grid(row=0, column=2, sticky=tk.E, padx=2, pady=2)
+    pathView.grid(row=0, column=2, sticky=tk.E, padx=2, pady=0)
     self.showPath.set('Y')
-    self.labelMaxDistance = ttk.Label(fileInfoFrame, text='')
-    self.labelMaxDistance.grid(row=0, column=3, sticky=tk.W, padx=2, pady=2)
-    self.labelMaxAltitude = ttk.Label(fileInfoFrame, text='')
-    self.labelMaxAltitude.grid(row=0, column=4, sticky=tk.W, padx=2, pady=2)
-    self.labelMaxSpeed = ttk.Label(fileInfoFrame, text='')
-    self.labelMaxSpeed.grid(row=0, column=5, sticky=tk.W, padx=2, pady=2)
+    self.labelMaxDistance = ttk.Label(fileInfoFrame, text='', width=19)
+    self.labelMaxDistance.grid(row=0, column=3, sticky=tk.W, padx=2, pady=0)
+    self.labelMaxAltitude = ttk.Label(fileInfoFrame, text='', width=18)
+    self.labelMaxAltitude.grid(row=0, column=4, sticky=tk.W, padx=2, pady=0)
+    self.labelMaxSpeed = ttk.Label(fileInfoFrame, text='', width=16)
+    self.labelMaxSpeed.grid(row=0, column=5, sticky=tk.W, padx=2, pady=0)
     self.labelFilename = ttk.Label(fileInfoFrame, text='')
-    self.labelFilename.grid(row=0, column=6, sticky=tk.W, padx=2, pady=2)
+    self.labelFilename.grid(row=0, column=6, sticky=tk.W, padx=2, pady=0)
 
     self.reset();
 
