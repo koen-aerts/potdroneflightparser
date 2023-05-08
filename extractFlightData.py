@@ -390,8 +390,8 @@ class ExtractFlightData(tk.Tk):
     if (len(pathCoord) > 0):
       self.pathCoords.append(pathCoord)
     self.setPathView()
-    self.labelMaxDistance['text'] = f'Max Distance (m): {maxDist:.2f}'
-    self.labelMaxAltitude['text'] = f'Max Altitude (m): {maxAlt:.2f}'
+    self.labelMaxDistance['text'] = f'Max Dist (m): {maxDist:.2f}'
+    self.labelMaxAltitude['text'] = f'Max Alt (m): {maxAlt:.2f}'
     self.labelMaxSpeed['text'] = f'Max Speed (m/s): {maxSpeed:.2f}'
     self.labelFilename['text'] = 'File: ' + PurePath(selectedFile).name
     pathNames = list(self.flightStarts.keys())
