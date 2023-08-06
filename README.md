@@ -1,9 +1,9 @@
 # Flight Data Viewer
-Flight Data Viewer that can read from Potensic flight-log files.
+Flight Data Viewer that can read from Potensic flight-log files. Models confirmed working are Atom SE and Atom SE V2. Models confirmed not compatible are P1A (Dreamer).
 
 ![Example Screenshot](<resources/screenshot1.png> "Example Screenshot")
 
-This project is based on reverse engineering of the Potensic flight bin files and by trial and error. Only some of the basic metrics are currently pulled from this proprietary file format as not everything has been identified yet.
+This project is based on reverse engineering of the Potensic flight bin files (mainly for the Atom) and by trial and error. Not all available metrics are currently pulled from this proprietary file format as not everything has been identified yet.
 
 # How to run
 On Windows or MacOS (x64) you can download and run one of the executables from the [Releases](<../../releases> "Releases") section.

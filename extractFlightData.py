@@ -28,16 +28,20 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v0.5.0-alpha"
+  version = "v0.6.0-alpha"
   defaultDroneZoom = 14
   defaultBlankMapZoom = 1
   distanceLimit = 10000
   altitudeLimit = 500
   speedLimit = 50
-  homeMarkerColor1 = "#5b96f7"
-  homeMarkerColor2 = "#aaccf6"
+  ctrlMarkerColor1 = "#5b96f7"
+  ctrlMarkerColor2 = "#aaccf6"
+  homeMarkerColor1 = "#9B261E"
+  homeMarkerColor2 = "#C5542D"
   droneMarkerColor1 = "#f59e00" #"#9B261E"
   droneMarkerColor2 = "#c6dfb3" #"#C5542D"
+  columns = ('timestamp','altitude1','altitude2','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected')
+  showCols = ('timestamp','altitude2','distance3','speed2','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
   zipFilename = None
   tree = None
   map_widget = None
@@ -45,8 +49,10 @@ class ExtractFlightData(tk.Tk):
   flightPaths = None
   pathCoords = None
   flightStarts = None
+  ctrlmarker = None
   homemarker = None
   dronemarker = None
+  ctrllabel = None
   homelabel = None
   dronelabel = None
   isPlaying = False
@@ -59,6 +65,7 @@ class ExtractFlightData(tk.Tk):
   selectPath = None
   selectedPath = None
   showPath = None
+  showAll = None
   labelMaxDistance = None
   labelMaxAltitude = None
   labelMaxSpeed = None
@@ -66,7 +73,7 @@ class ExtractFlightData(tk.Tk):
 
 
   '''
-  Update home/drone markers on the map with the next set of coordinates in the table list.
+  Update ctrl/home/drone markers on the map with the next set of coordinates in the table list.
   '''
   def setFrame(self):
     while self.isPlaying and self.currentRow != None:
@@ -86,7 +93,7 @@ class ExtractFlightData(tk.Tk):
       if (len(rows) > nextIdx+1):
         nextRow = rows[nextIdx]
         if (pause):
-          diff = self.getDatetime(self.tree.item(nextRow)['values'][0]) - self.getDatetime(self.tree.item(self.currentRow)['values'][0])
+          diff = self.getDatetime(self.tree.item(nextRow)['values'][self.columns.index('timestamp')]) - self.getDatetime(self.tree.item(self.currentRow)['values'][self.columns.index('timestamp')])
           seconds = diff.total_seconds()/1000;
           if (seconds > 1):
             seconds = 1
@@ -126,6 +133,7 @@ class ExtractFlightData(tk.Tk):
   Reset the application as it were before opening a file.
   '''
   def reset(self):
+    self.ctrllabel = 'Ctrl'
     self.homelabel = 'Home'
     self.dronelabel = 'Drone'
     self.selectPlaySpeeds.set('Fast 4x')
@@ -137,6 +145,9 @@ class ExtractFlightData(tk.Tk):
         flightPath.delete()
         flightPath = None
       self.flightPaths = None
+    if (self.ctrlmarker):
+      self.ctrlmarker.delete()
+      self.ctrlmarker = None
     if (self.homemarker):
       self.homemarker.delete()
       self.homemarker = None
@@ -159,15 +170,27 @@ class ExtractFlightData(tk.Tk):
 
 
   '''
-  Update drone/home markers on the map as well as other labels with flight information.
+  Update ctrl/home/drone markers on the map as well as other labels with flight information.
   '''
   def setMarkers(self, row):
     item = self.tree.item(row)
     record = item['values']
-    homelat = float(record[9])
-    homelon = float(record[10])
-    dronelat = float(record[11])
-    dronelon = float(record[12])
+    ctrllat = float(record[self.columns.index('ctrllat')])
+    ctrllon = float(record[self.columns.index('ctrllon')])
+    homelat = float(record[self.columns.index('homelat')])
+    homelon = float(record[self.columns.index('homelon')])
+    dronelat = float(record[self.columns.index('dronelat')])
+    dronelon = float(record[self.columns.index('dronelon')])
+    try:
+      if (self.ctrlmarker):
+        self.ctrlmarker.set_position(ctrllat, ctrllon)
+      else:
+        self.ctrlmarker = self.map_widget.set_marker(
+          ctrllat, ctrllon, text=self.ctrllabel,
+          marker_color_circle=self.ctrlMarkerColor1,
+          marker_color_outside=self.ctrlMarkerColor2)
+    except:
+      self.ctrlmarker = None # Handle bad coordinates.
     try:
       if (self.homemarker):
         self.homemarker.set_position(homelat, homelon)
@@ -177,8 +200,7 @@ class ExtractFlightData(tk.Tk):
           marker_color_circle=self.homeMarkerColor1,
           marker_color_outside=self.homeMarkerColor2)
     except:
-      # Handle bad coordinates.
-      self.homemarker = None
+      self.homemarker = None # Handle bad coordinates.
     try:
       if (self.dronemarker):
         self.dronemarker.set_position(dronelat, dronelon)
@@ -188,16 +210,15 @@ class ExtractFlightData(tk.Tk):
           marker_color_circle=self.droneMarkerColor1,
           marker_color_outside=self.droneMarkerColor2)
     except:
-      # Handle bad coordinates.
-      self.dronemarker = None
-    dist = record[2]
-    alt = record[1]
-    speed = record[5]
+      self.dronemarker = None # Handle bad coordinates.
+    dist = record[self.columns.index('distance3')]
+    alt = record[self.columns.index('altitude2')]
+    speed = record[self.columns.index('speed2')]
     validDist = True if float(dist) < self.distanceLimit else False
     distVal = dist if validDist else '--'
     altVal = alt if validDist else '--'
     speedVal = speed if validDist else '--'
-    self.labelTimestamp['text'] = 'Time: ' + self.getDatetime(record[0]).isoformat(sep=' ', timespec='seconds')
+    self.labelTimestamp['text'] = 'Time: ' + self.getDatetime(record[self.columns.index('timestamp')]).isoformat(sep=' ', timespec='seconds')
     self.labelDistance['text'] = f'Distance (m): {distVal}'
     self.labelAltitude['text'] = f'Altitude (m): {altVal}'
     self.labelSpeed['text'] = f'Speed (m/s): {speedVal}'
@@ -252,6 +273,16 @@ class ExtractFlightData(tk.Tk):
 
 
   '''
+  Called when checkbox to show all drone metrics is selected.
+  '''
+  def setShowAll(self):
+    if (self.showAll.get() == 'Y'):
+      self.tree['displaycolumns'] = self.columns
+    else:
+      self.tree['displaycolumns'] = self.showCols
+
+
+  '''
   Called when checkbox for Path view is selected (to show or hide drone path on the map).
   '''
   def setPathView(self):
@@ -275,10 +306,25 @@ class ExtractFlightData(tk.Tk):
   '''
   def saveFile(self, csvFilename):
     with open(csvFilename, 'w') as f:
-      f.write("Timestamp,Altitude (m),Distance (m),Distance Lat (m),Distance Lon (m),Speed (m/s),Speed Lat (m/s),Speed Lon (m/s),Satellites,Home Lat,Home Lon,Drone Lat,Drone Lon")
+      head = ''
+      for colref in self.tree['displaycolumns']:
+        colTitle = self.tree.heading(colref)['text']
+        if len(head) > 0:
+          head = head + ','
+        head = head + colTitle
+      f.write(head)
       for rowid in self.tree.get_children():
         vals = self.tree.item(rowid)['values']
-        f.write("\n"+str(vals[0])+","+str(vals[1])+","+str(vals[2])+","+str(vals[3])+","+str(vals[4])+","+str(vals[5])+","+str(vals[6])+","+str(vals[7])+","+str(vals[8])+","+str(vals[9])+","+str(vals[10])+","+str(vals[11])+","+str(vals[12]))
+        hasWritten = False
+        colIdx = 0
+        f.write('\n')
+        for colref in self.tree['columns']:
+          if colref in self.tree['displaycolumns']:
+            if (hasWritten):
+              f.write(',')
+            f.write('"' + str(vals[colIdx]) + '"')
+            hasWritten = True
+          colIdx = colIdx + 1;
     f.close()
     showinfo(title='Export Completed', message=f'Data has been exported to {csvFilename}')
 
@@ -287,11 +333,16 @@ class ExtractFlightData(tk.Tk):
   Open the selected Flight Data Zip file.
   '''
   def parseFile(self, selectedFile):
-    sethome = True
+    setctrl = True
     zipFile = Path(selectedFile);
     if (not zipFile.is_file()):
       showerror(title='Invalid File', message=f'Not a valid file specified: {selectedFile}')
       return
+
+    droneModel = re.sub(r"[0-9]*-(.*)-Drone.*", r"\1", PurePath(selectedFile).name) # Pull drone model from zip filename.
+    droneModel = re.sub(r"[^\w]", r" ", droneModel) # Remove non-alphanumeric characters from the model name.
+    if ('atom' not in droneModel.lower()):
+      showwarning(title='Unsupported Model', message=f'This drone model may not be supported in this software: {droneModel}')
 
     binLog = os.path.join(tempfile.gettempdir(), "flightdata")
 
@@ -301,12 +352,21 @@ class ExtractFlightData(tk.Tk):
     self.reset()
     self.zipFilename = selectedFile
 
-    # First read the FPV file.
+    # First read the FPV file. The presence of this file is optional.
+    fpvStat = {}
     files = glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True)
     for file in files:
-      self.homelabel = re.sub(r"[0-9]*-(.*)\.[^\.]*", r"\1", PurePath(file).name)
+      self.ctrllabel = re.sub(r"[^\(]*\(([^\)]*).*", r"\1", PurePath(file).name)
+      with open(file, mode='rb') as fpvFile:
+        while True:
+          fpvRecord = fpvFile.readline().decode("utf-8")
+          if not fpvRecord:
+            break
+          vals = fpvRecord.split(" ")
+          fpvStat[vals[0]] = vals[1]
+      fpvFile.close()
 
-    # Read the Flight Status files.
+    # Read the Flight Status files. These files are required to be present.
     files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True))
     timestampMarkers = []
 
@@ -330,37 +390,51 @@ class ExtractFlightData(tk.Tk):
           if (len(fcRecord) < 512):
             break
 
-          recordCount = struct.unpack('<I', fcRecord[0:4])[0] # not sure if this is 2 bytes or 4 bytes.
-          elapsed = struct.unpack('<Q', fcRecord[5:13])[0]
-          satellites = struct.unpack('<B', fcRecord[46:47])[0];
-          dronelat = struct.unpack('<i', fcRecord[53:57])[0]/10000000
+          recordCount = struct.unpack('<I', fcRecord[0:4])[0] # This incremental record count is generated by the Potensic Pro app. All other fields are generated directly on the drone itself. The Potensic App saves these drone logs to the .bin files on the mobile device.
+          elapsed = struct.unpack('<Q', fcRecord[5:13])[0] # Microseconds elapsed since previous reading. 
+          satellites = struct.unpack('<B', fcRecord[46:47])[0] # Number of satellites.
+          dronelat = struct.unpack('<i', fcRecord[53:57])[0]/10000000 # Drone coords.
           dronelon = struct.unpack('<i', fcRecord[57:61])[0]/10000000
-          homelat = struct.unpack('<i', fcRecord[159:163])[0]/10000000
-          homelon = struct.unpack('<i', fcRecord[163:167])[0]/10000000
-          distlat = struct.unpack('f', fcRecord[235:239])[0]
-          distlon = struct.unpack('f', fcRecord[239:243])[0]
-          dist = round(math.sqrt(math.pow(distlat, 2) + math.pow(distlon, 2)), 2) # Pythagoras to calculate real distance.
+          ctrllat = struct.unpack('<i', fcRecord[159:163])[0]/10000000 # Controller coords.
+          ctrllon = struct.unpack('<i', fcRecord[163:167])[0]/10000000
+          homelat = struct.unpack('<i', fcRecord[435:439])[0]/10000000 # Home Point coords (for Return To Home).
+          homelon = struct.unpack('<i', fcRecord[439:443])[0]/10000000
+          dist1lat = struct.unpack('f', fcRecord[235:239])[0] # Distance home point vs controller??
+          dist1lon = struct.unpack('f', fcRecord[239:243])[0]
+          dist2lat = struct.unpack('f', fcRecord[319:323])[0] # Distance home point vs controller??
+          dist2lon = struct.unpack('f', fcRecord[323:327])[0]
+          dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
+          dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
+          dist3 = struct.unpack('f', fcRecord[431:435])[0] # Distance as reported by the drone.
 
-          validDist = True if dist < self.distanceLimit else False
-          if (validDist and dist > maxDist):
-            maxDist = dist
-          alt = round(-struct.unpack('f', fcRecord[243:247])[0], 2)
-          if (validDist and alt < self.altitudeLimit and alt > maxAlt):
-            maxAlt = alt
-          speedlat = struct.unpack('f', fcRecord[247:251])[0]
-          speedlon = struct.unpack('f', fcRecord[251:255])[0]
-          speed = round(math.sqrt(math.pow(speedlat, 2) + math.pow(speedlon, 2)), 2) # Pythagoras to calculate real speed.
-          if (validDist and speed < self.speedLimit and speed > maxSpeed):
-            maxSpeed = speed
+          if (dist3 > maxDist):
+            maxDist = dist3
+          alt1 = round(-struct.unpack('f', fcRecord[243:247])[0], 2) # Relative height from controller vs distance to ground??
+          alt2 = round(-struct.unpack('f', fcRecord[343:347])[0], 2) # Relative height from controller vs distance to ground??
+          if (alt2 > maxAlt):
+            maxAlt = alt2
+          speed1lat = struct.unpack('f', fcRecord[247:251])[0]
+          speed1lon = struct.unpack('f', fcRecord[251:255])[0]
+          speed2lat = struct.unpack('f', fcRecord[327:331])[0]
+          speed2lon = struct.unpack('f', fcRecord[331:335])[0]
+          speed1 = round(math.sqrt(math.pow(speed1lat, 2) + math.pow(speed1lon, 2)), 2) # Pythagoras to calculate real speed.
+          speed2 = round(math.sqrt(math.pow(speed2lat, 2) + math.pow(speed2lon, 2)), 2) # Pythagoras to calculate real speed.
+          if (speed2 > maxSpeed):
+            maxSpeed = speed2
+          speed1vert = -struct.unpack('f', fcRecord[255:259])[0]
+          speed2vert = -struct.unpack('f', fcRecord[347:351])[0]
 
-          # Build paths for each flight.
-          if (satellites == 0):
-            if (len(pathCoord) > 0):
-              self.pathCoords.append(pathCoord)
-              pathCoord = []
-              isNewPath = True
-          elif (dist < self.distanceLimit):
-            pathCoord.append((dronelat, dronelon))
+          hasValidCoords = dronelat != 0.0 and dronelon != 0.0 and ctrllat != 0.0 and ctrllon != 0.0
+
+          # Build paths for each flight. TODO - improve this logic as it's not always correct.
+          if (hasValidCoords):
+            if (dist3 == 0): # distance is zero when ctrl coords are refreshed.
+              if (len(pathCoord) > 0):
+                self.pathCoords.append(pathCoord)
+                pathCoord = []
+                isNewPath = True
+            elif (alt2 > 0): # Only trace path where the drone is off the ground.
+              pathCoord.append((dronelat, dronelon))
 
           readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
           while (readingTs < prevReadingTs):
@@ -368,20 +442,37 @@ class ExtractFlightData(tk.Tk):
             filenameTs = timestampMarkers.pop(0)
             readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
 
+          # Get corresponding record from the controller. There may not be one, or any at all.
+          fpvRssi = ""
+          fpvChannel = ""
+          #fpvWirelessConnected = ""
+          fpvFlightCtrlConnected = ""
+          fpvRemoteConnected = ""
+          #fpvHighDbm = ""
+          fpvRecord = fpvStat.get(readingTs.strftime('%Y%m%d%H%M%S'));
+          if (fpvRecord):
+            fpvRssi = str(int(fpvRecord[2:4], 16))
+            fpvChannel = str(int(fpvRecord[4:6], 16))
+            fpvFlags = int(fpvRecord[6:8], 16)
+            #fpvWirelessConnected = "1" if fpvFlags & 1 == 1 else "0"
+            fpvFlightCtrlConnected = "1" if fpvFlags & 2 == 2 else "0" # Drone to controller connection.
+            fpvRemoteConnected = "1" if fpvFlags & 4 == 4 else "0"
+            #fpvHighDbm = "1" if fpvFlags & 32 == 32 else "0"
+
           prevReadingTs = readingTs
-          if (isNewPath):
+          if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {len(self.pathCoords)+1}'] = len(self.tree.get_children())
             isNewPath = False
-          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), f"{alt:.2f}", f"{dist:.2f}", f"{distlat:.2f}", f"{distlon:.2f}", f"{speed:.2f}", f"{speedlat:.2f}", f"{speedlon:.2f}", str(satellites), str(homelat), str(homelon), str(dronelat), str(dronelon)))
-          if (sethome and dist > 0 and validDist):
-            self.dronelabel = re.sub(r"[0-9]*-(.*)\.[^\.]*", r"\1", PurePath(selectedFile).name)
+          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), f"{alt1:.2f}", f"{alt2:.2f}", f"{dist1:.2f}", f"{dist1lat:.2f}", f"{dist1lon:.2f}", f"{dist2:.2f}", f"{dist2lat:.2f}", f"{dist2lon:.2f}", f"{dist3:.2f}", f"{speed1:.2f}", f"{speed1lat:.2f}", f"{speed1lon:.2f}", f"{speed2:.2f}", f"{speed2lat:.2f}", f"{speed2lon:.2f}", f"{speed1vert:.2f}", f"{speed2vert:.2f}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected))
+          if (setctrl and hasValidCoords and alt2 > 0): # Record home location from the moment the drone ascends.
+            self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
-            self.map_widget.set_position(homelat, homelon)
-            self.homemarker = self.map_widget.set_marker(
-              homelat, homelon, text=self.homelabel,
-              marker_color_circle=self.homeMarkerColor1,
-              marker_color_outside=self.homeMarkerColor2)
-            sethome = False
+            self.map_widget.set_position(ctrllat, ctrllon)
+            self.ctrlmarker = self.map_widget.set_marker(
+              ctrllat, ctrllon, text=self.ctrllabel,
+              marker_color_circle=self.ctrlMarkerColor1,
+              marker_color_outside=self.ctrlMarkerColor2)
+            setctrl = False
 
       flightFile.close()
 
@@ -476,26 +567,49 @@ class ExtractFlightData(tk.Tk):
     file_menu.add_command(label='Exit', command=self.exitApp)
     menubar.add_cascade(label='File', menu=file_menu)
     
-    columns = ('timestamp','altitude','distance','distlat','distlon','speed','speedlat','speedlon','satellites','homelat','homelon','dronelat','dronelon')
-    self.tree = ttk.Treeview(dataFrame, columns=columns, show='headings', selectmode='browse')
+    self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showCols)
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=200)
     self.tree.heading('timestamp', text='Timestamp')
-    self.tree.column("altitude", anchor=tk.E, stretch=tk.NO, width=70)
-    self.tree.heading('altitude', text='Alt (m)')
-    self.tree.column("distance", anchor=tk.E, stretch=tk.NO, width=80)
-    self.tree.heading('distance', text='Dist (m)')
-    self.tree.column("distlat", anchor=tk.E, stretch=tk.NO, width=80)
-    self.tree.heading('distlat', text='Lat Dist (m)')
-    self.tree.column("distlon", anchor=tk.E, stretch=tk.NO, width=80)
-    self.tree.heading('distlon', text='Lon Dist (m)')
-    self.tree.column("speed", anchor=tk.E, stretch=tk.NO, width=70)
-    self.tree.heading('speed', text='Speed (m/s)')
-    self.tree.column("speedlat", anchor=tk.E, stretch=tk.NO, width=70)
-    self.tree.heading('speedlat', text='Lat S (m/s)')
-    self.tree.column("speedlon", anchor=tk.E, stretch=tk.NO, width=70)
-    self.tree.heading('speedlon', text='Lon S (m/s)')
+    self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('altitude1', text='Alt1 (m)')
+    self.tree.column("altitude2", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('altitude2', text='Alt2 (m)')
+    self.tree.column("distance1", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('distance1', text='Dist1 (m)')
+    self.tree.column("dist1lat", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('dist1lat', text='Lat Dist1 (m)')
+    self.tree.column("dist1lon", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('dist1lon', text='Lon Dist1 (m)')
+    self.tree.column("distance2", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('distance2', text='Dist2 (m)')
+    self.tree.column("dist2lat", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('dist2lat', text='Lat Dist2 (m)')
+    self.tree.column("dist2lon", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('dist2lon', text='Lon Dist2 (m)')
+    self.tree.column("distance3", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.heading('distance3', text='Dist3 (m)')
+    self.tree.column("speed1", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speed1', text='Speed1 (m/s)')
+    self.tree.column("speed1lat", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speed1lat', text='Lat S1 (m/s)')
+    self.tree.column("speed1lon", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speed1lon', text='Lon S1 (m/s)')
+    self.tree.column("speed2", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speed2', text='Speed2 (m/s)')
+    self.tree.column("speed2lat", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speed2lat', text='Lat S2 (m/s)')
+    self.tree.column("speed2lon", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speed2lon', text='Lon S2 (m/s)')
+    self.tree.column("speed1vert", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speed1vert', text='Speed1 Vert (m/s)')
+    self.tree.column("speed2vert", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.heading('speed2vert', text='Speed2 Vert (m/s)')
     self.tree.column("satellites", anchor=tk.E, stretch=tk.NO, width=50)
     self.tree.heading('satellites', text='Sat')
+    self.tree.column("ctrllat", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.heading('ctrllat', text='Ctrl Lat')
+    self.tree.column("ctrllon", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.heading('ctrllon', text='Ctrl Lon')
     self.tree.column("homelat", anchor=tk.W, stretch=tk.NO, width=120)
     self.tree.heading('homelat', text='Home Lat')
     self.tree.column("homelon", anchor=tk.W, stretch=tk.NO, width=120)
@@ -504,6 +618,18 @@ class ExtractFlightData(tk.Tk):
     self.tree.heading('dronelat', text='Drone Lat')
     self.tree.column("dronelon", anchor=tk.W, stretch=tk.NO, width=120)
     self.tree.heading('dronelon', text='Drone Lon')
+    self.tree.column("rssi", anchor=tk.W, stretch=tk.NO, width=70)
+    self.tree.heading('rssi', text='RSSI')
+    self.tree.column("channel", anchor=tk.W, stretch=tk.NO, width=70)
+    self.tree.heading('channel', text='Chn')
+    #self.tree.column("wirelessconnected", anchor=tk.W, stretch=tk.NO, width=120)
+    #self.tree.heading('wirelessconnected', text='Wireless Connected')
+    self.tree.column("flightctrlconnected", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.heading('flightctrlconnected', text='Drone Connected')
+    self.tree.column("remoteconnected", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.heading('remoteconnected', text='Remote Connected')
+    #self.tree.column("highdbm", anchor=tk.W, stretch=tk.NO, width=120)
+    #self.tree.heading('highdbm', text='High Dbm')
     self.tree.bind('<<TreeviewSelect>>', self.item_selected)
     self.tree.grid(row=0, column=0, sticky=tk.NSEW)
     scrollbar = ttk.Scrollbar(dataFrame, orient=tk.VERTICAL, command=self.tree.yview)
@@ -522,14 +648,18 @@ class ExtractFlightData(tk.Tk):
     buttonPlay.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
     buttonStop = ttk.Button(playbackFrame, text='Stop', command=self.stop, width=4)
     buttonStop.grid(row=0, column=2, sticky=tk.W, padx=0, pady=0)
+    self.showAll = tk.StringVar()
+    pathView = ttk.Checkbutton(playbackFrame, text='Show All', command=self.setShowAll, variable=self.showAll, onvalue='Y', offvalue='N')
+    pathView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
+    self.showAll.set('N')
     self.labelDistance = ttk.Label(playbackFrame, text='', width=18)
-    self.labelDistance.grid(row=0, column=3, sticky=tk.W, padx=2, pady=0)
+    self.labelDistance.grid(row=0, column=4, sticky=tk.W, padx=2, pady=0)
     self.labelAltitude = ttk.Label(playbackFrame, text='', width=18)
-    self.labelAltitude.grid(row=0, column=4, sticky=tk.W, padx=2, pady=0)
+    self.labelAltitude.grid(row=0, column=5, sticky=tk.W, padx=2, pady=0)
     self.labelSpeed = ttk.Label(playbackFrame, text='', width=18)
-    self.labelSpeed.grid(row=0, column=5, sticky=tk.W, padx=2, pady=0)
+    self.labelSpeed.grid(row=0, column=6, sticky=tk.W, padx=2, pady=0)
     self.labelTimestamp = ttk.Label(playbackFrame, text='')
-    self.labelTimestamp.grid(row=0, column=6, sticky=tk.W, padx=2, pady=0)
+    self.labelTimestamp.grid(row=0, column=7, sticky=tk.W, padx=2, pady=0)
 
     fileInfoFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
     fileInfoFrame.pack(fill=tk.BOTH, expand=False)
