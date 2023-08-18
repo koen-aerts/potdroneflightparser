@@ -6,7 +6,7 @@ Flight Data Viewer that can read from Potensic flight-log files. Models confirme
 This project is based on reverse engineering of the Potensic flight bin files (mainly for the Atom) and by trial and error. Not all available metrics are currently pulled from this proprietary file format as not everything has been identified yet.
 
 # How to run
-On Windows or MacOS (x64) you can download and run one of the executables from the [Releases](<../../releases> "Releases") section.
+On Windows or MacOS (x64/ARM) you can download and run one of the executables from the [Releases](<../../releases> "Releases") section.
 
 On any platform or if you don't want or can't run the executables:
 ```sh
@@ -20,7 +20,7 @@ MacOS:
 ```sh
 pip3 install pyinstaller
 pyinstaller extractFlightData.py --noconsole --onefile -i ./resources/app-icon256.png
-sed -i -- "s/0\.0\.0/0.3.0-alpha/" dist/extractFlightData.app/Contents/Info.plist
+sed -i -- "s/0\.0\.0/0.6.0-alpha/" dist/extractFlightData.app/Contents/Info.plist
 ```
 
 Windows:
