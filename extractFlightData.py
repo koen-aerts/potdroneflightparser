@@ -28,18 +28,17 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v0.6.0-alpha"
+  version = "v0.7.0-alpha"
   defaultDroneZoom = 14
   defaultBlankMapZoom = 1
-  distanceLimit = 10000
-  altitudeLimit = 500
-  speedLimit = 50
+  windowWidth = 1400
+  windowHeight = 800
   ctrlMarkerColor1 = "#5b96f7"
   ctrlMarkerColor2 = "#aaccf6"
   homeMarkerColor1 = "#9B261E"
   homeMarkerColor2 = "#C5542D"
-  droneMarkerColor1 = "#f59e00" #"#9B261E"
-  droneMarkerColor2 = "#c6dfb3" #"#C5542D"
+  droneMarkerColor1 = "#f59e00"
+  droneMarkerColor2 = "#c6dfb3"
   columns = ('timestamp','altitude1','altitude2','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected')
   showCols = ('timestamp','altitude2','distance3','speed2','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
   zipFilename = None
@@ -217,12 +216,8 @@ class ExtractFlightData(tk.Tk):
     dist = record[self.columns.index('distance3')]
     alt = record[self.columns.index('altitude2')]
     speed = record[self.columns.index('speed2')]
-    validDist = True if float(dist) < self.distanceLimit else False
-    distVal = dist if validDist else '--'
-    altVal = alt if validDist else '--'
-    speedVal = speed if validDist else '--'
     flightTs = self.getDatetime(record[self.columns.index('timestamp')]).isoformat(sep=' ', timespec='seconds')
-    self.labelFlight['text'] = f'    Time: {flightTs}   /   Distance (m): {distVal}   /   Altitude (m): {altVal}   /   Speed (m/s): {speedVal}'
+    self.labelFlight['text'] = f'    Time: {flightTs}   /   Distance (m): {dist}   /   Altitude (m): {alt}   /   Speed (m/s): {speed}'
 
 
   '''
@@ -271,20 +266,6 @@ class ExtractFlightData(tk.Tk):
       self.map_widget.set_tile_server("https://tile.opentopomap.org/{z}/{x}/{y}.png")
     else:
       self.map_widget.set_tile_server("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png")  # OpenStreetMap (default)
-
-
-  '''
-  Called when checkbox to show controller marker is selected.
-  '''
-  #def setShowMarkerCtrl(self):
-    # Do nothing.
-
-
-  '''
-  Called when checkbox to show drone home (RTF) marker is selected.
-  '''
-  #def setShowMarkerHome(self):
-    # Do nothing.
 
 
   '''
@@ -364,6 +345,7 @@ class ExtractFlightData(tk.Tk):
     with ZipFile(selectedFile, 'r') as unzip:
       unzip.extractall(path=binLog)
 
+    self.stop()
     self.reset()
     self.zipFilename = selectedFile
 
@@ -457,7 +439,7 @@ class ExtractFlightData(tk.Tk):
             filenameTs = timestampMarkers.pop(0)
             readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
 
-          # Get corresponding record from the controller. There may not be one, or any at all.
+          # Get corresponding record from the controller. There may not be one, or any at all. Match up to 5 seconds ago.
           fpvRssi = ""
           fpvChannel = ""
           #fpvWirelessConnected = ""
@@ -465,6 +447,12 @@ class ExtractFlightData(tk.Tk):
           fpvRemoteConnected = ""
           #fpvHighDbm = ""
           fpvRecord = fpvStat.get(readingTs.strftime('%Y%m%d%H%M%S'));
+          secondsAgo = -1;
+          while (not fpvRecord):
+            fpvRecord = fpvStat.get((readingTs + datetime.timedelta(seconds=secondsAgo)).strftime('%Y%m%d%H%M%S'));
+            if (secondsAgo <= -5):
+              break;
+            secondsAgo = secondsAgo - 1;
           if (fpvRecord):
             fpvRssi = str(int(fpvRecord[2:4], 16))
             fpvChannel = str(int(fpvRecord[4:6], 16))
@@ -549,7 +537,7 @@ class ExtractFlightData(tk.Tk):
     super().__init__()
     self.title(f"Flight Data Viewer - {self.version}")
     self.protocol("WM_DELETE_WINDOW", self.exitApp)
-    self.geometry('1400x800')
+    self.geometry("{}x{}+{}+{}".format(self.windowWidth, self.windowHeight, int((self.winfo_screenwidth() - self.windowWidth)/2), int((self.winfo_screenheight() - self.windowHeight)/2)))
     self.resizable(True, True)
     style = ttk.Style(self)
     style.theme_use('classic')
