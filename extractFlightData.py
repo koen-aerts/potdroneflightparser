@@ -359,8 +359,9 @@ class ExtractFlightData(tk.Tk):
           fpvRecord = fpvFile.readline().decode("utf-8")
           if not fpvRecord:
             break
-          vals = fpvRecord.split(" ")
-          fpvStat[vals[0]] = vals[1]
+          if (len(fpvRecord) >= 24):
+            vals = fpvRecord.split(" ")
+            fpvStat[vals[0]] = vals[1]
       fpvFile.close()
 
     # Read the Flight Status files. These files are required to be present.
