@@ -28,7 +28,7 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v0.7.0-alpha"
+  version = "v1.0.0"
   defaultDroneZoom = 14
   defaultBlankMapZoom = 1
   windowWidth = 1400
