@@ -28,7 +28,7 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v1.0.0"
+  version = "v1.0.1"
   defaultDroneZoom = 14
   defaultBlankMapZoom = 1
   windowWidth = 1400
@@ -349,19 +349,28 @@ class ExtractFlightData(tk.Tk):
     self.reset()
     self.zipFilename = selectedFile
 
-    # First read the FPV file. The presence of this file is optional.
+    # First read the FPV file. The presence of this file is optional. The format of this
+    # file differs slightly based on the mobile platform it was created on: Android vs iOS.
+    # Example filenames:
+    #   - 20230819190421-AtomSE-iosSystem-iPhone13Pro-FPV.bin
+    #   - 20230826161313-Atom SE-Android-(samsung)-FPV.bin
     fpvStat = {}
     files = glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True)
     for file in files:
-      self.ctrllabel = re.sub(r"[^\(]*\(([^\)]*).*", r"\1", PurePath(file).name)
+      self.ctrllabel = re.sub(r".*-\(?([^\)-]+)\)?-.*", r"\1", PurePath(file).name)
       with open(file, mode='rb') as fpvFile:
         while True:
           fpvRecord = fpvFile.readline().decode("utf-8")
           if not fpvRecord:
             break
-          if (len(fpvRecord) >= 24):
+          reclen = len(fpvRecord)
+          if (reclen == 19):
             vals = fpvRecord.split(" ")
-            fpvStat[vals[0]] = vals[1]
+            binval = vals[1].encode("ascii")
+            fpvStat[vals[0]] = f'00{hex(binval[0])[2:]}{hex(binval[1])[2:]}{hex(binval[2])[2:]}' # iOS
+          elif (reclen == 24):
+            vals = fpvRecord.split(" ")
+            fpvStat[vals[0]] = vals[1] # Android
       fpvFile.close()
 
     # Read the Flight Status files. These files are required to be present.
