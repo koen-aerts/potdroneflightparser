@@ -230,6 +230,12 @@ class ExtractFlightData(tk.Tk):
     gotoRow = self.tree.get_children()[idx]
     self.tree.see(gotoRow)
     self.tree.selection_set(gotoRow)
+    # Center the map at the drone lift-off position.
+    item = self.tree.item(gotoRow)
+    record = item['values']
+    dronelat = float(record[self.columns.index('dronelat')])
+    dronelon = float(record[self.columns.index('dronelon')])
+    self.map_widget.set_position(dronelat, dronelon)
 
 
   '''
@@ -480,7 +486,7 @@ class ExtractFlightData(tk.Tk):
           if (setctrl and hasValidCoords and alt2 > 0): # Record home location from the moment the drone ascends.
             self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
-            self.map_widget.set_position(ctrllat, ctrllon)
+            self.map_widget.set_position(dronelat, dronelon)
             self.ctrlmarker = self.map_widget.set_marker(
               ctrllat, ctrllon, text=self.ctrllabel,
               marker_color_circle=self.ctrlMarkerColor1,
@@ -651,7 +657,7 @@ class ExtractFlightData(tk.Tk):
 
     playbackFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 0))
     playbackFrame.pack(fill=tk.BOTH, expand=False)
-    self.selectPlaySpeeds = ttk.Combobox(playbackFrame, width=16)
+    self.selectPlaySpeeds = ttk.Combobox(playbackFrame, state="readonly", exportselection=0, width=16)
     self.selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=7, pady=0)
     self.selectPlaySpeeds['values'] = ('Real-Time', 'Fast', 'Fast 2x', 'Fast 4x', 'Fast 10x', 'Fast 25x')
     buttonPlay = ttk.Button(playbackFrame, text='Play', command=self.play, width=4)
@@ -672,13 +678,13 @@ class ExtractFlightData(tk.Tk):
     fileInfoFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
     fileInfoFrame.pack(fill=tk.BOTH, expand=False)
     self.selectedTile = tk.StringVar()
-    selectTileSource = ttk.Combobox(fileInfoFrame, textvariable=self.selectedTile, width=16)
+    selectTileSource = ttk.Combobox(fileInfoFrame, textvariable=self.selectedTile, state="readonly", exportselection=0, width=16)
     selectTileSource.grid(row=0, column=0, sticky=tk.E, padx=7, pady=0)
     selectTileSource['values'] = ('OpenStreetMap', 'Google Standard', 'Google Satellite', 'Open Topo')
     selectTileSource.bind('<<ComboboxSelected>>', self.setTileSource)
     self.selectedTile.set('OpenStreetMap')
     self.selectedPath = tk.StringVar()
-    self.selectPath = ttk.Combobox(fileInfoFrame, textvariable=self.selectedPath, width=14)
+    self.selectPath = ttk.Combobox(fileInfoFrame, textvariable=self.selectedPath, state="readonly", exportselection=0, width=14)
     self.selectPath.grid(row=0, column=1, sticky=tk.E, padx=7, pady=0)
     self.selectPath.bind('<<ComboboxSelected>>', self.choosePath)
     self.showPath = tk.StringVar()
