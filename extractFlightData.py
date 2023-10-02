@@ -652,9 +652,6 @@ class ExtractFlightData(tk.Tk):
     self.tree.configure(yscroll=scrollbar.set)
     scrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-    self.map_widget = tkintermapview.TkinterMapView(mapFrame, corner_radius=0)
-    self.map_widget.pack(fill=tk.BOTH, expand=True)
-
     playbackFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 0))
     playbackFrame.pack(fill=tk.BOTH, expand=False)
     self.selectPlaySpeeds = ttk.Combobox(playbackFrame, state="readonly", exportselection=0, width=16)
@@ -697,6 +694,9 @@ class ExtractFlightData(tk.Tk):
     self.showAll.set('N')
     self.labelFile = ttk.Label(fileInfoFrame, text='')
     self.labelFile.grid(row=0, column=4, sticky=tk.W, padx=2, pady=0)
+
+    self.map_widget = tkintermapview.TkinterMapView(mapFrame, corner_radius=0)
+    self.map_widget.pack(fill=tk.BOTH, expand=True)
 
     self.reset();
 
