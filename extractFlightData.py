@@ -22,13 +22,14 @@ import tkintermapview
 from pathlib import Path, PurePath
 from zipfile import ZipFile
 
+
 class ExtractFlightData(tk.Tk):
 
 
   '''
   Global variables and constants.
   '''
-  version = "v1.0.1"
+  version = "v1.0.2"
   defaultDroneZoom = 14
   defaultBlankMapZoom = 1
   windowWidth = 1400
@@ -39,8 +40,10 @@ class ExtractFlightData(tk.Tk):
   homeMarkerColor2 = "#C5542D"
   droneMarkerColor1 = "#f59e00"
   droneMarkerColor2 = "#c6dfb3"
+  displayMode = "ATOM"
   columns = ('timestamp','altitude1','altitude2','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected')
-  showCols = ('timestamp','altitude2','distance3','speed2','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
+  showColsAtom = ('timestamp','altitude2','distance3','speed2','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
+  showColsDreamer = ('timestamp','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
   zipFilename = None
   tree = None
   map_widget = None
@@ -164,15 +167,11 @@ class ExtractFlightData(tk.Tk):
   def setMarkers(self, row):
     item = self.tree.item(row)
     record = item['values']
-    ctrllat = float(record[self.columns.index('ctrllat')])
-    ctrllon = float(record[self.columns.index('ctrllon')])
-    homelat = float(record[self.columns.index('homelat')])
-    homelon = float(record[self.columns.index('homelon')])
-    dronelat = float(record[self.columns.index('dronelat')])
-    dronelon = float(record[self.columns.index('dronelon')])
     # Controller Marker.
     if (self.showMarkerCtrl and self.showMarkerCtrl.get() == 'Y'):
       try:
+        ctrllat = float(record[self.columns.index('ctrllat')])
+        ctrllon = float(record[self.columns.index('ctrllon')])
         if (self.ctrlmarker):
           self.ctrlmarker.set_position(ctrllat, ctrllon)
         else:
@@ -189,6 +188,8 @@ class ExtractFlightData(tk.Tk):
     # Drone Home (RTH) Marker.
     if (self.showMarkerHome and self.showMarkerHome.get() == 'Y'):
       try:
+        homelat = float(record[self.columns.index('homelat')])
+        homelon = float(record[self.columns.index('homelon')])
         if (self.homemarker):
           self.homemarker.set_position(homelat, homelon)
         else:
@@ -204,6 +205,8 @@ class ExtractFlightData(tk.Tk):
         self.homemarker = None
     # Drone marker.
     try:
+      dronelat = float(record[self.columns.index('dronelat')])
+      dronelon = float(record[self.columns.index('dronelon')])
       if (self.dronemarker):
         self.dronemarker.set_position(dronelat, dronelon)
       else:
@@ -281,7 +284,10 @@ class ExtractFlightData(tk.Tk):
     if (self.showAll.get() == 'Y'):
       self.tree['displaycolumns'] = self.columns
     else:
-      self.tree['displaycolumns'] = self.showCols
+      if (self.displayMode == "DREAMER"):
+        self.tree['displaycolumns'] = self.showColsDreamer
+      else:
+        self.tree['displaycolumns'] = self.showColsAtom
 
 
   '''
@@ -335,7 +341,6 @@ class ExtractFlightData(tk.Tk):
   Open the selected Flight Data Zip file.
   '''
   def parseFile(self, selectedFile):
-    setctrl = True
     zipFile = Path(selectedFile);
     if (not zipFile.is_file()):
       showerror(title='Invalid File', message=f'Not a valid file specified: {selectedFile}')
@@ -343,16 +348,33 @@ class ExtractFlightData(tk.Tk):
 
     droneModel = re.sub(r"[0-9]*-(.*)-Drone.*", r"\1", PurePath(selectedFile).name) # Pull drone model from zip filename.
     droneModel = re.sub(r"[^\w]", r" ", droneModel) # Remove non-alphanumeric characters from the model name.
-    if ('atom' not in droneModel.lower()):
+    lcDM = droneModel.lower()
+    if ('atom' in droneModel.lower()):
+      self.parseAtomLogs(droneModel, selectedFile)
+    elif ('p1a' in droneModel.lower()):
+      self.parseDreamerLogs(droneModel, selectedFile)
+    else:
       showwarning(title='Unsupported Model', message=f'This drone model may not be supported in this software: {droneModel}')
+      self.parseAtomLogs(droneModel, selectedFile)
+
+
+
+  '''
+  Parse Atom based logs.
+  '''
+  def parseAtomLogs(self, droneModel, selectedFile):
+    setctrl = True
 
     binLog = os.path.join(tempfile.gettempdir(), "flightdata")
+    shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
 
     with ZipFile(selectedFile, 'r') as unzip:
       unzip.extractall(path=binLog)
 
     self.stop()
     self.reset()
+    self.displayMode = "ATOM"
+    self.setShowAll()
     self.zipFilename = selectedFile
 
     # First read the FPV file. The presence of this file is optional. The format of this
@@ -371,12 +393,13 @@ class ExtractFlightData(tk.Tk):
             break
           reclen = len(fpvRecord)
           if (reclen == 19):
-            vals = fpvRecord.split(" ")
-            binval = vals[1].encode("ascii")
-            fpvStat[vals[0]] = f'00{hex(binval[0])[2:]}{hex(binval[1])[2:]}{hex(binval[2])[2:]}' # iOS
+            binval = fpvRecord[15:18].encode("ascii")
+            hex1 = ('0' + hex(binval[0])[2:])[-2:]
+            hex2 = ('0' + hex(binval[1])[2:])[-2:]
+            hex3 = ('0' + hex(binval[2])[2:])[-2:]
+            fpvStat[fpvRecord[:14]] = f'00{hex1}{hex2}{hex3}' # iOS
           elif (reclen == 24):
-            vals = fpvRecord.split(" ")
-            fpvStat[vals[0]] = vals[1] # Android
+            fpvStat[fpvRecord[:14]] = fpvRecord[15:] # Android
       fpvFile.close()
 
     # Read the Flight Status files. These files are required to be present.
@@ -495,12 +518,170 @@ class ExtractFlightData(tk.Tk):
 
       flightFile.close()
 
-    shutil.rmtree(binLog) # Delete temp files.
+    shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
 
     if (len(pathCoord) > 0):
       self.pathCoords.append(pathCoord)
     self.setPathView()
     self.labelFile['text'] = f'    Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   Max Speed (m/s): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
+    pathNames = list(self.flightStarts.keys())
+    self.selectPath['values'] = pathNames
+    self.selectedPath.set(pathNames[0])
+
+
+
+  '''
+  Parse Dreamer based logs.
+  '''
+  def parseDreamerLogs(self, droneModel, selectedFile):
+    setctrl = True
+
+    binLog = os.path.join(tempfile.gettempdir(), "flightdata")
+    shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
+
+    with ZipFile(selectedFile, 'r') as unzip:
+      unzip.extractall(path=binLog)
+
+    self.stop()
+    self.reset()
+    self.displayMode = "DREAMER"
+    self.setShowAll()
+    self.zipFilename = selectedFile
+
+    # First read the FPV file. The presence of this file is optional.
+    fpvStat = {}
+    files = glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True)
+    for file in files:
+      self.ctrllabel = re.sub(r".*-\(?([^\)-]+)\)?-.*", r"\1", PurePath(file).name)
+      with open(file, mode='rb') as fpvFile:
+        while True:
+          fpvRecord = fpvFile.readline().decode("utf-8")
+          if not fpvRecord:
+            break
+          reclen = len(fpvRecord)
+          if (reclen == 19):
+            binval = fpvRecord[15:18].encode("ascii")
+            hex1 = ('0' + hex(binval[0])[2:])[-2:]
+            hex2 = ('0' + hex(binval[1])[2:])[-2:]
+            hex3 = ('0' + hex(binval[2])[2:])[-2:]
+            fpvStat[fpvRecord[:14]] = f'00{hex1}{hex2}{hex3}' # iOS
+          elif (reclen == 24):
+            fpvStat[fpvRecord[:14]] = fpvRecord[15:] # Android
+      fpvFile.close()
+
+    # Read the Flight Status files. These files are required to be present.
+    files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True))
+    timestampMarkers = []
+
+    # First grab timestamps from the filenames. Those are used to calculate the real timestamps with the elapsed time from each record.
+    for file in files:
+      timestampMarkers.append(datetime.datetime.strptime(re.sub("-.*", "", Path(file).stem), '%Y%m%d%H%M%S'))
+
+    filenameTs = timestampMarkers[0]
+    prevReadingTs = timestampMarkers[0]
+    readingTs = timestampMarkers[0]
+    maxDist = 0;
+    maxAlt = 0;
+    maxSpeed = 0;
+    self.pathCoords = []
+    self.flightStarts = {}
+    pathCoord = []
+    isNewPath = True
+    for file in files:
+      with open(file, mode='rb') as flightFile:
+        while True:
+          fcRecord = flightFile.read(512)
+          if (len(fcRecord) < 512):
+            break
+
+          recordCount = struct.unpack('<I', fcRecord[0:4])[0] # 4 bytes.
+          elapsed = struct.unpack('<I', fcRecord[33:37])[0]
+          satellites = struct.unpack('<B', fcRecord[7:8])[0]
+          dronelon = struct.unpack('f', fcRecord[145:149])[0]
+          dronelat = struct.unpack('f', fcRecord[149:153])[0]
+          alt1 = struct.unpack('<h', fcRecord[39:41])[0] / 10
+          alt2 = struct.unpack('<h', fcRecord[59:61])[0] / 10
+          dist1lat = struct.unpack('<h', fcRecord[37:39])[0] / 10
+          dist1lon = struct.unpack('<h', fcRecord[41:43])[0] / 10
+          dist2lat = struct.unpack('<h', fcRecord[57:59])[0] / 10
+          dist2lon = struct.unpack('<h', fcRecord[61:63])[0] / 10
+          dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
+          dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
+          earth_radius_in_km = 6367 # 6378.137
+          coeff = (1 / ((2 * math.pi / 360) * earth_radius_in_km)) / 1000
+          real1lat = dronelat + ((dist1lat) * coeff)
+          real1lon = dronelon + (((dist1lon) * coeff) / (math.cos(dronelat * math.pi / 180)))
+          #real1lon = dronelon + (((dist1lon) * coeff) / (math.cos(dronelat * 0.018)))
+
+          if (dist1 > maxDist):
+            maxDist = dist1
+          if (alt1 > maxAlt):
+            maxAlt = alt1
+
+          hasValidCoords = dronelat != 0.0 and dronelon != 0.0
+
+          # Build paths for each flight. TODO - improve this logic as it's not always correct.
+          if (hasValidCoords):
+            if (dist1 == 0): # distance is zero when ctrl coords are refreshed.
+              if (len(pathCoord) > 0):
+                self.pathCoords.append(pathCoord)
+                pathCoord = []
+                isNewPath = True
+            elif (alt1 > 0): # Only trace path where the drone is off the ground.
+              pathCoord.append((real1lat, real1lon))
+
+          readingTs = readingTs + datetime.timedelta(milliseconds=(elapsed/1000000))
+          while (readingTs < prevReadingTs):
+            # Line up to the next valid timestamp marker (pulled from the filenames).
+            filenameTs = timestampMarkers.pop(0)
+            readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000000))
+
+          # Get corresponding record from the controller. There may not be one, or any at all. Match up to 5 seconds ago.
+          fpvRssi = ""
+          fpvChannel = ""
+          #fpvWirelessConnected = ""
+          fpvFlightCtrlConnected = ""
+          fpvRemoteConnected = ""
+          #fpvHighDbm = ""
+          fpvRecord = fpvStat.get(readingTs.strftime('%Y%m%d%H%M%S'));
+          secondsAgo = -1;
+          while (not fpvRecord):
+            fpvRecord = fpvStat.get((readingTs + datetime.timedelta(seconds=secondsAgo)).strftime('%Y%m%d%H%M%S'));
+            if (secondsAgo <= -5):
+              break;
+            secondsAgo = secondsAgo - 1;
+          if (fpvRecord):
+            fpvRssi = str(int(fpvRecord[2:4], 16))
+            fpvChannel = str(int(fpvRecord[4:6], 16))
+            fpvFlags = int(fpvRecord[6:8], 16)
+            #fpvWirelessConnected = "1" if fpvFlags & 1 == 1 else "0"
+            fpvFlightCtrlConnected = "1" if fpvFlags & 2 == 2 else "0" # Drone to controller connection.
+            fpvRemoteConnected = "1" if fpvFlags & 4 == 4 else "0"
+            #fpvHighDbm = "1" if fpvFlags & 32 == 32 else "0"
+
+          prevReadingTs = readingTs
+          if (isNewPath and len(pathCoord) > 0):
+            self.flightStarts[f'Flight {len(self.pathCoords)+1}'] = len(self.tree.get_children())
+            isNewPath = False
+          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), f"{alt1:.2f}", f"{alt2:.2f}", f"{dist1:.2f}", f"{dist1lat:.2f}", f"{dist1lon:.2f}", f"{dist2:.2f}", f"{dist2lat:.2f}", f"{dist2lon:.2f}", "", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon)))
+          if (setctrl and hasValidCoords and alt1 > 0): # Record home location from the moment the drone ascends.
+            self.dronelabel = droneModel
+            self.map_widget.set_zoom(self.defaultDroneZoom)
+            self.map_widget.set_position(real1lat, real1lon)
+            self.ctrlmarker = self.map_widget.set_marker(
+              dronelat, dronelon, text=self.ctrllabel,
+              marker_color_circle=self.ctrlMarkerColor1,
+              marker_color_outside=self.ctrlMarkerColor2)
+            setctrl = False
+
+      flightFile.close()
+
+    shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
+
+    if (len(pathCoord) > 0):
+      self.pathCoords.append(pathCoord)
+    self.setPathView()
+    self.labelFile['text'] = f'    Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     self.selectPath['values'] = pathNames
     self.selectedPath.set(pathNames[0])
@@ -583,7 +764,7 @@ class ExtractFlightData(tk.Tk):
     file_menu.add_command(label='Exit', command=self.exitApp)
     menubar.add_cascade(label='File', menu=file_menu)
     
-    self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showCols)
+    self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom)
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=200)
     self.tree.heading('timestamp', text='Timestamp')
     self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=70)
