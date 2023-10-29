@@ -24,7 +24,7 @@ MacOS:
 ```sh
 pip3 install pyinstaller
 pyinstaller extractFlightData.py --noconsole --onefile -i ./resources/app-icon256.png
-sed -i -- "s/0\.0\.0/1.0.2/" dist/extractFlightData.app/Contents/Info.plist
+sed -i -- "s/0\.0\.0/1.0.3/" dist/extractFlightData.app/Contents/Info.plist
 ```
 
 Windows:

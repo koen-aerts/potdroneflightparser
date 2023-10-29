@@ -16,6 +16,7 @@ from tkinter import filedialog
 from tkinter import font
 from tkinter import Menu
 from tkinter.messagebox import showinfo, showwarning, showerror
+from tkinter.font import nametofont
 
 import tkintermapview
 
@@ -29,11 +30,9 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v1.0.2"
+  version = "v1.0.3"
   defaultDroneZoom = 14
   defaultBlankMapZoom = 1
-  windowWidth = 1400
-  windowHeight = 800
   ctrlMarkerColor1 = "#5b96f7"
   ctrlMarkerColor2 = "#aaccf6"
   homeMarkerColor1 = "#9B261E"
@@ -732,10 +731,56 @@ class ExtractFlightData(tk.Tk):
   '''
   def __init__(self):
     super().__init__()
+    screen_width = self.winfo_screenwidth()
+    screen_height = self.winfo_screenheight()
+    # Determine target device
+    if (screen_width >= 1280):
+      device = "desktop"
+    elif (screen_width >= 768):
+      device = "tablet"
+    else:
+      device = "mobile"
+
+    # Scale widgets based on device.
+    if (device == 'desktop'):
+      fontFamily = 'Helvetica'
+      nametofont("TkMenuFont").configure(family=fontFamily, size=14)
+      nametofont("TkDefaultFont").configure(family=fontFamily, size=14)
+      nametofont("TkHeadingFont").configure(family=fontFamily, size=14)
+      nametofont("TkTextFont").configure(family=fontFamily, size=14)
+      colWidth1 = 200
+      colWidth2 = 120
+      colWidth3 = 90
+      colWidth4 = 120
+      colWidth5 = 50
+    elif (device == 'tablet'):
+      fontFamily = 'Helvetica'
+      nametofont("TkMenuFont").configure(family=fontFamily, size=12)
+      nametofont("TkDefaultFont").configure(family=fontFamily, size=12)
+      nametofont("TkHeadingFont").configure(family=fontFamily, size=12)
+      nametofont("TkTextFont").configure(family=fontFamily, size=12)
+      colWidth1 = 170
+      colWidth2 = 90
+      colWidth3 = 80
+      colWidth4 = 70
+      colWidth5 = 50
+    else:
+      fontFamily = 'Helvetica'
+      nametofont("TkMenuFont").configure(family=fontFamily, size=8)
+      nametofont("TkDefaultFont").configure(family=fontFamily, size=8) 
+      nametofont("TkHeadingFont").configure(family=fontFamily, size=8)
+      nametofont("TkTextFont").configure(family=fontFamily, size=8)
+      colWidth1 = 100
+      colWidth2 = 70
+      colWidth3 = 60
+      colWidth4 = 50
+      colWidth5 = 30
+
     self.title(f"Flight Data Viewer - {self.version}")
     self.protocol("WM_DELETE_WINDOW", self.exitApp)
-    self.geometry("{}x{}+{}+{}".format(self.windowWidth, self.windowHeight, int((self.winfo_screenwidth() - self.windowWidth)/2), int((self.winfo_screenheight() - self.windowHeight)/2)))
+    self.state('zoomed')
     self.resizable(True, True)
+
     style = ttk.Style(self)
     style.theme_use('classic')
 
@@ -765,65 +810,65 @@ class ExtractFlightData(tk.Tk):
     menubar.add_cascade(label='File', menu=file_menu)
     
     self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom)
-    self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=200)
+    self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=colWidth1)
     self.tree.heading('timestamp', text='Timestamp')
-    self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('altitude1', text='Alt1 (m)')
-    self.tree.column("altitude2", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("altitude2", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('altitude2', text='Alt2 (m)')
-    self.tree.column("distance1", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.column("distance1", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('distance1', text='Dist1 (m)')
-    self.tree.column("dist1lat", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.column("dist1lat", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('dist1lat', text='Lat Dist1 (m)')
-    self.tree.column("dist1lon", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.column("dist1lon", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('dist1lon', text='Lon Dist1 (m)')
-    self.tree.column("distance2", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.column("distance2", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('distance2', text='Dist2 (m)')
-    self.tree.column("dist2lat", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.column("dist2lat", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('dist2lat', text='Lat Dist2 (m)')
-    self.tree.column("dist2lon", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.column("dist2lon", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('dist2lon', text='Lon Dist2 (m)')
-    self.tree.column("distance3", anchor=tk.E, stretch=tk.NO, width=80)
+    self.tree.column("distance3", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('distance3', text='Dist3 (m)')
-    self.tree.column("speed1", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("speed1", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed1', text='Speed1 (m/s)')
-    self.tree.column("speed1lat", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("speed1lat", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed1lat', text='Lat S1 (m/s)')
-    self.tree.column("speed1lon", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("speed1lon", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed1lon', text='Lon S1 (m/s)')
-    self.tree.column("speed2", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("speed2", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed2', text='Speed2 (m/s)')
-    self.tree.column("speed2lat", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("speed2lat", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed2lat', text='Lat S2 (m/s)')
-    self.tree.column("speed2lon", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("speed2lon", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed2lon', text='Lon S2 (m/s)')
-    self.tree.column("speed1vert", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("speed1vert", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed1vert', text='Speed1 Vert (m/s)')
-    self.tree.column("speed2vert", anchor=tk.E, stretch=tk.NO, width=70)
+    self.tree.column("speed2vert", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed2vert', text='Speed2 Vert (m/s)')
-    self.tree.column("satellites", anchor=tk.E, stretch=tk.NO, width=50)
+    self.tree.column("satellites", anchor=tk.E, stretch=tk.NO, width=colWidth5)
     self.tree.heading('satellites', text='Sat')
-    self.tree.column("ctrllat", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.column("ctrllat", anchor=tk.W, stretch=tk.NO, width=colWidth2)
     self.tree.heading('ctrllat', text='Ctrl Lat')
-    self.tree.column("ctrllon", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.column("ctrllon", anchor=tk.W, stretch=tk.NO, width=colWidth2)
     self.tree.heading('ctrllon', text='Ctrl Lon')
-    self.tree.column("homelat", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.column("homelat", anchor=tk.W, stretch=tk.NO, width=colWidth2)
     self.tree.heading('homelat', text='Home Lat')
-    self.tree.column("homelon", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.column("homelon", anchor=tk.W, stretch=tk.NO, width=colWidth2)
     self.tree.heading('homelon', text='Home Lon')
-    self.tree.column("dronelat", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.column("dronelat", anchor=tk.W, stretch=tk.NO, width=colWidth2)
     self.tree.heading('dronelat', text='Drone Lat')
-    self.tree.column("dronelon", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.column("dronelon", anchor=tk.W, stretch=tk.NO, width=colWidth2)
     self.tree.heading('dronelon', text='Drone Lon')
-    self.tree.column("rssi", anchor=tk.W, stretch=tk.NO, width=70)
+    self.tree.column("rssi", anchor=tk.W, stretch=tk.NO, width=colWidth5)
     self.tree.heading('rssi', text='RSSI')
-    self.tree.column("channel", anchor=tk.W, stretch=tk.NO, width=70)
+    self.tree.column("channel", anchor=tk.W, stretch=tk.NO, width=colWidth5)
     self.tree.heading('channel', text='Chn')
     #self.tree.column("wirelessconnected", anchor=tk.W, stretch=tk.NO, width=120)
     #self.tree.heading('wirelessconnected', text='Wireless Connected')
-    self.tree.column("flightctrlconnected", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.column("flightctrlconnected", anchor=tk.W, stretch=tk.NO, width=colWidth2)
     self.tree.heading('flightctrlconnected', text='Drone Connected')
-    self.tree.column("remoteconnected", anchor=tk.W, stretch=tk.NO, width=120)
+    self.tree.column("remoteconnected", anchor=tk.W, stretch=tk.NO, width=colWidth2)
     self.tree.heading('remoteconnected', text='Remote Connected')
     #self.tree.column("highdbm", anchor=tk.W, stretch=tk.NO, width=120)
     #self.tree.heading('highdbm', text='High Dbm')
