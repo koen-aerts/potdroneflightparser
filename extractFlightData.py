@@ -26,11 +26,13 @@ from zipfile import ZipFile
 
 class ExtractFlightData(tk.Tk):
 
+  ORIGINAL_DPI = 72.02025316455696
 
   '''
   Global variables and constants.
   '''
   version = "v1.0.3"
+  scale = 1
   defaultDroneZoom = 14
   defaultBlankMapZoom = 1
   ctrlMarkerColor1 = "#5b96f7"
@@ -726,11 +728,16 @@ class ExtractFlightData(tk.Tk):
     self.destroy()
 
 
+  def scaled(self, target_width):
+    return int(round(target_width +  self.scale))
+
+
   '''
   Initialize.
   '''
   def __init__(self):
     super().__init__()
+    self.scale = self.winfo_fpixels('1i') / self.ORIGINAL_DPI
     screen_width = self.winfo_screenwidth()
     screen_height = self.winfo_screenheight()
     # Determine target device
@@ -744,37 +751,37 @@ class ExtractFlightData(tk.Tk):
     # Scale widgets based on device.
     if (device == 'desktop'):
       fontFamily = 'Helvetica'
-      nametofont("TkMenuFont").configure(family=fontFamily, size=14)
-      nametofont("TkDefaultFont").configure(family=fontFamily, size=14)
-      nametofont("TkHeadingFont").configure(family=fontFamily, size=14)
-      nametofont("TkTextFont").configure(family=fontFamily, size=14)
-      colWidth1 = 200
-      colWidth2 = 120
-      colWidth3 = 90
-      colWidth4 = 120
-      colWidth5 = 50
+      nametofont("TkMenuFont").configure(family=fontFamily, size=self.scaled(14))
+      nametofont("TkDefaultFont").configure(family=fontFamily, size=self.scaled(14))
+      nametofont("TkHeadingFont").configure(family=fontFamily, size=self.scaled(14))
+      nametofont("TkTextFont").configure(family=fontFamily, size=self.scaled(14))
+      colWidth1 = self.scaled(200)
+      colWidth2 = self.scaled(120)
+      colWidth3 = self.scaled(90)
+      colWidth4 = self.scaled(120)
+      colWidth5 = self.scaled(50)
     elif (device == 'tablet'):
       fontFamily = 'Helvetica'
-      nametofont("TkMenuFont").configure(family=fontFamily, size=12)
-      nametofont("TkDefaultFont").configure(family=fontFamily, size=12)
-      nametofont("TkHeadingFont").configure(family=fontFamily, size=12)
-      nametofont("TkTextFont").configure(family=fontFamily, size=12)
-      colWidth1 = 170
-      colWidth2 = 90
-      colWidth3 = 80
-      colWidth4 = 70
-      colWidth5 = 50
+      nametofont("TkMenuFont").configure(family=fontFamily, size=self.scaled(12))
+      nametofont("TkDefaultFont").configure(family=fontFamily, size=self.scaled(12))
+      nametofont("TkHeadingFont").configure(family=fontFamily, size=self.scaled(12))
+      nametofont("TkTextFont").configure(family=fontFamily, size=self.scaled(12))
+      colWidth1 = self.scaled(170)
+      colWidth2 = self.scaled(90)
+      colWidth3 = self.scaled(80)
+      colWidth4 = self.scaled(70)
+      colWidth5 = self.scaled(50)
     else:
       fontFamily = 'Helvetica'
-      nametofont("TkMenuFont").configure(family=fontFamily, size=8)
-      nametofont("TkDefaultFont").configure(family=fontFamily, size=8) 
-      nametofont("TkHeadingFont").configure(family=fontFamily, size=8)
-      nametofont("TkTextFont").configure(family=fontFamily, size=8)
-      colWidth1 = 100
-      colWidth2 = 70
-      colWidth3 = 60
-      colWidth4 = 50
-      colWidth5 = 30
+      nametofont("TkMenuFont").configure(family=fontFamily, size=self.scaled(8))
+      nametofont("TkDefaultFont").configure(family=fontFamily, size=self.scaled(8))
+      nametofont("TkHeadingFont").configure(family=fontFamily, size=self.scaled(8))
+      nametofont("TkTextFont").configure(family=fontFamily, size=self.scaled(8))
+      colWidth1 = self.scaled(100)
+      colWidth2 = self.scaled(70)
+      colWidth3 = self.scaled(60)
+      colWidth4 = self.scaled(50)
+      colWidth5 = self.scaled(30)
 
     self.title(f"Flight Data Viewer - {self.version}")
     self.protocol("WM_DELETE_WINDOW", self.exitApp)
@@ -786,11 +793,11 @@ class ExtractFlightData(tk.Tk):
 
     pw = ttk.PanedWindow(orient=tk.VERTICAL)
 
-    dataFrame = ttk.Frame(self, height=200)
+    dataFrame = ttk.Frame(self, height=self.scaled(200))
     dataFrame.columnconfigure(0, weight=1)
     dataFrame.rowconfigure(0, weight=1)
 
-    mapFrame = ttk.Frame(self, height=400)
+    mapFrame = ttk.Frame(self, height=self.scaled(400))
 
     pw.add(dataFrame)
     pw.add(mapFrame)
