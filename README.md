@@ -18,13 +18,17 @@ pip3 install tkintermapview
 python3 extractFlightData.py
 ```
 
+You can also run this software on Android devices via [Pydroid 3](<https://play.google.com/store/apps/details?id=ru.iiec.pydroid3> "Google Play - Pydroid 3 - IDE for Python 3"). Make sure to use the pip function in Pydroid to install the dependency shown in the above commands before you can run this software.
+
+![Android Screenshot](<resources/screenshot2.jpg> "Android Screenshot")
+
 # How to build
 
 MacOS:
 ```sh
 pip3 install pyinstaller
 pyinstaller extractFlightData.py --noconsole --onefile -i ./resources/app-icon256.png
-sed -i -- "s/0\.0\.0/1.0.3/" dist/extractFlightData.app/Contents/Info.plist
+sed -i -- "s/0\.0\.0/1.1.0/" dist/extractFlightData.app/Contents/Info.plist
 ```
 
 Windows:
