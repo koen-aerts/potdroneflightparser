@@ -26,15 +26,20 @@ from zipfile import ZipFile
 
 class ExtractFlightData(tk.Tk):
 
-  ORIGINAL_DPI = 72.02025316455696
+  #ORIGINAL_DPI = 72.02025316455696
+  ORIGINAL_DPI = 96
 
   '''
   Global variables and constants.
   '''
   version = "v1.0.3"
   scale = 1
+  screen_width = 1024
+  screen_height = 768
   defaultDroneZoom = 14
   defaultBlankMapZoom = 1
+  windowWidth = 800
+  windowHeight = 400
   ctrlMarkerColor1 = "#5b96f7"
   ctrlMarkerColor2 = "#aaccf6"
   homeMarkerColor1 = "#9B261E"
@@ -728,8 +733,14 @@ class ExtractFlightData(tk.Tk):
     self.destroy()
 
 
-  def scaled(self, target_width):
-    return int(round(target_width +  self.scale))
+  #def scaled(self, target_width):
+  #  return int(round(target_width * self.scale))
+
+  def scaledWidth(self, target_width):
+    return int(round(target_width / 1792 * self.screen_width))
+
+  def scaledHeight(self, target_height):
+    return int(round(target_height / 1120 * self.screen_height))
 
 
   '''
@@ -737,55 +748,27 @@ class ExtractFlightData(tk.Tk):
   '''
   def __init__(self):
     super().__init__()
-    self.scale = self.winfo_fpixels('1i') / self.ORIGINAL_DPI
-    screen_width = self.winfo_screenwidth()
-    screen_height = self.winfo_screenheight()
-    # Determine target device
-    if (screen_width >= 1280):
-      device = "desktop"
-    elif (screen_width >= 768):
-      device = "tablet"
-    else:
-      device = "mobile"
+    self.scale = self.ORIGINAL_DPI / self.winfo_fpixels('1i')
+    self.screen_width = self.winfo_screenwidth()
+    self.screen_height = self.winfo_screenheight()
+    self.windowWidth = self.screen_width
+    self.windowHeight = self.screen_height
 
     # Scale widgets based on device.
-    if (device == 'desktop'):
-      fontFamily = 'Helvetica'
-      nametofont("TkMenuFont").configure(family=fontFamily, size=self.scaled(14))
-      nametofont("TkDefaultFont").configure(family=fontFamily, size=self.scaled(14))
-      nametofont("TkHeadingFont").configure(family=fontFamily, size=self.scaled(14))
-      nametofont("TkTextFont").configure(family=fontFamily, size=self.scaled(14))
-      colWidth1 = self.scaled(200)
-      colWidth2 = self.scaled(120)
-      colWidth3 = self.scaled(90)
-      colWidth4 = self.scaled(120)
-      colWidth5 = self.scaled(50)
-    elif (device == 'tablet'):
-      fontFamily = 'Helvetica'
-      nametofont("TkMenuFont").configure(family=fontFamily, size=self.scaled(12))
-      nametofont("TkDefaultFont").configure(family=fontFamily, size=self.scaled(12))
-      nametofont("TkHeadingFont").configure(family=fontFamily, size=self.scaled(12))
-      nametofont("TkTextFont").configure(family=fontFamily, size=self.scaled(12))
-      colWidth1 = self.scaled(170)
-      colWidth2 = self.scaled(90)
-      colWidth3 = self.scaled(80)
-      colWidth4 = self.scaled(70)
-      colWidth5 = self.scaled(50)
-    else:
-      fontFamily = 'Helvetica'
-      nametofont("TkMenuFont").configure(family=fontFamily, size=self.scaled(8))
-      nametofont("TkDefaultFont").configure(family=fontFamily, size=self.scaled(8))
-      nametofont("TkHeadingFont").configure(family=fontFamily, size=self.scaled(8))
-      nametofont("TkTextFont").configure(family=fontFamily, size=self.scaled(8))
-      colWidth1 = self.scaled(100)
-      colWidth2 = self.scaled(70)
-      colWidth3 = self.scaled(60)
-      colWidth4 = self.scaled(50)
-      colWidth5 = self.scaled(30)
+    fontFamily = 'Helvetica'
+    nametofont("TkMenuFont").configure(family=fontFamily, size=-self.scaledWidth(14))
+    nametofont("TkDefaultFont").configure(family=fontFamily, size=-self.scaledWidth(14))
+    nametofont("TkHeadingFont").configure(family=fontFamily, size=-self.scaledWidth(14))
+    nametofont("TkTextFont").configure(family=fontFamily, size=-self.scaledWidth(14))
+    colWidth1 = self.scaledWidth(200)
+    colWidth2 = self.scaledWidth(120)
+    colWidth3 = self.scaledWidth(90)
+    colWidth4 = self.scaledWidth(120)
+    colWidth5 = self.scaledWidth(50)
 
     self.title(f"Flight Data Viewer - {self.version}")
     self.protocol("WM_DELETE_WINDOW", self.exitApp)
-    self.state('zoomed')
+    self.geometry("{}x{}+{}+{}".format(self.windowWidth, self.windowHeight, int((self.winfo_screenwidth() - self.windowWidth)/2), int((self.winfo_screenheight() - self.windowHeight)/2)))
     self.resizable(True, True)
 
     style = ttk.Style(self)
@@ -793,11 +776,11 @@ class ExtractFlightData(tk.Tk):
 
     pw = ttk.PanedWindow(orient=tk.VERTICAL)
 
-    dataFrame = ttk.Frame(self, height=self.scaled(200))
+    dataFrame = ttk.Frame(self, height=self.scaledHeight(200))
     dataFrame.columnconfigure(0, weight=1)
     dataFrame.rowconfigure(0, weight=1)
 
-    mapFrame = ttk.Frame(self, height=self.scaled(400))
+    mapFrame = ttk.Frame(self, height=self.scaledHeight(400))
 
     pw.add(dataFrame)
     pw.add(mapFrame)
@@ -821,7 +804,7 @@ class ExtractFlightData(tk.Tk):
     self.tree.heading('timestamp', text='Timestamp')
     self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('altitude1', text='Alt1 (m)')
-    self.tree.column("altitude2", anchor=tk.E, stretch=tk.NO, width=colWidth4)
+    self.tree.column("altitude2", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('altitude2', text='Alt2 (m)')
     self.tree.column("distance1", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('distance1', text='Dist1 (m)')
