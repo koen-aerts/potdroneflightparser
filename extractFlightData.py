@@ -26,17 +26,15 @@ from zipfile import ZipFile
 
 class ExtractFlightData(tk.Tk):
 
-  #ORIGINAL_DPI = 72.02025316455696
-  ORIGINAL_DPI = 96
 
   '''
   Global variables and constants.
   '''
-  version = "v1.0.3"
-  scale = 1
+  version = "v1.1.0"
+  smallScreen = False
   screen_width = 1024
   screen_height = 768
-  defaultDroneZoom = 14
+  defaultDroneZoom = 18
   defaultBlankMapZoom = 1
   windowWidth = 800
   windowHeight = 400
@@ -226,7 +224,8 @@ class ExtractFlightData(tk.Tk):
     alt = record[self.columns.index('altitude2')]
     speed = record[self.columns.index('speed2')]
     flightTs = self.getDatetime(record[self.columns.index('timestamp')]).isoformat(sep=' ', timespec='seconds')
-    self.labelFlight['text'] = f'    Time: {flightTs}   /   Distance (m): {dist}   /   Altitude (m): {alt}   /   Speed (m/s): {speed}'
+    labelPad = '' if self.smallScreen else '    '
+    self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance (m): {dist}   /   Altitude (m): {alt}   /   Speed (m/s): {speed}'
 
 
   '''
@@ -529,7 +528,8 @@ class ExtractFlightData(tk.Tk):
     if (len(pathCoord) > 0):
       self.pathCoords.append(pathCoord)
     self.setPathView()
-    self.labelFile['text'] = f'    Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   Max Speed (m/s): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
+    labelPad = '' if self.smallScreen else '    '
+    self.labelFile['text'] = f'{labelPad}Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   Max Speed (m/s): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     self.selectPath['values'] = pathNames
     self.selectedPath.set(pathNames[0])
@@ -687,7 +687,8 @@ class ExtractFlightData(tk.Tk):
     if (len(pathCoord) > 0):
       self.pathCoords.append(pathCoord)
     self.setPathView()
-    self.labelFile['text'] = f'    Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   File: {PurePath(selectedFile).name}'
+    labelPad = '' if self.smallScreen else '    '
+    self.labelFile['text'] = f'{labelPad}Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     self.selectPath['values'] = pathNames
     self.selectedPath.set(pathNames[0])
@@ -733,14 +734,18 @@ class ExtractFlightData(tk.Tk):
     self.destroy()
 
 
-  #def scaled(self, target_width):
-  #  return int(round(target_width * self.scale))
-
+  '''
+  Return desired widget width based on device screen width.
+  '''
   def scaledWidth(self, target_width):
-    return int(round(target_width / 1792 * self.screen_width))
+    return target_width if self.smallScreen else int(round(target_width / 1792 * self.windowWidth))
 
+
+  '''
+  Return desired widget height based on device screen height.
+  '''
   def scaledHeight(self, target_height):
-    return int(round(target_height / 1120 * self.screen_height))
+    return target_height if self.smallScreen else int(round(target_height / 1120 * self.windowHeight))
 
 
   '''
@@ -748,18 +753,19 @@ class ExtractFlightData(tk.Tk):
   '''
   def __init__(self):
     super().__init__()
-    self.scale = self.ORIGINAL_DPI / self.winfo_fpixels('1i')
     self.screen_width = self.winfo_screenwidth()
     self.screen_height = self.winfo_screenheight()
     self.windowWidth = self.screen_width
     self.windowHeight = self.screen_height
+    self.smallScreen = self.windowWidth < 1280
 
     # Scale widgets based on device.
     fontFamily = 'Helvetica'
-    nametofont("TkMenuFont").configure(family=fontFamily, size=-self.scaledWidth(14))
-    nametofont("TkDefaultFont").configure(family=fontFamily, size=-self.scaledWidth(14))
-    nametofont("TkHeadingFont").configure(family=fontFamily, size=-self.scaledWidth(14))
-    nametofont("TkTextFont").configure(family=fontFamily, size=-self.scaledWidth(14))
+    fontSize = self.scaledWidth(14)
+    nametofont("TkMenuFont").configure(family=fontFamily, size=-fontSize)
+    nametofont("TkDefaultFont").configure(family=fontFamily, size=-fontSize)
+    nametofont("TkHeadingFont").configure(family=fontFamily, size=-fontSize)
+    nametofont("TkTextFont").configure(family=fontFamily, size=-fontSize)
     colWidth1 = self.scaledWidth(200)
     colWidth2 = self.scaledWidth(120)
     colWidth3 = self.scaledWidth(90)
@@ -768,7 +774,7 @@ class ExtractFlightData(tk.Tk):
 
     self.title(f"Flight Data Viewer - {self.version}")
     self.protocol("WM_DELETE_WINDOW", self.exitApp)
-    self.geometry("{}x{}+{}+{}".format(self.windowWidth, self.windowHeight, int((self.winfo_screenwidth() - self.windowWidth)/2), int((self.winfo_screenheight() - self.windowHeight)/2)))
+    self.geometry("{}x{}+{}+{}".format(self.windowWidth, self.windowHeight, int((self.screen_width - self.windowWidth)/2), int((self.screen_height - self.windowHeight)/2)))
     self.resizable(True, True)
 
     style = ttk.Style(self)
@@ -885,8 +891,10 @@ class ExtractFlightData(tk.Tk):
     markerHomeView = ttk.Checkbutton(playbackFrame, text='Home', variable=self.showMarkerHome, onvalue='Y', offvalue='N')
     markerHomeView.grid(row=0, column=4, sticky=tk.E, padx=4, pady=0)
     self.showMarkerHome.set('N')
-    self.labelFlight = ttk.Label(playbackFrame, text='')
-    self.labelFlight.grid(row=0, column=5, sticky=tk.W, padx=2, pady=0)
+
+    if (not self.smallScreen):
+      self.labelFlight = ttk.Label(playbackFrame, text='')
+      self.labelFlight.grid(row=0, column=5, sticky=tk.W, padx=2, pady=0)
 
     fileInfoFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
     fileInfoFrame.pack(fill=tk.BOTH, expand=False)
@@ -908,8 +916,19 @@ class ExtractFlightData(tk.Tk):
     allMetricView = ttk.Checkbutton(fileInfoFrame, text='All Metrics', command=self.setShowAll, variable=self.showAll, onvalue='Y', offvalue='N')
     allMetricView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
     self.showAll.set('N')
-    self.labelFile = ttk.Label(fileInfoFrame, text='')
-    self.labelFile.grid(row=0, column=4, sticky=tk.W, padx=2, pady=0)
+
+    if (not self.smallScreen):
+      self.labelFile = ttk.Label(fileInfoFrame, text='')
+      self.labelFile.grid(row=0, column=4, sticky=tk.W, padx=2, pady=0)
+    else:
+      flightInfoFrame1 = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
+      flightInfoFrame1.pack(fill=tk.BOTH, expand=False)
+      self.labelFile = ttk.Label(flightInfoFrame1, text='')
+      self.labelFile.grid(row=0, column=0, sticky=tk.W, padx=2, pady=0)
+      flightInfoFrame2 = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
+      flightInfoFrame2.pack(fill=tk.BOTH, expand=False)
+      self.labelFlight = ttk.Label(flightInfoFrame2, text='')
+      self.labelFlight.grid(row=0, column=0, sticky=tk.W, padx=2, pady=0)
 
     self.map_widget = tkintermapview.TkinterMapView(mapFrame, corner_radius=0)
     self.map_widget.pack(fill=tk.BOTH, expand=True)
