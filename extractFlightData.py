@@ -30,8 +30,11 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v1.1.0"
+  version = "v1.1.1"
   smallScreen = False
+  tinyScreen = False
+  scale = 1
+  cpl = 137 # 137.84615384615384 characters fit on development machine screen.
   screen_width = 1024
   screen_height = 768
   defaultDroneZoom = 18
@@ -161,7 +164,8 @@ class ExtractFlightData(tk.Tk):
     self.selectPath['values'] = ('--')
     self.selectedPath.set('--')
     self.labelFlight['text'] = ''
-    self.labelFile['text'] = ''
+    if (not self.tinyScreen):
+      self.labelFile['text'] = ''
     self.zipFilename = None
 
 
@@ -225,7 +229,12 @@ class ExtractFlightData(tk.Tk):
     speed = record[self.columns.index('speed2')]
     flightTs = self.getDatetime(record[self.columns.index('timestamp')]).isoformat(sep=' ', timespec='seconds')
     labelPad = '' if self.smallScreen else '    '
-    self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance (m): {dist}   /   Altitude (m): {alt}   /   Speed (m/s): {speed}'
+    if (self.tinyScreen):
+      self.labelFlight['text'] = f'{labelPad}Dist (m): {dist} / Alt (m): {alt} / Sp (m/s): {speed}'
+    elif (self.smallScreen):
+      self.labelFlight['text'] = f'{labelPad}Time: {flightTs} / Dist (m): {dist} / Alt (m): {alt} / Speed (m/s): {speed}'
+    else:
+      self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance (m): {dist}   /   Altitude (m): {alt}   /   Speed (m/s): {speed}'
 
 
   '''
@@ -528,8 +537,11 @@ class ExtractFlightData(tk.Tk):
     if (len(pathCoord) > 0):
       self.pathCoords.append(pathCoord)
     self.setPathView()
-    labelPad = '' if self.smallScreen else '    '
-    self.labelFile['text'] = f'{labelPad}Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   Max Speed (m/s): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
+    if (not self.tinyScreen):
+      if (self.smallScreen):
+        self.labelFile['text'] = f'Max Dist (m): {maxDist:8.2f}  /  Max Alt (m): {maxAlt:7.2f}  /  Max Speed (m/s): {maxSpeed:6.2f}  /  {PurePath(selectedFile).name}'
+      else:
+        self.labelFile['text'] = f'    Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   Max Speed (m/s): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     self.selectPath['values'] = pathNames
     self.selectedPath.set(pathNames[0])
@@ -687,8 +699,11 @@ class ExtractFlightData(tk.Tk):
     if (len(pathCoord) > 0):
       self.pathCoords.append(pathCoord)
     self.setPathView()
-    labelPad = '' if self.smallScreen else '    '
-    self.labelFile['text'] = f'{labelPad}Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   File: {PurePath(selectedFile).name}'
+    if (not self.tinyScreen):
+      if (self.smallScreen):
+        self.labelFile['text'] = f'Max Dist (m): {maxDist:8.2f}  /  Max Alt (m): {maxAlt:7.2f}  /  {PurePath(selectedFile).name}'
+      else:
+        self.labelFile['text'] = f'    Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     self.selectPath['values'] = pathNames
     self.selectedPath.set(pathNames[0])
@@ -738,14 +753,14 @@ class ExtractFlightData(tk.Tk):
   Return desired widget width based on device screen width.
   '''
   def scaledWidth(self, target_width):
-    return target_width if self.smallScreen else int(round(target_width / 1792 * self.windowWidth))
+    return int(round(target_width * self.scale))
 
 
   '''
   Return desired widget height based on device screen height.
   '''
   def scaledHeight(self, target_height):
-    return target_height if self.smallScreen else int(round(target_height / 1120 * self.windowHeight))
+    return int(round(target_height * self.scale))
 
 
   '''
@@ -753,11 +768,15 @@ class ExtractFlightData(tk.Tk):
   '''
   def __init__(self):
     super().__init__()
+    charWidth = nametofont("TkDefaultFont").measure('W') # Use size of default character as way to measure how much space is on the device screen.
+    self.scale = charWidth / 13 # 13 is default font size on development machine.
     self.screen_width = self.winfo_screenwidth()
     self.screen_height = self.winfo_screenheight()
     self.windowWidth = self.screen_width
     self.windowHeight = self.screen_height
-    self.smallScreen = self.windowWidth < 1280
+    self.cpl = self.windowWidth / charWidth # Characters per line using default font size
+    self.smallScreen = self.cpl < 100
+    self.tinyScreen = self.cpl < 40
 
     # Scale widgets based on device.
     fontFamily = 'Helvetica'
@@ -805,6 +824,7 @@ class ExtractFlightData(tk.Tk):
     file_menu.add_command(label='Exit', command=self.exitApp)
     menubar.add_cascade(label='File', menu=file_menu)
     
+    style.configure("Treeview", rowheight=int(round(charWidth * 1.75)))
     self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom)
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=colWidth1)
     self.tree.heading('timestamp', text='Timestamp')
@@ -870,10 +890,14 @@ class ExtractFlightData(tk.Tk):
     #self.tree.heading('highdbm', text='High Dbm')
     self.tree.bind('<<TreeviewSelect>>', self.item_selected)
     self.tree.grid(row=0, column=0, sticky=tk.NSEW)
-    scrollbar = ttk.Scrollbar(dataFrame, orient=tk.VERTICAL, command=self.tree.yview)
-    self.tree.configure(yscroll=scrollbar.set)
-    scrollbar.grid(row=0, column=1, sticky=tk.NS)
+    verScroll = ttk.Scrollbar(dataFrame, orient=tk.VERTICAL, command=self.tree.yview)
+    self.tree.configure(yscroll=verScroll.set)
+    verScroll.grid(row=0, column=1, sticky=tk.NS)
+    horScroll = ttk.Scrollbar(dataFrame, orient=tk.HORIZONTAL, command=self.tree.xview)
+    self.tree.configure(xscroll=horScroll.set)
+    horScroll.grid(row=1, column=0, sticky=tk.EW)
 
+    # Speed selection, Play and Stop buttons.
     playbackFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 0))
     playbackFrame.pack(fill=tk.BOTH, expand=False)
     self.selectPlaySpeeds = ttk.Combobox(playbackFrame, state="readonly", exportselection=0, width=16)
@@ -883,19 +907,24 @@ class ExtractFlightData(tk.Tk):
     buttonPlay.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
     buttonStop = ttk.Button(playbackFrame, text='Stop', command=self.stop, width=4)
     buttonStop.grid(row=0, column=2, sticky=tk.W, padx=0, pady=0)
-    self.showMarkerCtrl = tk.StringVar()
-    markerCtrlView = ttk.Checkbutton(playbackFrame, text='Controller', variable=self.showMarkerCtrl, onvalue='Y', offvalue='N')
-    markerCtrlView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
-    self.showMarkerCtrl.set('Y')
-    self.showMarkerHome = tk.StringVar()
-    markerHomeView = ttk.Checkbutton(playbackFrame, text='Home', variable=self.showMarkerHome, onvalue='Y', offvalue='N')
-    markerHomeView.grid(row=0, column=4, sticky=tk.E, padx=4, pady=0)
-    self.showMarkerHome.set('N')
+    
+    if (not self.tinyScreen):
+      # Controller and Home selection checkboxes.
+      self.showMarkerCtrl = tk.StringVar()
+      markerCtrlView = ttk.Checkbutton(playbackFrame, text='Controller', variable=self.showMarkerCtrl, onvalue='Y', offvalue='N')
+      markerCtrlView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
+      self.showMarkerCtrl.set('Y')
+      self.showMarkerHome = tk.StringVar()
+      markerHomeView = ttk.Checkbutton(playbackFrame, text='Home', variable=self.showMarkerHome, onvalue='Y', offvalue='N')
+      markerHomeView.grid(row=0, column=4, sticky=tk.E, padx=4, pady=0)
+      self.showMarkerHome.set('N')
 
     if (not self.smallScreen):
+      # Current drone location metrics.
       self.labelFlight = ttk.Label(playbackFrame, text='')
       self.labelFlight.grid(row=0, column=5, sticky=tk.W, padx=2, pady=0)
 
+    # Map and Flight selections.
     fileInfoFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
     fileInfoFrame.pack(fill=tk.BOTH, expand=False)
     self.selectedTile = tk.StringVar()
@@ -908,29 +937,75 @@ class ExtractFlightData(tk.Tk):
     self.selectPath = ttk.Combobox(fileInfoFrame, textvariable=self.selectedPath, state="readonly", exportselection=0, width=14)
     self.selectPath.grid(row=0, column=1, sticky=tk.E, padx=7, pady=0)
     self.selectPath.bind('<<ComboboxSelected>>', self.choosePath)
-    self.showPath = tk.StringVar()
-    pathView = ttk.Checkbutton(fileInfoFrame, text='Flight Paths', command=self.setPathView, variable=self.showPath, onvalue='Y', offvalue='N')
-    pathView.grid(row=0, column=2, sticky=tk.E, padx=2, pady=0)
-    self.showPath.set('Y')
-    self.showAll = tk.StringVar()
-    allMetricView = ttk.Checkbutton(fileInfoFrame, text='All Metrics', command=self.setShowAll, variable=self.showAll, onvalue='Y', offvalue='N')
-    allMetricView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
-    self.showAll.set('N')
+
+    if (not self.tinyScreen):
+      # Flight Path and All Metrics selection checkboxes.
+      self.showPath = tk.StringVar()
+      pathView = ttk.Checkbutton(fileInfoFrame, text='Flight Paths', command=self.setPathView, variable=self.showPath, onvalue='Y', offvalue='N')
+      pathView.grid(row=0, column=2, sticky=tk.E, padx=2, pady=0)
+      self.showPath.set('Y')
+      self.showAll = tk.StringVar()
+      allMetricView = ttk.Checkbutton(fileInfoFrame, text='All Metrics', command=self.setShowAll, variable=self.showAll, onvalue='Y', offvalue='N')
+      allMetricView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
+      self.showAll.set('N')
+    else:
+      optionsFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 0))
+      optionsFrame.pack(fill=tk.BOTH, expand=False)
+      # Controller and Home selection checkboxes.
+      self.showMarkerCtrl = tk.StringVar()
+      markerCtrlView = ttk.Checkbutton(optionsFrame, text='Ctrl', variable=self.showMarkerCtrl, onvalue='Y', offvalue='N')
+      markerCtrlView.grid(row=0, column=0, sticky=tk.E, padx=4, pady=0)
+      self.showMarkerCtrl.set('Y')
+      self.showMarkerHome = tk.StringVar()
+      markerHomeView = ttk.Checkbutton(optionsFrame, text='Home', variable=self.showMarkerHome, onvalue='Y', offvalue='N')
+      markerHomeView.grid(row=0, column=1, sticky=tk.E, padx=4, pady=0)
+      self.showMarkerHome.set('N')
+      # Flight Path and All Metrics selection checkboxes.
+      self.showPath = tk.StringVar()
+      pathView = ttk.Checkbutton(optionsFrame, text='Paths', command=self.setPathView, variable=self.showPath, onvalue='Y', offvalue='N')
+      pathView.grid(row=0, column=2, sticky=tk.E, padx=2, pady=0)
+      self.showPath.set('Y')
+      self.showAll = tk.StringVar()
+      allMetricView = ttk.Checkbutton(optionsFrame, text='Metrics', command=self.setShowAll, variable=self.showAll, onvalue='Y', offvalue='N')
+      allMetricView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
+      self.showAll.set('N')
 
     if (not self.smallScreen):
+      # Max values of the flights.
       self.labelFile = ttk.Label(fileInfoFrame, text='')
       self.labelFile.grid(row=0, column=4, sticky=tk.W, padx=2, pady=0)
     else:
-      flightInfoFrame1 = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
-      flightInfoFrame1.pack(fill=tk.BOTH, expand=False)
-      self.labelFile = ttk.Label(flightInfoFrame1, text='')
-      self.labelFile.grid(row=0, column=0, sticky=tk.W, padx=2, pady=0)
+      if (not self.tinyScreen):
+        # Max values of the flights.    
+        flightInfoFrame1 = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
+        flightInfoFrame1.pack(fill=tk.BOTH, expand=False)
+        self.labelFile = ttk.Label(flightInfoFrame1, text='')
+        self.labelFile.grid(row=0, column=0, sticky=tk.W, padx=2, pady=0)
+
+      # Current drone location metrics.      
       flightInfoFrame2 = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
       flightInfoFrame2.pack(fill=tk.BOTH, expand=False)
       self.labelFlight = ttk.Label(flightInfoFrame2, text='')
       self.labelFlight.grid(row=0, column=0, sticky=tk.W, padx=2, pady=0)
 
     self.map_widget = tkintermapview.TkinterMapView(mapFrame, corner_radius=0)
+    
+    # Adjust map buttons, if needed.
+    adjMapButtonWidth = self.scaledWidth(self.map_widget.button_zoom_in.width)
+    if (self.map_widget.button_zoom_in.width != adjMapButtonWidth):
+      self.map_widget.button_zoom_in.width = adjMapButtonWidth
+      self.map_widget.button_zoom_in.height = adjMapButtonWidth
+      self.map_widget.button_zoom_in.canvas_position = (20, 20)
+      self.map_widget.button_zoom_in.map_widget.canvas.delete(self.map_widget.button_zoom_in.canvas_rect)
+      self.map_widget.button_zoom_in.map_widget.canvas.delete(self.map_widget.button_zoom_in.canvas_text)
+      self.map_widget.button_zoom_in.draw()
+      self.map_widget.button_zoom_out.width = adjMapButtonWidth
+      self.map_widget.button_zoom_out.height = adjMapButtonWidth
+      self.map_widget.button_zoom_out.canvas_position = (20, 20 + adjMapButtonWidth + self.map_widget.button_zoom_in.border_width + 8)
+      self.map_widget.button_zoom_out.map_widget.canvas.delete(self.map_widget.button_zoom_out.canvas_rect)
+      self.map_widget.button_zoom_out.map_widget.canvas.delete(self.map_widget.button_zoom_out.canvas_text)
+      self.map_widget.button_zoom_out.draw()
+
     self.map_widget.pack(fill=tk.BOTH, expand=True)
 
     self.reset();
