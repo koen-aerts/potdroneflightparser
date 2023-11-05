@@ -230,11 +230,20 @@ class ExtractFlightData(tk.Tk):
     flightTs = self.getDatetime(record[self.columns.index('timestamp')]).isoformat(sep=' ', timespec='seconds')
     labelPad = '' if self.smallScreen else '    '
     if (self.tinyScreen):
-      self.labelFlight['text'] = f'{labelPad}Dist (m): {dist} / Alt (m): {alt} / Sp (m/s): {speed}'
+      self.labelFlight['text'] = f'{labelPad}Dist: {self.getRnd(dist)}m / Alt: {self.getRnd(alt)}m / Speed: {self.getRnd(speed)}m/s'
     elif (self.smallScreen):
-      self.labelFlight['text'] = f'{labelPad}Time: {flightTs} / Dist (m): {dist} / Alt (m): {alt} / Speed (m/s): {speed}'
+      self.labelFlight['text'] = f'{labelPad}Time: {flightTs} / Dist: {self.getRnd(dist)}m / Alt: {self.getRnd(alt)}m / Speed: {self.getRnd(speed)}m/s'
     else:
       self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance (m): {dist}   /   Altitude (m): {alt}   /   Speed (m/s): {speed}'
+
+
+  '''
+  Return rounded number.
+  '''
+  def getRnd(self, strNum):
+    if (strNum is None):
+      return ''
+    return str(round(float(strNum)))
 
 
   '''
