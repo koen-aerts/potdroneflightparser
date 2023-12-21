@@ -55,9 +55,9 @@ class ExtractFlightData(tk.Tk):
     ["#ffed49","#ffcb00","#ffa800","#ff6e2c","#fa5b46"]
   ]
   displayMode = "ATOM"
-  columns = ('timestamp','altitude1','altitude2','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected')
-  showColsAtom = ('timestamp','altitude2','distance3','speed2','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
-  showColsDreamer = ('timestamp','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
+  columns = ('timestamp','time','altitude1','altitude2','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected')
+  showColsAtom = ('time','altitude2','distance3','speed2','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
+  showColsDreamer = ('time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
   zipFilename = None
   tree = None
   map_widget = None
@@ -625,7 +625,7 @@ class ExtractFlightData(tk.Tk):
           if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {len(self.pathCoords)+1}'] = len(self.tree.get_children())
             isNewPath = False
-          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), f"{alt1:.2f}", f"{alt2:.2f}", f"{dist1:.2f}", f"{dist1lat:.2f}", f"{dist1lon:.2f}", f"{dist2:.2f}", f"{dist2lat:.2f}", f"{dist2lon:.2f}", f"{dist3:.2f}", f"{speed1:.2f}", f"{speed1lat:.2f}", f"{speed1lon:.2f}", f"{speed2:.2f}", f"{speed2lat:.2f}", f"{speed2lon:.2f}", f"{speed1vert:.2f}", f"{speed2vert:.2f}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected))
+          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), readingTs.strftime('%X'), f"{alt1:.2f}", f"{alt2:.2f}", f"{dist1:.2f}", f"{dist1lat:.2f}", f"{dist1lon:.2f}", f"{dist2:.2f}", f"{dist2lat:.2f}", f"{dist2lon:.2f}", f"{dist3:.2f}", f"{speed1:.2f}", f"{speed1lat:.2f}", f"{speed1lon:.2f}", f"{speed2:.2f}", f"{speed2lat:.2f}", f"{speed2lon:.2f}", f"{speed1vert:.2f}", f"{speed2vert:.2f}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected))
           if (setctrl and hasValidCoords and alt2 > 0): # Record home location from the moment the drone ascends.
             self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
@@ -724,12 +724,12 @@ class ExtractFlightData(tk.Tk):
           satellites = struct.unpack('<B', fcRecord[7:8])[0]
           dronelon = struct.unpack('f', fcRecord[145:149])[0]
           dronelat = struct.unpack('f', fcRecord[149:153])[0]
-          alt1 = struct.unpack('<h', fcRecord[39:41])[0] / 10
-          alt2 = struct.unpack('<h', fcRecord[59:61])[0] / 10
-          dist1lat = struct.unpack('<h', fcRecord[37:39])[0] / 10
-          dist1lon = struct.unpack('<h', fcRecord[41:43])[0] / 10
-          dist2lat = struct.unpack('<h', fcRecord[57:59])[0] / 10
-          dist2lon = struct.unpack('<h', fcRecord[61:63])[0] / 10
+          alt1 = self.distVal(struct.unpack('<h', fcRecord[39:41])[0] / 10)
+          alt2 = self.distVal(struct.unpack('<h', fcRecord[59:61])[0] / 10)
+          dist1lat = self.distVal(struct.unpack('<h', fcRecord[37:39])[0] / 10)
+          dist1lon = self.distVal(struct.unpack('<h', fcRecord[41:43])[0] / 10)
+          dist2lat = self.distVal(struct.unpack('<h', fcRecord[57:59])[0] / 10)
+          dist2lon = self.distVal(struct.unpack('<h', fcRecord[61:63])[0] / 10)
           dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
           dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
           earth_radius_in_km = 6367 # 6378.137
@@ -788,7 +788,7 @@ class ExtractFlightData(tk.Tk):
           if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {len(self.pathCoords)+1}'] = len(self.tree.get_children())
             isNewPath = False
-          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), f"{alt1:.2f}", f"{alt2:.2f}", f"{dist1:.2f}", f"{dist1lat:.2f}", f"{dist1lon:.2f}", f"{dist2:.2f}", f"{dist2lat:.2f}", f"{dist2lon:.2f}", "", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon)))
+          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), readingTs.strftime('%X'), f"{alt1:.2f}", f"{alt2:.2f}", f"{dist1:.2f}", f"{dist1lat:.2f}", f"{dist1lon:.2f}", f"{dist2:.2f}", f"{dist2lat:.2f}", f"{dist2lon:.2f}", "", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon)))
           if (setctrl and hasValidCoords and alt1 > 0): # Record home location from the moment the drone ascends.
             self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
@@ -809,9 +809,9 @@ class ExtractFlightData(tk.Tk):
     self.setPathView()
     if (not self.tinyScreen):
       if (self.smallScreen):
-        self.labelFile['text'] = f'Max Dist (m): {maxDist:8.2f}  /  Max Alt (m): {maxAlt:7.2f}  /  {PurePath(selectedFile).name}'
+        self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:8.2f}  /  Max Alt ({self.distUnit()}): {maxAlt:7.2f}  /  {PurePath(selectedFile).name}'
       else:
-        self.labelFile['text'] = f'    Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   File: {PurePath(selectedFile).name}'
+        self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     self.selectPath['values'] = pathNames
     self.selectedPath.set(pathNames[0])
@@ -966,8 +966,6 @@ class ExtractFlightData(tk.Tk):
     pref_menu.add_radiobutton(label='Flight Path Width: 3', command=self.setPathWidth, variable=self.pathWidth, value=3)
     pref_menu.add_separator()
     pref_menu.add_checkbutton(label='Imperial Units', command=self.setImperial, variable=self.imperial, onvalue='Y', offvalue='N')
-    pref_menu.add_checkbutton(label='Times Only')
-    pref_menu.add_checkbutton(label='24 hour format')
     pref_menu.add_separator()
     pref_menu.add_radiobutton(label='Colour Scheme 1', command=self.setColorSet, variable=self.colorSet, value=0)
     pref_menu.add_radiobutton(label='Colour Scheme 2', command=self.setColorSet, variable=self.colorSet, value=1)
@@ -988,7 +986,9 @@ class ExtractFlightData(tk.Tk):
     style.configure("Treeview", rowheight=int(round(charWidth * 1.75)))
     self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom)
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=colWidth1)
-    self.tree.heading('timestamp', text='Timestamp')
+    self.tree.heading('timestamp', text='Timestamp (ISO)')
+    self.tree.column("time", anchor=tk.W, stretch=tk.NO, width=colWidth2)
+    self.tree.heading('time', text='Time')
     self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('altitude1', text=f'Alt1 ({self.distUnit()})')
     self.tree.column("altitude2", anchor=tk.E, stretch=tk.NO, width=colWidth3)
