@@ -9,6 +9,7 @@ import datetime
 import threading
 import time
 import math
+import configparser
 
 import tkinter as tk
 from tkinter import ttk
@@ -30,7 +31,7 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v1.1.1"
+  version = "v1.2.0"
   smallScreen = False
   tinyScreen = False
   scale = 1
@@ -41,12 +42,18 @@ class ExtractFlightData(tk.Tk):
   defaultBlankMapZoom = 1
   windowWidth = 800
   windowHeight = 400
-  ctrlMarkerColor1 = "#5b96f7"
-  ctrlMarkerColor2 = "#aaccf6"
-  homeMarkerColor1 = "#9B261E"
-  homeMarkerColor2 = "#C5542D"
-  droneMarkerColor1 = "#f59e00"
-  droneMarkerColor2 = "#c6dfb3"
+  ctrlMarkerColor1  = ["#5b96f7", "#2d2d2d", "#00b9f7"]
+  ctrlMarkerColor2  = ["#aaccf6", "#c6c6c6", "#00c7dd"]
+  homeMarkerColor1  = ["#9B261E", "#4c4c4c", "#5068c2"]
+  homeMarkerColor2  = ["#C5542D", "#cfcfcf", "#23a9f6"]
+  droneMarkerColor1 = ["#f59e00", "#e0e0e0", "#ae44bf"]
+  droneMarkerColor2 = ["#c6dfb3", "#2d2d2d", "#7b54c4"]
+  markerLabelColor  = ["#652A22", "#cfcfcf", "#f03977"]
+  pathColors = [
+    ["#417dd6","#ab27a9","#e54f14","#ffa900","#00a31f"],
+    ["#c6c6c6","#cfcfcf","#e0e0e0","#4c4c4c","#2d2d2d"],
+    ["#ffed49","#ffcb00","#ffa800","#ff6e2c","#fa5b46"]
+  ]
   displayMode = "ATOM"
   columns = ('timestamp','altitude1','altitude2','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected')
   showColsAtom = ('timestamp','altitude2','distance3','speed2','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
@@ -70,11 +77,16 @@ class ExtractFlightData(tk.Tk):
   selectedTile = None
   selectPath = None
   selectedPath = None
+  pathWidth = None
+  imperial = None
+  colorSet = None
   showMarkerCtrl = None
   showMarkerHome = None
   showPath = None
   showAll = None
   labelFile = None
+  configParser = None
+  configFile = 'extractFlightData.ini'
 
 
   '''
@@ -185,8 +197,9 @@ class ExtractFlightData(tk.Tk):
         else:
           self.ctrlmarker = self.map_widget.set_marker(
             ctrllat, ctrllon, text=self.ctrllabel,
-            marker_color_circle=self.ctrlMarkerColor1,
-            marker_color_outside=self.ctrlMarkerColor2)
+            text_color=self.markerLabelColor[int(self.colorSet.get())],
+            marker_color_circle=self.ctrlMarkerColor1[int(self.colorSet.get())],
+            marker_color_outside=self.ctrlMarkerColor2[int(self.colorSet.get())])
       except:
         self.ctrlmarker = None # Handle bad coordinates.
     else:
@@ -203,8 +216,9 @@ class ExtractFlightData(tk.Tk):
         else:
           self.homemarker = self.map_widget.set_marker(
             homelat, homelon, text=self.homelabel,
-            marker_color_circle=self.homeMarkerColor1,
-            marker_color_outside=self.homeMarkerColor2)
+            text_color=self.markerLabelColor[int(self.colorSet.get())],
+            marker_color_circle=self.homeMarkerColor1[int(self.colorSet.get())],
+            marker_color_outside=self.homeMarkerColor2[int(self.colorSet.get())])
       except:
         self.homemarker = None # Handle bad coordinates.
     else:
@@ -220,8 +234,9 @@ class ExtractFlightData(tk.Tk):
       else:
         self.dronemarker = self.map_widget.set_marker(
           dronelat, dronelon, text=self.dronelabel,
-          marker_color_circle=self.droneMarkerColor1,
-          marker_color_outside=self.droneMarkerColor2)
+          text_color=self.markerLabelColor[int(self.colorSet.get())],
+          marker_color_circle=self.droneMarkerColor1[int(self.colorSet.get())],
+          marker_color_outside=self.droneMarkerColor2[int(self.colorSet.get())])
     except:
       self.dronemarker = None # Handle bad coordinates.
     dist = record[self.columns.index('distance3')]
@@ -230,11 +245,47 @@ class ExtractFlightData(tk.Tk):
     flightTs = self.getDatetime(record[self.columns.index('timestamp')]).isoformat(sep=' ', timespec='seconds')
     labelPad = '' if self.smallScreen else '    '
     if (self.tinyScreen):
-      self.labelFlight['text'] = f'{labelPad}Dist: {self.getRnd(dist)}m / Alt: {self.getRnd(alt)}m / Speed: {self.getRnd(speed)}m/s'
+      self.labelFlight['text'] = f'{labelPad}Dist: {self.getRnd(dist)}{self.distUnit()} / Alt: {self.getRnd(alt)}{self.distUnit()} / Speed: {self.getRnd(speed)}{self.speedUnit()}'
     elif (self.smallScreen):
-      self.labelFlight['text'] = f'{labelPad}Time: {flightTs} / Dist: {self.getRnd(dist)}m / Alt: {self.getRnd(alt)}m / Speed: {self.getRnd(speed)}m/s'
+      self.labelFlight['text'] = f'{labelPad}Time: {flightTs} / Dist: {self.getRnd(dist)}{self.distUnit()} / Alt: {self.getRnd(alt)}{self.distUnit()} / Speed: {self.getRnd(speed)}{self.speedUnit()}'
     else:
-      self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance (m): {dist}   /   Altitude (m): {alt}   /   Speed (m/s): {speed}'
+      self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance ({self.distUnit()}): {dist}   /   Altitude ({self.distUnit()}): {alt}   /   Speed ({self.speedUnit()}): {speed}'
+
+
+  '''
+  Return specified distance in the proper Unit (metric vs imperial).
+  '''
+  def distVal(self, num):
+    if self.imperial.get() == 'Y':
+      return num * 3.28084
+    return num
+
+
+  '''
+  Return selected distance unit of measure.
+  '''
+  def distUnit(self):
+    if self.imperial.get() == 'Y':
+      return "ft"
+    return "m"
+
+
+  '''
+  Return specified speed in the proper Unit (metric vs imperial).
+  '''
+  def speedVal(self, num):
+    if self.imperial.get() == 'Y':
+      return num * 2.236936
+    return num
+
+
+  '''
+  Return selected speed unit of measure.
+  '''
+  def speedUnit(self):
+    if self.imperial.get() == 'Y':
+      return "mph"
+    return "m/s"
 
 
   '''
@@ -262,6 +313,53 @@ class ExtractFlightData(tk.Tk):
     dronelat = float(record[self.columns.index('dronelat')])
     dronelon = float(record[self.columns.index('dronelon')])
     self.map_widget.set_position(dronelat, dronelon)
+
+
+  '''
+  Called when map needs to be redrawn, for instance when preferences change.
+  '''
+  def reDrawMap(self):
+    self.stop()
+    if (self.ctrlmarker):
+      self.ctrlmarker.delete()
+      self.ctrlmarker = None
+    if (self.homemarker):
+      self.homemarker.delete()
+      self.homemarker = None
+    if (self.dronemarker):
+      self.dronemarker.delete()
+      self.dronemarker = None
+    for selected_item in self.tree.selection():
+      self.setMarkers(selected_item)
+      break
+    if (self.showPath.get() == 'Y'):
+      self.showPath.set('N')
+      self.setPathView()
+      self.showPath.set('Y')
+      self.setPathView()
+
+
+  '''
+  Called when flight path width has been changed. Redraw path if it's currently visible.
+  '''
+  def setPathWidth(self):
+    self.saveConfig()
+    self.reDrawMap()
+
+
+  '''
+  Called when Color Scheme selection has been changed. Redraw path if it's currently visible.
+  '''
+  def setColorSet(self):
+    self.saveConfig()
+    self.reDrawMap()
+
+
+  '''
+  Called when Unit of Measure is switched between Metric/Imperial units.
+  '''
+  def setImperial(self):
+    self.saveConfig()
 
 
   '''
@@ -318,11 +416,11 @@ class ExtractFlightData(tk.Tk):
   '''
   def setPathView(self):
     if (self.showPath.get() == 'Y'):
-      colors = ["#417dd6","#ab27a9","#e54f14","#ffa900","#00a31f"]
+      colors = self.pathColors[int(self.colorSet.get())]
       self.flightPaths = []
       idx = 0
       for pathCoord in self.pathCoords:
-        self.flightPaths.append(self.map_widget.set_path(width=1, position_list=pathCoord, color=colors[idx%len(colors)]))
+        self.flightPaths.append(self.map_widget.set_path(width=self.pathWidth.get(), position_list=pathCoord, color=colors[idx%len(colors)]))
         idx = idx + 1
     else:
       if (self.flightPaths):
@@ -372,12 +470,11 @@ class ExtractFlightData(tk.Tk):
     droneModel = re.sub(r"[0-9]*-(.*)-Drone.*", r"\1", PurePath(selectedFile).name) # Pull drone model from zip filename.
     droneModel = re.sub(r"[^\w]", r" ", droneModel) # Remove non-alphanumeric characters from the model name.
     lcDM = droneModel.lower()
-    if ('atom' in droneModel.lower()):
-      self.parseAtomLogs(droneModel, selectedFile)
-    elif ('p1a' in droneModel.lower()):
+    if ('p1a' in droneModel.lower()):
       self.parseDreamerLogs(droneModel, selectedFile)
     else:
-      showwarning(title='Unsupported Model', message=f'This drone model may not be supported in this software: {droneModel}')
+      if (not 'atom' in droneModel.lower()):
+        showwarning(title='Unsupported Model', message=f'This drone model may not be supported in this software: {droneModel}')
       self.parseAtomLogs(droneModel, selectedFile)
 
 
@@ -458,30 +555,30 @@ class ExtractFlightData(tk.Tk):
           ctrllon = struct.unpack('<i', fcRecord[163:167])[0]/10000000
           homelat = struct.unpack('<i', fcRecord[435:439])[0]/10000000 # Home Point coords (for Return To Home).
           homelon = struct.unpack('<i', fcRecord[439:443])[0]/10000000
-          dist1lat = struct.unpack('f', fcRecord[235:239])[0] # Distance home point vs controller??
-          dist1lon = struct.unpack('f', fcRecord[239:243])[0]
-          dist2lat = struct.unpack('f', fcRecord[319:323])[0] # Distance home point vs controller??
-          dist2lon = struct.unpack('f', fcRecord[323:327])[0]
+          dist1lat = self.distVal(struct.unpack('f', fcRecord[235:239])[0]) # Distance home point vs controller??
+          dist1lon = self.distVal(struct.unpack('f', fcRecord[239:243])[0])
+          dist2lat = self.distVal(struct.unpack('f', fcRecord[319:323])[0]) # Distance home point vs controller??
+          dist2lon = self.distVal(struct.unpack('f', fcRecord[323:327])[0])
           dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
           dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
-          dist3 = struct.unpack('f', fcRecord[431:435])[0] # Distance as reported by the drone.
+          dist3 = self.distVal(struct.unpack('f', fcRecord[431:435])[0]) # Distance as reported by the drone.
 
           if (dist3 > maxDist):
             maxDist = dist3
-          alt1 = round(-struct.unpack('f', fcRecord[243:247])[0], 2) # Relative height from controller vs distance to ground??
-          alt2 = round(-struct.unpack('f', fcRecord[343:347])[0], 2) # Relative height from controller vs distance to ground??
+          alt1 = round(self.distVal(-struct.unpack('f', fcRecord[243:247])[0]), 2) # Relative height from controller vs distance to ground??
+          alt2 = round(self.distVal(-struct.unpack('f', fcRecord[343:347])[0]), 2) # Relative height from controller vs distance to ground??
           if (alt2 > maxAlt):
             maxAlt = alt2
-          speed1lat = struct.unpack('f', fcRecord[247:251])[0]
-          speed1lon = struct.unpack('f', fcRecord[251:255])[0]
-          speed2lat = struct.unpack('f', fcRecord[327:331])[0]
-          speed2lon = struct.unpack('f', fcRecord[331:335])[0]
+          speed1lat = self.speedVal(struct.unpack('f', fcRecord[247:251])[0])
+          speed1lon = self.speedVal(struct.unpack('f', fcRecord[251:255])[0])
+          speed2lat = self.speedVal(struct.unpack('f', fcRecord[327:331])[0])
+          speed2lon = self.speedVal(struct.unpack('f', fcRecord[331:335])[0])
           speed1 = round(math.sqrt(math.pow(speed1lat, 2) + math.pow(speed1lon, 2)), 2) # Pythagoras to calculate real speed.
           speed2 = round(math.sqrt(math.pow(speed2lat, 2) + math.pow(speed2lon, 2)), 2) # Pythagoras to calculate real speed.
           if (speed2 > maxSpeed):
             maxSpeed = speed2
-          speed1vert = -struct.unpack('f', fcRecord[255:259])[0]
-          speed2vert = -struct.unpack('f', fcRecord[347:351])[0]
+          speed1vert = self.speedVal(-struct.unpack('f', fcRecord[255:259])[0])
+          speed2vert = self.speedVal(-struct.unpack('f', fcRecord[347:351])[0])
 
           hasValidCoords = dronelat != 0.0 and dronelon != 0.0 and ctrllat != 0.0 and ctrllon != 0.0
 
@@ -535,8 +632,9 @@ class ExtractFlightData(tk.Tk):
             self.map_widget.set_position(dronelat, dronelon)
             self.ctrlmarker = self.map_widget.set_marker(
               ctrllat, ctrllon, text=self.ctrllabel,
-              marker_color_circle=self.ctrlMarkerColor1,
-              marker_color_outside=self.ctrlMarkerColor2)
+              text_color=self.markerLabelColor[int(self.colorSet.get())],
+              marker_color_circle=self.ctrlMarkerColor1[int(self.colorSet.get())],
+              marker_color_outside=self.ctrlMarkerColor2[int(self.colorSet.get())])
             setctrl = False
 
       flightFile.close()
@@ -548,9 +646,9 @@ class ExtractFlightData(tk.Tk):
     self.setPathView()
     if (not self.tinyScreen):
       if (self.smallScreen):
-        self.labelFile['text'] = f'Max Dist (m): {maxDist:8.2f}  /  Max Alt (m): {maxAlt:7.2f}  /  Max Speed (m/s): {maxSpeed:6.2f}  /  {PurePath(selectedFile).name}'
+        self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:8.2f}  /  Max Alt ({self.distUnit()}): {maxAlt:7.2f}  /  Max Speed ({self.speedUnit()}): {maxSpeed:6.2f}  /  {PurePath(selectedFile).name}'
       else:
-        self.labelFile['text'] = f'    Max Dist (m): {maxDist:8.2f}   /   Max Alt (m): {maxAlt:7.2f}   /   Max Speed (m/s): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
+        self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}   /   Max Speed ({self.speedUnit()}): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     self.selectPath['values'] = pathNames
     self.selectedPath.set(pathNames[0])
@@ -697,8 +795,9 @@ class ExtractFlightData(tk.Tk):
             self.map_widget.set_position(real1lat, real1lon)
             self.ctrlmarker = self.map_widget.set_marker(
               dronelat, dronelon, text=self.ctrllabel,
-              marker_color_circle=self.ctrlMarkerColor1,
-              marker_color_outside=self.ctrlMarkerColor2)
+              text_color=self.markerLabelColor[int(self.colorSet.get())],
+              marker_color_circle=self.ctrlMarkerColor1[int(self.colorSet.get())],
+              marker_color_outside=self.ctrlMarkerColor2[int(self.colorSet.get())])
             setctrl = False
 
       flightFile.close()
@@ -773,6 +872,38 @@ class ExtractFlightData(tk.Tk):
 
 
   '''
+  Read configs from storage.
+  '''
+  def readConfig(self):
+    self.configParser = configparser.ConfigParser(allow_no_value=True)
+    self.configParser.read(self.configFile)
+    if ('Common' in self.configParser):
+      comCfg = self.configParser['Common']
+      self.pathWidth.set(comCfg['PathWidth'])
+      self.colorSet.set(comCfg['ColorScheme'])
+      self.imperial.set(comCfg['Imperial'])
+    else:
+      self.pathWidth.set(1)
+      self.colorSet.set(0)
+      self.imperial.set('N')
+      self.saveConfig()
+
+
+  '''
+  Save configs to storage.
+  '''
+  def saveConfig(self):
+    self.configParser['Common'] = {
+      'PathWidth': self.pathWidth.get(),
+      'ColorScheme': self.colorSet.get(),
+      'Imperial': self.imperial.get(),
+      'TimestampFormat': 'ISO'
+    }
+    with open(self.configFile, 'w') as cfile:
+      self.configParser.write(cfile)
+
+
+  '''
   Initialize.
   '''
   def __init__(self):
@@ -808,6 +939,11 @@ class ExtractFlightData(tk.Tk):
     style = ttk.Style(self)
     style.theme_use('classic')
 
+    self.pathWidth = tk.StringVar()
+    self.imperial = tk.StringVar()
+    self.colorSet = tk.StringVar()
+    self.readConfig()
+
     pw = ttk.PanedWindow(orient=tk.VERTICAL)
 
     dataFrame = ttk.Frame(self, height=self.scaledHeight(200))
@@ -823,54 +959,70 @@ class ExtractFlightData(tk.Tk):
     menubar = Menu(self)
     self.config(menu=menubar)
     file_menu = Menu(menubar, tearoff=False)
+
+    pref_menu = Menu(file_menu, tearoff=0)
+    pref_menu.add_radiobutton(label='Flight Path Width: 1', command=self.setPathWidth, variable=self.pathWidth, value=1)
+    pref_menu.add_radiobutton(label='Flight Path Width: 2', command=self.setPathWidth, variable=self.pathWidth, value=2)
+    pref_menu.add_radiobutton(label='Flight Path Width: 3', command=self.setPathWidth, variable=self.pathWidth, value=3)
+    pref_menu.add_separator()
+    pref_menu.add_checkbutton(label='Imperial Units', command=self.setImperial, variable=self.imperial, onvalue='Y', offvalue='N')
+    pref_menu.add_checkbutton(label='Times Only')
+    pref_menu.add_checkbutton(label='24 hour format')
+    pref_menu.add_separator()
+    pref_menu.add_radiobutton(label='Colour Scheme 1', command=self.setColorSet, variable=self.colorSet, value=0)
+    pref_menu.add_radiobutton(label='Colour Scheme 2', command=self.setColorSet, variable=self.colorSet, value=1)
+    pref_menu.add_radiobutton(label='Colour Scheme 3', command=self.setColorSet, variable=self.colorSet, value=2)
+
     file_menu.add_command(label='Open...', command=self.askForFlightFile)
     file_menu.add_separator()
     file_menu.add_command(label='Export', command=self.exportFlightFile)
     file_menu.add_command(label='Export As...', command=self.askForExportFile)
     file_menu.add_separator()
+    file_menu.add_cascade(label='Preferences', menu=pref_menu)
+    file_menu.add_separator()
     file_menu.add_command(label='Close', command=self.reset)
     file_menu.add_separator()
     file_menu.add_command(label='Exit', command=self.exitApp)
     menubar.add_cascade(label='File', menu=file_menu)
-    
+
     style.configure("Treeview", rowheight=int(round(charWidth * 1.75)))
     self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom)
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=colWidth1)
     self.tree.heading('timestamp', text='Timestamp')
     self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('altitude1', text='Alt1 (m)')
+    self.tree.heading('altitude1', text=f'Alt1 ({self.distUnit()})')
     self.tree.column("altitude2", anchor=tk.E, stretch=tk.NO, width=colWidth3)
-    self.tree.heading('altitude2', text='Alt2 (m)')
+    self.tree.heading('altitude2', text=f'Alt2 ({self.distUnit()})')
     self.tree.column("distance1", anchor=tk.E, stretch=tk.NO, width=colWidth3)
-    self.tree.heading('distance1', text='Dist1 (m)')
+    self.tree.heading('distance1', text=f'Dist1 ({self.distUnit()})')
     self.tree.column("dist1lat", anchor=tk.E, stretch=tk.NO, width=colWidth3)
-    self.tree.heading('dist1lat', text='Lat Dist1 (m)')
+    self.tree.heading('dist1lat', text=f'Lat Dist1 ({self.distUnit()})')
     self.tree.column("dist1lon", anchor=tk.E, stretch=tk.NO, width=colWidth3)
-    self.tree.heading('dist1lon', text='Lon Dist1 (m)')
+    self.tree.heading('dist1lon', text=f'Lon Dist1 ({self.distUnit()})')
     self.tree.column("distance2", anchor=tk.E, stretch=tk.NO, width=colWidth3)
-    self.tree.heading('distance2', text='Dist2 (m)')
+    self.tree.heading('distance2', text=f'Dist2 ({self.distUnit()})')
     self.tree.column("dist2lat", anchor=tk.E, stretch=tk.NO, width=colWidth3)
-    self.tree.heading('dist2lat', text='Lat Dist2 (m)')
+    self.tree.heading('dist2lat', text=f'Lat Dist2 ({self.distUnit()})')
     self.tree.column("dist2lon", anchor=tk.E, stretch=tk.NO, width=colWidth3)
-    self.tree.heading('dist2lon', text='Lon Dist2 (m)')
+    self.tree.heading('dist2lon', text=f'Lon Dist2 ({self.distUnit()})')
     self.tree.column("distance3", anchor=tk.E, stretch=tk.NO, width=colWidth3)
-    self.tree.heading('distance3', text='Dist3 (m)')
+    self.tree.heading('distance3', text=f'Dist3 ({self.distUnit()})')
     self.tree.column("speed1", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed1', text='Speed1 (m/s)')
+    self.tree.heading('speed1', text=f'Speed1 ({self.speedUnit()})')
     self.tree.column("speed1lat", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed1lat', text='Lat S1 (m/s)')
+    self.tree.heading('speed1lat', text=f'Lat S1 ({self.speedUnit()})')
     self.tree.column("speed1lon", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed1lon', text='Lon S1 (m/s)')
+    self.tree.heading('speed1lon', text=f'Lon S1 ({self.speedUnit()})')
     self.tree.column("speed2", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed2', text='Speed2 (m/s)')
+    self.tree.heading('speed2', text=f'Speed2 ({self.speedUnit()})')
     self.tree.column("speed2lat", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed2lat', text='Lat S2 (m/s)')
+    self.tree.heading('speed2lat', text=f'Lat S2 ({self.speedUnit()})')
     self.tree.column("speed2lon", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed2lon', text='Lon S2 (m/s)')
+    self.tree.heading('speed2lon', text=f'Lon S2 ({self.speedUnit()})')
     self.tree.column("speed1vert", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed1vert', text='Speed1 Vert (m/s)')
+    self.tree.heading('speed1vert', text=f'Speed1 Vert ({self.speedUnit()})')
     self.tree.column("speed2vert", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed2vert', text='Speed2 Vert (m/s)')
+    self.tree.heading('speed2vert', text=f'Speed2 Vert ({self.speedUnit()})')
     self.tree.column("satellites", anchor=tk.E, stretch=tk.NO, width=colWidth5)
     self.tree.heading('satellites', text='Sat')
     self.tree.column("ctrllat", anchor=tk.W, stretch=tk.NO, width=colWidth2)
@@ -998,7 +1150,7 @@ class ExtractFlightData(tk.Tk):
       self.labelFlight.grid(row=0, column=0, sticky=tk.W, padx=2, pady=0)
 
     self.map_widget = tkintermapview.TkinterMapView(mapFrame, corner_radius=0)
-    
+
     # Adjust map buttons, if needed.
     adjMapButtonWidth = self.scaledWidth(self.map_widget.button_zoom_in.width)
     if (self.map_widget.button_zoom_in.width != adjMapButtonWidth):
