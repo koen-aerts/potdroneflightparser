@@ -21,6 +21,8 @@ from tkinter.font import nametofont
 
 import tkintermapview
 
+from platformdirs import user_data_dir
+
 from pathlib import Path, PurePath
 from zipfile import ZipFile
 
@@ -85,8 +87,10 @@ class ExtractFlightData(tk.Tk):
   showPath = None
   showAll = None
   labelFile = None
+  userPath = None
   configParser = None
-  configFile = 'extractFlightData.ini'
+  configFilename = 'extractFlightData.ini'
+  configPath = None
 
 
   '''
@@ -876,7 +880,7 @@ class ExtractFlightData(tk.Tk):
   '''
   def readConfig(self):
     self.configParser = configparser.ConfigParser(allow_no_value=True)
-    self.configParser.read(self.configFile)
+    self.configParser.read(self.configPath)
     if ('Common' in self.configParser):
       comCfg = self.configParser['Common']
       self.pathWidth.set(comCfg['PathWidth'])
@@ -896,10 +900,9 @@ class ExtractFlightData(tk.Tk):
     self.configParser['Common'] = {
       'PathWidth': self.pathWidth.get(),
       'ColorScheme': self.colorSet.get(),
-      'Imperial': self.imperial.get(),
-      'TimestampFormat': 'ISO'
+      'Imperial': self.imperial.get()
     }
-    with open(self.configFile, 'w') as cfile:
+    with open(self.configPath, 'w') as cfile:
       self.configParser.write(cfile)
 
 
@@ -942,6 +945,9 @@ class ExtractFlightData(tk.Tk):
     self.pathWidth = tk.StringVar()
     self.imperial = tk.StringVar()
     self.colorSet = tk.StringVar()
+    self.userPath = user_data_dir("Flight Data Viewer", "extractFlightData")
+    Path(self.userPath).mkdir(parents=True, exist_ok=True)
+    self.configPath = os.path.join(self.userPath, self.configFilename)
     self.readConfig()
 
     pw = ttk.PanedWindow(orient=tk.VERTICAL)
