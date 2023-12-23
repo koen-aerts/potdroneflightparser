@@ -33,7 +33,7 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v1.2.0"
+  version = "v1.2.1"
   smallScreen = False
   tinyScreen = False
   scale = 1
@@ -81,6 +81,7 @@ class ExtractFlightData(tk.Tk):
   selectedPath = None
   pathWidth = None
   imperial = None
+  rounded = None
   colorSet = None
   showMarkerCtrl = None
   showMarkerHome = None
@@ -246,7 +247,7 @@ class ExtractFlightData(tk.Tk):
     dist = record[self.columns.index('distance3')]
     alt = record[self.columns.index('altitude2')]
     speed = record[self.columns.index('speed2')]
-    flightTs = self.getDatetime(record[self.columns.index('timestamp')]).isoformat(sep=' ', timespec='seconds')
+    flightTs = record[self.columns.index('time')]
     labelPad = '' if self.smallScreen else '    '
     if (self.tinyScreen):
       self.labelFlight['text'] = f'{labelPad}Dist: {self.getRnd(dist)}{self.distUnit()} / Alt: {self.getRnd(alt)}{self.distUnit()} / Speed: {self.getRnd(speed)}{self.speedUnit()}'
@@ -298,7 +299,17 @@ class ExtractFlightData(tk.Tk):
   def getRnd(self, strNum):
     if (strNum is None):
       return ''
-    return str(round(float(strNum)))
+    return f"{strNum:.2f}"
+    #return str(round(float(strNum)))
+
+
+  '''
+  Format number based on selected rounding option.
+  '''
+  def fmtNum(self, num):
+    if (num is None):
+      return ''
+    return f"{num:.0f}" if self.rounded.get() == 'Y' else f"{num:.2f}"
 
 
   '''
@@ -364,6 +375,15 @@ class ExtractFlightData(tk.Tk):
   '''
   def setImperial(self):
     self.saveConfig()
+    showinfo(title='App Restart Required', message='Changes will be effective next time you start the app.')
+
+
+  '''
+  Called when metric rounding is turned on/off.
+  '''
+  def setRounded(self):
+    self.saveConfig()
+    showinfo(title='App Restart Required', message='Changes will be effective on the next log file opened or app restart.')
 
 
   '''
@@ -629,7 +649,7 @@ class ExtractFlightData(tk.Tk):
           if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {len(self.pathCoords)+1}'] = len(self.tree.get_children())
             isNewPath = False
-          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), readingTs.strftime('%X'), f"{alt1:.2f}", f"{alt2:.2f}", f"{dist1:.2f}", f"{dist1lat:.2f}", f"{dist1lon:.2f}", f"{dist2:.2f}", f"{dist2lat:.2f}", f"{dist2lon:.2f}", f"{dist3:.2f}", f"{speed1:.2f}", f"{speed1lat:.2f}", f"{speed1lon:.2f}", f"{speed2:.2f}", f"{speed2lat:.2f}", f"{speed2lon:.2f}", f"{speed1vert:.2f}", f"{speed2vert:.2f}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected))
+          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), readingTs.strftime('%X'), f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", f"{self.fmtNum(dist3)}", f"{self.fmtNum(speed1)}", f"{self.fmtNum(speed1lat)}", f"{self.fmtNum(speed1lon)}", f"{self.fmtNum(speed2)}", f"{self.fmtNum(speed2lat)}", f"{self.fmtNum(speed2lon)}", f"{self.fmtNum(speed1vert)}", f"{self.fmtNum(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected))
           if (setctrl and hasValidCoords and alt2 > 0): # Record home location from the moment the drone ascends.
             self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
@@ -650,9 +670,15 @@ class ExtractFlightData(tk.Tk):
     self.setPathView()
     if (not self.tinyScreen):
       if (self.smallScreen):
-        self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:8.2f}  /  Max Alt ({self.distUnit()}): {maxAlt:7.2f}  /  Max Speed ({self.speedUnit()}): {maxSpeed:6.2f}  /  {PurePath(selectedFile).name}'
+        if self.rounded.get() == 'Y':
+          self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:6.0f}  /  Max Alt ({self.distUnit()}): {maxAlt:5.0f}  /  Max Speed ({self.speedUnit()}): {maxSpeed:4.0f}  /  {PurePath(selectedFile).name}'
+        else:
+          self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:8.2f}  /  Max Alt ({self.distUnit()}): {maxAlt:7.2f}  /  Max Speed ({self.speedUnit()}): {maxSpeed:6.2f}  /  {PurePath(selectedFile).name}'
       else:
-        self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}   /   Max Speed ({self.speedUnit()}): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
+        if self.rounded.get() == 'Y':
+          self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:6.0f}   /   Max Alt ({self.distUnit()}): {maxAlt:5.0f}   /   Max Speed ({self.speedUnit()}): {maxSpeed:4.0f}   /   File: {PurePath(selectedFile).name}'
+        else:
+          self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}   /   Max Speed ({self.speedUnit()}): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     self.selectPath['values'] = pathNames
     self.selectedPath.set(pathNames[0])
@@ -792,7 +818,7 @@ class ExtractFlightData(tk.Tk):
           if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {len(self.pathCoords)+1}'] = len(self.tree.get_children())
             isNewPath = False
-          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), readingTs.strftime('%X'), f"{alt1:.2f}", f"{alt2:.2f}", f"{dist1:.2f}", f"{dist1lat:.2f}", f"{dist1lon:.2f}", f"{dist2:.2f}", f"{dist2lat:.2f}", f"{dist2lon:.2f}", "", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon)))
+          self.tree.insert('', tk.END, value=(readingTs.isoformat(sep=' '), readingTs.strftime('%X'), f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", "", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon)))
           if (setctrl and hasValidCoords and alt1 > 0): # Record home location from the moment the drone ascends.
             self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
@@ -883,13 +909,15 @@ class ExtractFlightData(tk.Tk):
     self.configParser.read(self.configPath)
     if ('Common' in self.configParser):
       comCfg = self.configParser['Common']
-      self.pathWidth.set(comCfg['PathWidth'])
-      self.colorSet.set(comCfg['ColorScheme'])
-      self.imperial.set(comCfg['Imperial'])
+      self.pathWidth.set(comCfg['PathWidth'] if 'PathWidth' in comCfg else 1)
+      self.colorSet.set(comCfg['ColorScheme'] if 'ColorScheme' in comCfg else 0)
+      self.imperial.set(comCfg['Imperial'] if 'Imperial' in comCfg else 'N')
+      self.rounded.set(comCfg['RoundedMetrics'] if 'RoundedMetrics' in comCfg else 'Y')
     else:
       self.pathWidth.set(1)
       self.colorSet.set(0)
       self.imperial.set('N')
+      self.rounded.set('Y')
       self.saveConfig()
 
 
@@ -900,7 +928,8 @@ class ExtractFlightData(tk.Tk):
     self.configParser['Common'] = {
       'PathWidth': self.pathWidth.get(),
       'ColorScheme': self.colorSet.get(),
-      'Imperial': self.imperial.get()
+      'Imperial': self.imperial.get(),
+      'RoundedMetrics': self.rounded.get()
     }
     with open(self.configPath, 'w') as cfile:
       self.configParser.write(cfile)
@@ -944,6 +973,7 @@ class ExtractFlightData(tk.Tk):
 
     self.pathWidth = tk.StringVar()
     self.imperial = tk.StringVar()
+    self.rounded = tk.StringVar()
     self.colorSet = tk.StringVar()
     self.userPath = user_data_dir("Flight Data Viewer", "extractFlightData")
     Path(self.userPath).mkdir(parents=True, exist_ok=True)
@@ -972,6 +1002,7 @@ class ExtractFlightData(tk.Tk):
     pref_menu.add_radiobutton(label='Flight Path Width: 3', command=self.setPathWidth, variable=self.pathWidth, value=3)
     pref_menu.add_separator()
     pref_menu.add_checkbutton(label='Imperial Units', command=self.setImperial, variable=self.imperial, onvalue='Y', offvalue='N')
+    pref_menu.add_checkbutton(label='Rounded Metrics', command=self.setRounded, variable=self.rounded, onvalue='Y', offvalue='N')
     pref_menu.add_separator()
     pref_menu.add_radiobutton(label='Colour Scheme 1', command=self.setColorSet, variable=self.colorSet, value=0)
     pref_menu.add_radiobutton(label='Colour Scheme 2', command=self.setColorSet, variable=self.colorSet, value=1)
@@ -993,7 +1024,7 @@ class ExtractFlightData(tk.Tk):
     self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom)
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=colWidth1)
     self.tree.heading('timestamp', text='Timestamp (ISO)')
-    self.tree.column("time", anchor=tk.W, stretch=tk.NO, width=colWidth2)
+    self.tree.column("time", anchor=tk.W, stretch=tk.NO, width=colWidth3)
     self.tree.heading('time', text='Time')
     self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('altitude1', text=f'Alt1 ({self.distUnit()})')
