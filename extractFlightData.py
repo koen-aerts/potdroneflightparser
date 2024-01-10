@@ -38,12 +38,8 @@ class ExtractFlightData(tk.Tk):
   tinyScreen = False
   scale = 1
   cpl = 137 # 137.84615384615384 characters fit on development machine screen.
-  screen_width = 1024
-  screen_height = 768
   defaultDroneZoom = 18
   defaultBlankMapZoom = 1
-  windowWidth = 800
-  windowHeight = 400
   ctrlMarkerColor1  = ["#5b96f7", "#2d2d2d", "#00b9f7"]
   ctrlMarkerColor2  = ["#aaccf6", "#c6c6c6", "#00c7dd"]
   homeMarkerColor1  = ["#9B261E", "#4c4c4c", "#5068c2"]
@@ -58,7 +54,7 @@ class ExtractFlightData(tk.Tk):
   ]
   displayMode = "ATOM"
   columns = ('flight','timestamp','tod','time','altitude1','altitude2','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected')
-  showColsAtom = ('flight','tod','time','altitude2','distance3','speed2','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
+  showColsAtom = ('flight','tod','time','altitude2','distance3','speed2','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
   showColsDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
   zipFilename = None
   tree = None
@@ -81,6 +77,7 @@ class ExtractFlightData(tk.Tk):
   selectedPath = None
   pathWidth = None
   imperial = None
+  defaultDataRows = None
   rounded = None
   colorSet = None
   showMarkerCtrl = None
@@ -92,6 +89,8 @@ class ExtractFlightData(tk.Tk):
   configParser = None
   configFilename = 'extractFlightData.ini'
   configPath = None
+  defaultFontsize = 13 # 13 is default font size on development machine.
+  lastFrameTs = None
 
 
   '''
@@ -115,16 +114,21 @@ class ExtractFlightData(tk.Tk):
       if (len(rows) > nextIdx+1):
         nextRow = rows[nextIdx]
         if (pause):
-          diff = self.getDatetime(self.tree.item(nextRow)['values'][self.columns.index('timestamp')]) - self.getDatetime(self.tree.item(self.currentRow)['values'][self.columns.index('timestamp')])
-          seconds = diff.total_seconds()/1000;
-          if (seconds > 1):
-            seconds = 1
-          time.sleep(seconds)
+          thisFrameTs = datetime.datetime.now()
+          lastFrameDiff = thisFrameTs - self.lastFrameTs
+          droneDiffTs = self.getDatetime(self.tree.item(nextRow)['values'][self.columns.index('timestamp')]) - self.getDatetime(self.tree.item(self.currentRow)['values'][self.columns.index('timestamp')])
+          extraWaitSec = droneDiffTs.total_seconds() - lastFrameDiff.total_seconds()
+          if (extraWaitSec > 0):
+            if (extraWaitSec > 1):
+              extraWaitSec = 1
+            time.sleep(extraWaitSec)
+          self.lastFrameTs = thisFrameTs
         self.currentRow = nextRow
       else:
         self.currentRow = None
         self.isPlaying = False
     self.currentRow = None
+    self.lastFrameTs = None
     self.isPlaying = False
 
 
@@ -138,6 +142,7 @@ class ExtractFlightData(tk.Tk):
     allRows = self.tree.get_children()
     if (len(allRows) == 0):
       return
+    self.lastFrameTs = datetime.datetime.now()
     selectedRows = self.tree.selection()
     self.currentRow = allRows[0] if len(selectedRows) == 0 else selectedRows[0]
     self.isPlaying = True;
@@ -268,15 +273,18 @@ class ExtractFlightData(tk.Tk):
       self.dronemarker = None # Handle bad coordinates.
     dist = record[self.columns.index('distance3')]
     alt = record[self.columns.index('altitude2')]
-    speed = record[self.columns.index('speed2')]
+    Hspeed = record[self.columns.index('speed2')]
+    Vspeed = record[self.columns.index('speed2vert')]
+    rssi = record[self.columns.index('rssi')]
+    droneconnected = 'Y' if (record[self.columns.index('flightctrlconnected')]) == 1 else 'N'
     flightTs = record[self.columns.index('time')]
     labelPad = '' if self.smallScreen else '    '
     if (self.tinyScreen):
-      self.labelFlight['text'] = f'{labelPad}Dist: {self.getRnd(dist)}{self.distUnit()} / Alt: {self.getRnd(alt)}{self.distUnit()} / Speed: {self.getRnd(speed)}{self.speedUnit()}'
+      self.labelFlight['text'] = f'{labelPad}Dist: {dist}{self.distUnit()} / Alt: {alt}{self.distUnit()} / H Speed: {Hspeed}{self.speedUnit()} / V Speed: {Vspeed}{self.speedUnit()}'
     elif (self.smallScreen):
-      self.labelFlight['text'] = f'{labelPad}Time: {flightTs} / Dist: {self.getRnd(dist)}{self.distUnit()} / Alt: {self.getRnd(alt)}{self.distUnit()} / Speed: {self.getRnd(speed)}{self.speedUnit()}'
+      self.labelFlight['text'] = f'{labelPad}Time: {flightTs} / Dist: {dist}{self.distUnit()} / Alt: {alt}{self.distUnit()} / H Speed: {Hspeed}{self.speedUnit()}  / V Speed: {Vspeed}{self.speedUnit()}'
     else:
-      self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance ({self.distUnit()}): {dist}   /   Altitude ({self.distUnit()}): {alt}   /   Speed ({self.speedUnit()}): {speed}'
+      self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance ({self.distUnit()}): {dist}   /   Altitude ({self.distUnit()}): {alt}   /   Horiz. Speed ({self.speedUnit()}): {Hspeed}   /   Vert. Speed ({self.speedUnit()}): {Vspeed}   /   RSSI: {rssi}   /   Connected: {droneconnected}'
     pathNum = record[self.columns.index('flight')]
     if pathNum != 0:
       self.selectPath.set(f'Flight {pathNum}')
@@ -316,16 +324,6 @@ class ExtractFlightData(tk.Tk):
     if self.imperial.get() == 'Y':
       return "mph"
     return "m/s"
-
-
-  '''
-  Return rounded number.
-  '''
-  def getRnd(self, strNum):
-    if (strNum is None):
-      return ''
-    return f"{strNum:.2f}"
-    #return str(round(float(strNum)))
 
 
   '''
@@ -399,6 +397,14 @@ class ExtractFlightData(tk.Tk):
   Called when Unit of Measure is switched between Metric/Imperial units.
   '''
   def setImperial(self):
+    self.saveConfig()
+    showinfo(title='App Restart Required', message='Changes will be effective next time you start the app.')
+
+
+  '''
+  Called when Default number of Data Rows Displayed is changed.
+  '''
+  def setDefaultDataRows(self):
     self.saveConfig()
     showinfo(title='App Restart Required', message='Changes will be effective next time you start the app.')
 
@@ -635,21 +641,25 @@ class ExtractFlightData(tk.Tk):
           # Build paths for each flight. TODO - improve this logic as it's not always correct.
           pathNum = 0
           if (hasValidCoords):
-            if (dist3 == 0): # distance is zero when ctrl coords are refreshed.
+            if (alt2 > 0): # Only trace path where the drone is off the ground.
+              pathNum = len(self.pathCoords)+1
+              pathCoord.append((dronelat, dronelon))
+            elif (dist3 == 0): # distance is zero when ctrl coords are refreshed.
               if (len(pathCoord) > 0):
                 self.pathCoords.append(pathCoord)
                 pathCoord = []
                 pathNum = 0
                 isNewPath = True
-            elif (alt2 > 0): # Only trace path where the drone is off the ground and has distance not zero from home point.
-              pathNum = len(self.pathCoords)+1
-              pathCoord.append((dronelat, dronelon))
 
           readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
           while (readingTs < prevReadingTs):
             # Line up to the next valid timestamp marker (pulled from the filenames).
-            filenameTs = timestampMarkers.pop(0)
-            readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
+            try:
+              filenameTs = timestampMarkers.pop(0)
+              readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
+            except:
+              # Handle rare case where log files contain mismatched "elapsed" indicators and times in bin filenames.
+              readingTs = prevReadingTs
 
           # Get corresponding record from the controller. There may not be one, or any at all. Match up to 5 seconds ago.
           fpvRssi = ""
@@ -956,10 +966,12 @@ class ExtractFlightData(tk.Tk):
       self.colorSet.set(comCfg['ColorScheme'] if 'ColorScheme' in comCfg else 0)
       self.imperial.set(comCfg['Imperial'] if 'Imperial' in comCfg else 'N')
       self.rounded.set(comCfg['RoundedMetrics'] if 'RoundedMetrics' in comCfg else 'Y')
+      self.defaultDataRows.set(comCfg['DefaultDataRows'] if 'DefaultDataRows' in comCfg else 4)
     else:
       self.pathWidth.set(1)
       self.colorSet.set(0)
       self.imperial.set('N')
+      self.defaultDataRows.set(4)
       self.rounded.set('Y')
       self.saveConfig()
 
@@ -972,7 +984,8 @@ class ExtractFlightData(tk.Tk):
       'PathWidth': self.pathWidth.get(),
       'ColorScheme': self.colorSet.get(),
       'Imperial': self.imperial.get(),
-      'RoundedMetrics': self.rounded.get()
+      'RoundedMetrics': self.rounded.get(),
+      'DefaultDataRows': self.defaultDataRows.get()
     }
     with open(self.configPath, 'w') as cfile:
       self.configParser.write(cfile)
@@ -984,14 +997,12 @@ class ExtractFlightData(tk.Tk):
   def __init__(self):
     super().__init__()
     charWidth = nametofont("TkDefaultFont").measure('W') # Use size of default character as way to measure how much space is on the device screen.
-    self.scale = charWidth / 13 # 13 is default font size on development machine.
-    self.screen_width = self.winfo_screenwidth()
-    self.screen_height = self.winfo_screenheight()
-    self.windowWidth = self.screen_width
-    self.windowHeight = self.screen_height
-    self.cpl = self.windowWidth / charWidth # Characters per line using default font size
+    self.scale = charWidth / self.defaultFontsize
+    self.cpl = self.winfo_screenwidth() / charWidth # Characters per line using default font size
     self.smallScreen = self.cpl < 100
     self.tinyScreen = self.cpl < 40
+    self.smallScreen = True
+    self.tinyScreen = True
 
     # Scale widgets based on device.
     fontFamily = 'Helvetica'
@@ -1008,7 +1019,10 @@ class ExtractFlightData(tk.Tk):
 
     self.title(f"Flight Data Viewer - {self.version}")
     self.protocol("WM_DELETE_WINDOW", self.exitApp)
-    self.geometry("{}x{}+{}+{}".format(self.windowWidth, self.windowHeight, int((self.screen_width - self.windowWidth)/2), int((self.screen_height - self.windowHeight)/2)))
+    try:
+      self.wm_attributes('-zoomed', 1)
+    except:
+      self.state('zoomed')
     self.resizable(True, True)
 
     style = ttk.Style(self)
@@ -1018,6 +1032,7 @@ class ExtractFlightData(tk.Tk):
     self.imperial = tk.StringVar()
     self.rounded = tk.StringVar()
     self.colorSet = tk.StringVar()
+    self.defaultDataRows = tk.StringVar()
     self.userPath = user_data_dir("Flight Data Viewer", "extractFlightData")
     Path(self.userPath).mkdir(parents=True, exist_ok=True)
     self.configPath = os.path.join(self.userPath, self.configFilename)
@@ -1043,6 +1058,8 @@ class ExtractFlightData(tk.Tk):
     pref_menu.add_radiobutton(label='Flight Path Width: 1', command=self.setPathWidth, variable=self.pathWidth, value=1)
     pref_menu.add_radiobutton(label='Flight Path Width: 2', command=self.setPathWidth, variable=self.pathWidth, value=2)
     pref_menu.add_radiobutton(label='Flight Path Width: 3', command=self.setPathWidth, variable=self.pathWidth, value=3)
+    pref_menu.add_radiobutton(label='Flight Path Width: 4', command=self.setPathWidth, variable=self.pathWidth, value=4)
+    pref_menu.add_radiobutton(label='Flight Path Width: 5', command=self.setPathWidth, variable=self.pathWidth, value=5)
     pref_menu.add_separator()
     pref_menu.add_checkbutton(label='Imperial Units', command=self.setImperial, variable=self.imperial, onvalue='Y', offvalue='N')
     pref_menu.add_checkbutton(label='Rounded Metrics', command=self.setRounded, variable=self.rounded, onvalue='Y', offvalue='N')
@@ -1050,6 +1067,11 @@ class ExtractFlightData(tk.Tk):
     pref_menu.add_radiobutton(label='Colour Scheme 1', command=self.setColorSet, variable=self.colorSet, value=0)
     pref_menu.add_radiobutton(label='Colour Scheme 2', command=self.setColorSet, variable=self.colorSet, value=1)
     pref_menu.add_radiobutton(label='Colour Scheme 3', command=self.setColorSet, variable=self.colorSet, value=2)
+    pref_menu.add_separator()
+    pref_menu.add_radiobutton(label='Rows Displayed: 1', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=1)
+    pref_menu.add_radiobutton(label='Rows Displayed: 2', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=2)
+    pref_menu.add_radiobutton(label='Rows Displayed: 4', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=4)
+    pref_menu.add_radiobutton(label='Rows Displayed: 8', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=8)
 
     file_menu.add_command(label='Open...', command=self.askForFlightFile)
     file_menu.add_separator()
@@ -1064,7 +1086,7 @@ class ExtractFlightData(tk.Tk):
     menubar.add_cascade(label='File', menu=file_menu)
 
     style.configure("Treeview", rowheight=int(round(charWidth * 1.75)))
-    self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom)
+    self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom, height=self.defaultDataRows.get())
     self.tree.column("flight", anchor=tk.W, stretch=tk.NO, width=colWidth5)
     self.tree.heading('flight', text='#')
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=colWidth1)
@@ -1073,7 +1095,7 @@ class ExtractFlightData(tk.Tk):
     self.tree.heading('tod', text='Time')
     self.tree.column("time", anchor=tk.W, stretch=tk.NO, width=colWidth3)
     self.tree.heading('time', text='Flight')
-    self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=colWidth4)
+    self.tree.column("altitude1", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('altitude1', text=f'Alt1 ({self.distUnit()})')
     self.tree.column("altitude2", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('altitude2', text=f'Alt2 ({self.distUnit()})')
@@ -1092,23 +1114,23 @@ class ExtractFlightData(tk.Tk):
     self.tree.column("distance3", anchor=tk.E, stretch=tk.NO, width=colWidth3)
     self.tree.heading('distance3', text=f'Dist RTH ({self.distUnit()})')
     self.tree.column("speed1", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed1', text=f'Speed1 ({self.speedUnit()})')
+    self.tree.heading('speed1', text=f'H Speed1 ({self.speedUnit()})')
     self.tree.column("speed1lat", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed1lat', text=f'Lat S1 ({self.speedUnit()})')
     self.tree.column("speed1lon", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed1lon', text=f'Lon S1 ({self.speedUnit()})')
     self.tree.column("speed2", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed2', text=f'Speed2 ({self.speedUnit()})')
+    self.tree.heading('speed2', text=f'H Speed2 ({self.speedUnit()})')
     self.tree.column("speed2lat", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed2lat', text=f'Lat S2 ({self.speedUnit()})')
     self.tree.column("speed2lon", anchor=tk.E, stretch=tk.NO, width=colWidth4)
     self.tree.heading('speed2lon', text=f'Lon S2 ({self.speedUnit()})')
     self.tree.column("speed1vert", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed1vert', text=f'Speed1 Vert ({self.speedUnit()})')
+    self.tree.heading('speed1vert', text=f'V Speed1 ({self.speedUnit()})')
     self.tree.column("speed2vert", anchor=tk.E, stretch=tk.NO, width=colWidth4)
-    self.tree.heading('speed2vert', text=f'Speed2 Vert ({self.speedUnit()})')
+    self.tree.heading('speed2vert', text=f'V Speed2 ({self.speedUnit()})')
     self.tree.column("satellites", anchor=tk.E, stretch=tk.NO, width=colWidth5)
-    self.tree.heading('satellites', text='Sat')
+    self.tree.heading('satellites', text='# Sats')
     self.tree.column("ctrllat", anchor=tk.W, stretch=tk.NO, width=colWidth2)
     self.tree.heading('ctrllat', text='Ctrl Lat')
     self.tree.column("ctrllon", anchor=tk.W, stretch=tk.NO, width=colWidth2)
