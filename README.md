@@ -14,6 +14,7 @@ On Windows or MacOS (x64/ARM) you can download and run one of the executables fr
 
 On any platform or if you don't want or can't run the executables:
 ```sh
+pip3 install platformdirs
 pip3 install tkintermapview
 python3 extractFlightData.py
 ```
@@ -34,6 +35,7 @@ sed -i -- "s/0\.0\.0/1.2.1/" dist/extractFlightData.app/Contents/Info.plist
 
 Windows:
 ```sh
+pip3 install platformdirs
 pip3 install pyinstaller
 pip3 install pyinstaller-versionfile
 create-version-file ./resources/app-version.yml --outfile file_version_info.txt
