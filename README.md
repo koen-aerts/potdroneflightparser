@@ -30,7 +30,7 @@ MacOS:
 pip3 install platformdirs
 pip3 install pyinstaller
 pyinstaller extractFlightData.py --noconsole --onefile -i ./resources/app-icon256.png
-sed -i -- "s/0\.0\.0/1.2.1/" dist/extractFlightData.app/Contents/Info.plist
+sed -i -- "s/0\.0\.0/1.3.0/" dist/extractFlightData.app/Contents/Info.plist
 ```
 
 Windows:

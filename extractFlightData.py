@@ -33,7 +33,7 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v1.2.1"
+  version = "v1.3.0"
   smallScreen = False
   tinyScreen = False
   scale = 1
