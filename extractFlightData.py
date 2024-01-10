@@ -925,7 +925,8 @@ class ExtractFlightData(tk.Tk):
   '''
   def exportFlightFile(self):
     if (self.zipFilename != None):
-      self.saveFile(re.sub("\.zip$", "", self.zipFilename) + ".csv")
+      ext = "-All.csv" if self.showAll.get() == 'Y' else ".csv"
+      self.saveFile(re.sub("\.zip$", "", self.zipFilename) + ext)
     else:
       showwarning(title='Nothing to Export', message='There is nothing to Export. Please open a Flight Data file first (.zip file).')
 
@@ -1001,8 +1002,6 @@ class ExtractFlightData(tk.Tk):
     self.cpl = self.winfo_screenwidth() / charWidth # Characters per line using default font size
     self.smallScreen = self.cpl < 100
     self.tinyScreen = self.cpl < 40
-    self.smallScreen = True
-    self.tinyScreen = True
 
     # Scale widgets based on device.
     fontFamily = 'Helvetica'
