@@ -16,6 +16,7 @@ On Windows or MacOS (x64/ARM) you can download and run one of the executables fr
 On MacOS, you may see warnings or errors that will prevent you from running the app. This is a standard defense mechanism to prevent users from accidentally running arbitrary content that comes from the Internet. Depending on your version, the message could say something along the lines of the app is broken or dangerous, and it will prevent you from executing it and instead give you a cancel or delete option.
 
 ![MacOS Application Warning](<resources/broken_app_message.png> "MacOS Application Warning")
+
 To solve this, you can remove the Extended Attributes from the file. You will have to open a Terminal and use the xattr command to remove the attributes. Example:
 
 ```sh
