@@ -33,7 +33,7 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v1.3.0"
+  version = "v1.3.1"
   smallScreen = False
   tinyScreen = False
   scale = 1
@@ -50,7 +50,13 @@ class ExtractFlightData(tk.Tk):
   pathColors = [
     ["#417dd6","#ab27a9","#e54f14","#ffa900","#00a31f"],
     ["#c6c6c6","#cfcfcf","#e0e0e0","#4c4c4c","#2d2d2d"],
-    ["#ffed49","#ffcb00","#ffa800","#ff6e2c","#fa5b46"]
+    ["#ffed49","#ffcb00","#ffa800","#ff6e2c","#fa5b46"],
+    ["#ff0000","#00ff00","#0000ff","#ffff00","#000000","#ffffff"],
+    ["#00ff00","#0000ff","#ffff00","#000000","#ffffff","#ff0000"],
+    ["#0000ff","#ffff00","#000000","#ffffff","#ff0000","#00ff00"],
+    ["#ffff00","#000000","#ffffff","#ff0000","#00ff00","#0000ff"],
+    ["#000000","#ffffff","#ff0000","#00ff00","#0000ff","#ffff00"],
+    ["#ffffff","#ff0000","#00ff00","#0000ff","#ffff00","#000000"]
   ]
   displayMode = "ATOM"
   columns = ('flight','timestamp','tod','time','altitude1','altitude2','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected')
@@ -79,7 +85,8 @@ class ExtractFlightData(tk.Tk):
   imperial = None
   defaultDataRows = None
   rounded = None
-  colorSet = None
+  marketColorSet = None
+  pathColorSet = None
   showMarkerCtrl = None
   showMarkerHome = None
   showPath = None
@@ -229,9 +236,9 @@ class ExtractFlightData(tk.Tk):
         else:
           self.ctrlmarker = self.map_widget.set_marker(
             ctrllat, ctrllon, text=self.ctrllabel,
-            text_color=self.markerLabelColor[int(self.colorSet.get())],
-            marker_color_circle=self.ctrlMarkerColor1[int(self.colorSet.get())],
-            marker_color_outside=self.ctrlMarkerColor2[int(self.colorSet.get())])
+            text_color=self.markerLabelColor[int(self.markerColorSet.get())],
+            marker_color_circle=self.ctrlMarkerColor1[int(self.markerColorSet.get())],
+            marker_color_outside=self.ctrlMarkerColor2[int(self.markerColorSet.get())])
       except:
         self.ctrlmarker = None # Handle bad coordinates.
     else:
@@ -248,9 +255,9 @@ class ExtractFlightData(tk.Tk):
         else:
           self.homemarker = self.map_widget.set_marker(
             homelat, homelon, text=self.homelabel,
-            text_color=self.markerLabelColor[int(self.colorSet.get())],
-            marker_color_circle=self.homeMarkerColor1[int(self.colorSet.get())],
-            marker_color_outside=self.homeMarkerColor2[int(self.colorSet.get())])
+            text_color=self.markerLabelColor[int(self.markerColorSet.get())],
+            marker_color_circle=self.homeMarkerColor1[int(self.markerColorSet.get())],
+            marker_color_outside=self.homeMarkerColor2[int(self.markerColorSet.get())])
       except:
         self.homemarker = None # Handle bad coordinates.
     else:
@@ -266,9 +273,9 @@ class ExtractFlightData(tk.Tk):
       else:
         self.dronemarker = self.map_widget.set_marker(
           dronelat, dronelon, text=self.dronelabel,
-          text_color=self.markerLabelColor[int(self.colorSet.get())],
-          marker_color_circle=self.droneMarkerColor1[int(self.colorSet.get())],
-          marker_color_outside=self.droneMarkerColor2[int(self.colorSet.get())])
+          text_color=self.markerLabelColor[int(self.markerColorSet.get())],
+          marker_color_circle=self.droneMarkerColor1[int(self.markerColorSet.get())],
+          marker_color_outside=self.droneMarkerColor2[int(self.markerColorSet.get())])
     except:
       self.dronemarker = None # Handle bad coordinates.
     dist = record[self.columns.index('distance3')]
@@ -388,7 +395,15 @@ class ExtractFlightData(tk.Tk):
   '''
   Called when Color Scheme selection has been changed. Redraw path if it's currently visible.
   '''
-  def setColorSet(self):
+  def setMarkerColorSet(self):
+    self.saveConfig()
+    self.reDrawMap()
+
+
+  '''
+  Called when Color Scheme selection has been changed. Redraw path if it's currently visible.
+  '''
+  def setPathColorSet(self):
     self.saveConfig()
     self.reDrawMap()
 
@@ -471,7 +486,7 @@ class ExtractFlightData(tk.Tk):
   '''
   def setPathView(self):
     if (self.showPath.get() == 'Y'):
-      colors = self.pathColors[int(self.colorSet.get())]
+      colors = self.pathColors[int(self.pathColorSet.get())]
       self.flightPaths = []
       idx = 0
       for pathCoord in self.pathCoords:
@@ -699,9 +714,9 @@ class ExtractFlightData(tk.Tk):
             self.map_widget.set_position(dronelat, dronelon)
             self.ctrlmarker = self.map_widget.set_marker(
               ctrllat, ctrllon, text=self.ctrllabel,
-              text_color=self.markerLabelColor[int(self.colorSet.get())],
-              marker_color_circle=self.ctrlMarkerColor1[int(self.colorSet.get())],
-              marker_color_outside=self.ctrlMarkerColor2[int(self.colorSet.get())])
+              text_color=self.markerLabelColor[int(self.markerColorSet.get())],
+              marker_color_circle=self.ctrlMarkerColor1[int(self.markerColorSet.get())],
+              marker_color_outside=self.ctrlMarkerColor2[int(self.markerColorSet.get())])
             setctrl = False
 
       flightFile.close()
@@ -877,9 +892,9 @@ class ExtractFlightData(tk.Tk):
             self.map_widget.set_position(real1lat, real1lon)
             self.ctrlmarker = self.map_widget.set_marker(
               dronelat, dronelon, text=self.ctrllabel,
-              text_color=self.markerLabelColor[int(self.colorSet.get())],
-              marker_color_circle=self.ctrlMarkerColor1[int(self.colorSet.get())],
-              marker_color_outside=self.ctrlMarkerColor2[int(self.colorSet.get())])
+              text_color=self.markerLabelColor[int(self.markerCcolorSet.get())],
+              marker_color_circle=self.ctrlMarkerColor1[int(self.markerColorSet.get())],
+              marker_color_outside=self.ctrlMarkerColor2[int(self.markerColorSet.get())])
             setctrl = False
 
       flightFile.close()
@@ -964,13 +979,15 @@ class ExtractFlightData(tk.Tk):
     if ('Common' in self.configParser):
       comCfg = self.configParser['Common']
       self.pathWidth.set(comCfg['PathWidth'] if 'PathWidth' in comCfg else 1)
-      self.colorSet.set(comCfg['ColorScheme'] if 'ColorScheme' in comCfg else 0)
+      self.markerColorSet.set(comCfg['MarkerColorScheme'] if 'MarkerColorScheme' in comCfg else 0)
+      self.pathColorSet.set(comCfg['PathColorScheme'] if 'PathColorScheme' in comCfg else 0)
       self.imperial.set(comCfg['Imperial'] if 'Imperial' in comCfg else 'N')
       self.rounded.set(comCfg['RoundedMetrics'] if 'RoundedMetrics' in comCfg else 'Y')
       self.defaultDataRows.set(comCfg['DefaultDataRows'] if 'DefaultDataRows' in comCfg else 4)
     else:
       self.pathWidth.set(1)
-      self.colorSet.set(0)
+      self.markerColorSet.set(0)
+      self.pathColorSet.set(0)
       self.imperial.set('N')
       self.defaultDataRows.set(4)
       self.rounded.set('Y')
@@ -983,7 +1000,8 @@ class ExtractFlightData(tk.Tk):
   def saveConfig(self):
     self.configParser['Common'] = {
       'PathWidth': self.pathWidth.get(),
-      'ColorScheme': self.colorSet.get(),
+      'MarkerColorScheme': self.markerColorSet.get(),
+      'PathColorScheme': self.pathColorSet.get(),
       'Imperial': self.imperial.get(),
       'RoundedMetrics': self.rounded.get(),
       'DefaultDataRows': self.defaultDataRows.get()
@@ -1030,7 +1048,8 @@ class ExtractFlightData(tk.Tk):
     self.pathWidth = tk.StringVar()
     self.imperial = tk.StringVar()
     self.rounded = tk.StringVar()
-    self.colorSet = tk.StringVar()
+    self.markerColorSet = tk.StringVar()
+    self.pathColorSet = tk.StringVar()
     self.defaultDataRows = tk.StringVar()
     self.userPath = user_data_dir("Flight Data Viewer", "extractFlightData")
     Path(self.userPath).mkdir(parents=True, exist_ok=True)
@@ -1063,9 +1082,19 @@ class ExtractFlightData(tk.Tk):
     pref_menu.add_checkbutton(label='Imperial Units', command=self.setImperial, variable=self.imperial, onvalue='Y', offvalue='N')
     pref_menu.add_checkbutton(label='Rounded Metrics', command=self.setRounded, variable=self.rounded, onvalue='Y', offvalue='N')
     pref_menu.add_separator()
-    pref_menu.add_radiobutton(label='Colour Scheme 1', command=self.setColorSet, variable=self.colorSet, value=0)
-    pref_menu.add_radiobutton(label='Colour Scheme 2', command=self.setColorSet, variable=self.colorSet, value=1)
-    pref_menu.add_radiobutton(label='Colour Scheme 3', command=self.setColorSet, variable=self.colorSet, value=2)
+    pref_menu.add_radiobutton(label='Marker Colour Scheme 1', command=self.setMarkerColorSet, variable=self.markerColorSet, value=0)
+    pref_menu.add_radiobutton(label='Marker Colour Scheme 2', command=self.setMarkerColorSet, variable=self.markerColorSet, value=1)
+    pref_menu.add_radiobutton(label='Marker Colour Scheme 3', command=self.setMarkerColorSet, variable=self.markerColorSet, value=2)
+    pref_menu.add_separator()
+    pref_menu.add_radiobutton(label='Path Colour Scheme 1', command=self.setPathColorSet, variable=self.pathColorSet, value=0)
+    pref_menu.add_radiobutton(label='Path Colour Scheme 2', command=self.setPathColorSet, variable=self.pathColorSet, value=1)
+    pref_menu.add_radiobutton(label='Path Colour Scheme 3', command=self.setPathColorSet, variable=self.pathColorSet, value=2)
+    pref_menu.add_radiobutton(label='Path Colour Scheme 4', command=self.setPathColorSet, variable=self.pathColorSet, value=3)
+    pref_menu.add_radiobutton(label='Path Colour Scheme 5', command=self.setPathColorSet, variable=self.pathColorSet, value=4)
+    pref_menu.add_radiobutton(label='Path Colour Scheme 6', command=self.setPathColorSet, variable=self.pathColorSet, value=5)
+    pref_menu.add_radiobutton(label='Path Colour Scheme 7', command=self.setPathColorSet, variable=self.pathColorSet, value=6)
+    pref_menu.add_radiobutton(label='Path Colour Scheme 8', command=self.setPathColorSet, variable=self.pathColorSet, value=7)
+    pref_menu.add_radiobutton(label='Path Colour Scheme 9', command=self.setPathColorSet, variable=self.pathColorSet, value=8)
     pref_menu.add_separator()
     pref_menu.add_radiobutton(label='Rows Displayed: 1', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=1)
     pref_menu.add_radiobutton(label='Rows Displayed: 2', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=2)
