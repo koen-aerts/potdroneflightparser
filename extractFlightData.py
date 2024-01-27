@@ -594,15 +594,7 @@ class ExtractFlightData(tk.Tk):
 
     # Read the Flight Status files. These files are required to be present.
     files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True))
-    timestampMarkers = []
 
-    # First grab timestamps from the filenames. Those are used to calculate the real timestamps with the elapsed time from each record.
-    for file in files:
-      timestampMarkers.append(datetime.datetime.strptime(re.sub("-.*", "", Path(file).stem), '%Y%m%d%H%M%S'))
-
-    filenameTs = timestampMarkers[0]
-    prevReadingTs = timestampMarkers[0]
-    firstTs = None
     maxDist = 0;
     maxAlt = 0;
     maxSpeed = 0;
@@ -611,6 +603,8 @@ class ExtractFlightData(tk.Tk):
     pathCoord = []
     isNewPath = True
     for file in files:
+      firstTs = None
+      filenameTs = datetime.datetime.strptime(re.sub("-.*", "", Path(file).stem), '%Y%m%d%H%M%S')
       with open(file, mode='rb') as flightFile:
         while True:
           fcRecord = flightFile.read(512)
@@ -669,14 +663,6 @@ class ExtractFlightData(tk.Tk):
                 isNewPath = True
 
           readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
-          while (readingTs < prevReadingTs):
-            # Line up to the next valid timestamp marker (pulled from the filenames).
-            try:
-              filenameTs = timestampMarkers.pop(0)
-              readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
-            except:
-              # Handle rare case where log files contain mismatched "elapsed" indicators and times in bin filenames.
-              readingTs = prevReadingTs
 
           # Get corresponding record from the controller. There may not be one, or any at all. Match up to 5 seconds ago.
           fpvRssi = ""
