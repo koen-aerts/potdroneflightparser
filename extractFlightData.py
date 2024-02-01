@@ -573,7 +573,7 @@ class ExtractFlightData(tk.Tk):
     #   - 20230819190421-AtomSE-iosSystem-iPhone13Pro-FPV.bin
     #   - 20230826161313-Atom SE-Android-(samsung)-FPV.bin
     fpvStat = {}
-    files = glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True)
+    files = sorted(glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True))
     for file in files:
       self.ctrllabel = re.sub(r".*-\(?([^\)-]+)\)?-.*", r"\1", PurePath(file).name)
       with open(file, mode='rb') as fpvFile:
@@ -602,6 +602,8 @@ class ExtractFlightData(tk.Tk):
 
     filenameTs = timestampMarkers[0]
     prevReadingTs = timestampMarkers[0]
+    prevHomeLat = None
+    prevHomeLon = None
     firstTs = None
     maxDist = 0;
     maxAlt = 0;
@@ -610,6 +612,7 @@ class ExtractFlightData(tk.Tk):
     self.flightStarts = {}
     pathCoord = []
     isNewPath = True
+    isFlying = False
     for file in files:
       with open(file, mode='rb') as flightFile:
         while True:
@@ -653,20 +656,29 @@ class ExtractFlightData(tk.Tk):
           speed1vert = self.speedVal(-struct.unpack('f', fcRecord[255:259])[0])
           speed2vert = self.speedVal(-struct.unpack('f', fcRecord[347:351])[0])
 
-          hasValidCoords = dronelat != 0.0 and dronelon != 0.0 and ctrllat != 0.0 and ctrllon != 0.0
+          hasValidCoords = dronelat != 0.0 and dronelon != 0.0 and ((ctrllat != 0.0 and ctrllon != 0.0) or (homelat != 0.0 and homelon != 0.0))
+          
+          grounded = homelat == 0 and homelon == 0
+          takeOff = (not grounded) and (homelat != prevHomeLat or homelon != prevHomeLon)
+          prevHomeLat = homelat
+          prevHomeLon = homelon
+          if isFlying:
+            if grounded:
+              isFlying = False
+          elif takeOff:
+            isFlying = True
 
           # Build paths for each flight. TODO - improve this logic as it's not always correct.
           pathNum = 0
           if (hasValidCoords):
-            if (alt2 > 0): # Only trace path where the drone is off the ground.
-              pathNum = len(self.pathCoords)+1
-              pathCoord.append((dronelat, dronelon))
-            elif (dist3 == 0): # distance is zero when ctrl coords are refreshed.
+            if (grounded or takeOff): # distance is zero when ctrl coords are refreshed.
               if (len(pathCoord) > 0):
                 self.pathCoords.append(pathCoord)
                 pathCoord = []
-                pathNum = 0
                 isNewPath = True
+            if (isFlying): # Only trace path where the drone is off the ground or has speed.
+              pathNum = len(self.pathCoords)+1
+              pathCoord.append((dronelat, dronelon))
 
           readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
           while (readingTs < prevReadingTs):
@@ -740,8 +752,10 @@ class ExtractFlightData(tk.Tk):
         else:
           self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}   /   Max Speed ({self.speedUnit()}): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
-    self.selectPath['values'] = pathNames
-    self.selectedPath.set(pathNames[0])
+    print(f"pathNames={pathNames}")
+    if (len(pathNames) > 0):
+      self.selectPath['values'] = pathNames
+      self.selectedPath.set(pathNames[0])
     self.prevPath()
 
 
@@ -766,7 +780,7 @@ class ExtractFlightData(tk.Tk):
 
     # First read the FPV file. The presence of this file is optional.
     fpvStat = {}
-    files = glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True)
+    files = sorted(glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True))
     for file in files:
       self.ctrllabel = re.sub(r".*-\(?([^\)-]+)\)?-.*", r"\1", PurePath(file).name)
       with open(file, mode='rb') as fpvFile:
@@ -846,7 +860,6 @@ class ExtractFlightData(tk.Tk):
               if (len(pathCoord) > 0):
                 self.pathCoords.append(pathCoord)
                 pathCoord = []
-                pathNum = 0
                 isNewPath = True
             elif (alt1 > 0): # Only trace path where the drone is off the ground.
               pathNum = len(self.pathCoords)+1
@@ -914,8 +927,9 @@ class ExtractFlightData(tk.Tk):
       else:
         self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
-    self.selectPath['values'] = pathNames
-    self.selectedPath.set(pathNames[0])
+    if (len(pathNames) > 0):
+      self.selectPath['values'] = pathNames
+      self.selectedPath.set(pathNames[0])
     self.prevPath()
 
 
@@ -1201,7 +1215,7 @@ class ExtractFlightData(tk.Tk):
     playbackFrame.pack(fill=tk.BOTH, expand=False)
     self.selectPlaySpeeds = ttk.Combobox(playbackFrame, state="readonly", exportselection=0, width=16)
     self.selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=7, pady=0)
-    self.selectPlaySpeeds['values'] = ('Real-Time', 'Fast', 'Fast 2x', 'Fast 4x', 'Fast 10x', 'Fast 25x')
+    self.selectPlaySpeeds['values'] = ('Real-Time', 'Fast', 'Fast 2x', 'Fast 4x', 'Fast 8x', 'Fast 16x', 'Fast 32x')
     buttonPrev = ttk.Button(playbackFrame, text='<<', command=self.prevPath, width=2)
     buttonPrev.grid(row=0, column=1, sticky=tk.E, padx=0, pady=0)
     buttonPlay = ttk.Button(playbackFrame, text='>', command=self.play, width=1)
