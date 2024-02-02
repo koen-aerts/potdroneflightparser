@@ -50,7 +50,7 @@ You can also run this software on Android devices that can run [Pydroid 3](<http
 pip3 install platformdirs
 pip3 install pyinstaller
 pyinstaller extractFlightData.py --noconsole --onefile -i ./resources/app-icon256.png
-sed -i -- "s/0\.0\.0/1.3.1/" dist/extractFlightData.app/Contents/Info.plist
+sed -i -- "s/0\.0\.0/1.3.2/" dist/extractFlightData.app/Contents/Info.plist
 ```
 
 ## Windows

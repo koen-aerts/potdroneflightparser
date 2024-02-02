@@ -33,7 +33,7 @@ class ExtractFlightData(tk.Tk):
   '''
   Global variables and constants.
   '''
-  version = "v1.3.1"
+  version = "v1.3.2"
   smallScreen = False
   tinyScreen = False
   scale = 1
@@ -98,6 +98,19 @@ class ExtractFlightData(tk.Tk):
   configPath = None
   defaultFontsize = 13 # 13 is default font size on development machine.
   lastFrameTs = None
+
+
+  '''
+  Calculate distance between 2 sets of coordinates (lat/lon). Note: Can't find the distance in the flight data itself.
+  '''
+  def haversine(self, lat1: float, long1: float, lat2: float, long2: float):
+    degree_to_rad = float(math.pi / 180.0)
+    d_lat = (lat2 - lat1) * degree_to_rad
+    d_long = (long2 - long1) * degree_to_rad
+    a = pow(math.sin(d_lat / 2), 2) + math.cos(lat1 * degree_to_rad) * math.cos(lat2 * degree_to_rad) * pow(math.sin(d_long / 2), 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    km = 6367 * c
+    return km
 
 
   '''
@@ -656,22 +669,38 @@ class ExtractFlightData(tk.Tk):
           speed1vert = self.speedVal(-struct.unpack('f', fcRecord[255:259])[0])
           speed2vert = self.speedVal(-struct.unpack('f', fcRecord[347:351])[0])
 
-          hasValidCoords = dronelat != 0.0 and dronelon != 0.0 and ((ctrllat != 0.0 and ctrllon != 0.0) or (homelat != 0.0 and homelon != 0.0))
+          # Some checks to handle cases with bad or incomplete GPS data.
+          hasDroneCoords = dronelat != 0.0 and dronelon != 0.0
+          hasCtrlCoords = ctrllat != 0.0 and ctrllon != 0.0
+          hasHomeCoords = homelat != 0.0 and homelon != 0.0
+          sanDist = 0
+          if (hasDroneCoords and hasHomeCoords):
+            try:
+              sanDist = self.haversine(homelat, homelon, dronelat, dronelon)
+            except:
+              sanDist = 9999
+          elif (hasDroneCoords and hasCtrlCoords):
+            try:
+              sanDist = self.haversine(ctrllat, ctrllon, dronelat, dronelon)
+            except:
+              sanDist = 9999
+            
+          hasValidCoords = sanDist < 20 and hasDroneCoords and (hasCtrlCoords or hasHomeCoords)
           
-          grounded = homelat == 0 and homelon == 0
-          takeOff = (not grounded) and (homelat != prevHomeLat or homelon != prevHomeLon)
+          takeOff = (hasHomeCoords) and (homelat != prevHomeLat or homelon != prevHomeLon)
           prevHomeLat = homelat
           prevHomeLon = homelon
           if isFlying:
-            if grounded:
+            if not hasHomeCoords:
               isFlying = False
           elif takeOff:
             isFlying = True
 
+
           # Build paths for each flight. TODO - improve this logic as it's not always correct.
           pathNum = 0
           if (hasValidCoords):
-            if (grounded or takeOff): # distance is zero when ctrl coords are refreshed.
+            if (not hasHomeCoords or takeOff): # distance is zero when ctrl coords are refreshed.
               if (len(pathCoord) > 0):
                 self.pathCoords.append(pathCoord)
                 pathCoord = []
