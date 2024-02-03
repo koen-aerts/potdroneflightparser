@@ -606,7 +606,7 @@ class ExtractFlightData(tk.Tk):
       fpvFile.close()
 
     # Read the Flight Status files. These files are required to be present.
-    files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True))
+    files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True) + glob.glob(os.path.join(binLog, '**/*-FC.fc'), recursive=True))
     timestampMarkers = []
 
     # First grab timestamps from the filenames. Those are used to calculate the real timestamps with the elapsed time from each record.
