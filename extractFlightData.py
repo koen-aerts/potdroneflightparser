@@ -661,10 +661,10 @@ class ExtractFlightData(tk.Tk):
           #spec5 = struct.unpack('<B', fcRecord[305:306])[0] # ?
           #spec6 = struct.unpack('<B', fcRecord[306:307])[0] # ?
           #spec7 = struct.unpack('<B', fcRecord[307:308])[0] # ?
-          motor1Stat = struct.unpack('<B', fcRecord[312:313])[0] # ?
-          motor2Stat = struct.unpack('<B', fcRecord[314:315])[0] # ?
-          motor3Stat = struct.unpack('<B', fcRecord[316:317])[0] # ?
-          motor4Stat = struct.unpack('<B', fcRecord[318:319])[0] # ?
+          motor1Stat = struct.unpack('<B', fcRecord[312:313])[0] # Motor 1 speed
+          motor2Stat = struct.unpack('<B', fcRecord[314:315])[0] # Motor 2 speed
+          motor3Stat = struct.unpack('<B', fcRecord[316:317])[0] # Motor 3 speed
+          motor4Stat = struct.unpack('<B', fcRecord[318:319])[0] # Motor 4 speed
           #flag1 = struct.unpack('<B', fcRecord[295:296])[0] # Flag 1
 
           if (dist3 > maxDist):
@@ -715,15 +715,15 @@ class ExtractFlightData(tk.Tk):
             statusChanged = True
 
 
-          # Build paths for each flight. TODO - improve this logic as it's not always correct.
+          # Build paths for each flight.
           pathNum = 0
           if (hasValidCoords):
-            if (statusChanged): # distance is zero when ctrl coords are refreshed.
+            if (statusChanged): # start new flight path if current one ends or new one begins.
               if (len(pathCoord) > 0):
                 self.pathCoords.append(pathCoord)
                 pathCoord = []
                 isNewPath = True
-            if (isFlying): # Only trace path where the drone is off the ground or has speed.
+            if (isFlying): # Only trace path when the drone's motors are spinning faster than idle speeds.
               pathNum = len(self.pathCoords)+1
               pathCoord.append((dronelat, dronelon))
 
