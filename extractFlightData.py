@@ -960,14 +960,14 @@ class ExtractFlightData(tk.Tk):
           if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {pathNum}'] = len(self.tree.get_children())
             isNewPath = False
-          self.tree.insert('', tk.END, value=(pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", "", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon)))
+          self.tree.insert('', tk.END, value=(pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, "", f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", "", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon), "", "", "", "", "", "", "", ""))
           if (setctrl and hasValidCoords and alt1 > 0): # Record home location from the moment the drone ascends.
             self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
             self.map_widget.set_position(real1lat, real1lon)
             self.ctrlmarker = self.map_widget.set_marker(
               dronelat, dronelon, text=self.ctrllabel,
-              text_color=self.markerLabelColor[int(self.markerCcolorSet.get())],
+              text_color=self.markerLabelColor[int(self.markerColorSet.get())],
               marker_color_circle=self.ctrlMarkerColor1[int(self.markerColorSet.get())],
               marker_color_outside=self.ctrlMarkerColor2[int(self.markerColorSet.get())])
             setctrl = False
