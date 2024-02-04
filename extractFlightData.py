@@ -607,6 +607,10 @@ class ExtractFlightData(tk.Tk):
 
     # Read the Flight Status files. These files are required to be present.
     files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True) + glob.glob(os.path.join(binLog, '**/*-FC.fc'), recursive=True))
+    if (len(files) == 0):
+      showerror(title='Empty Log File', message=f'Log file is empty: {selectedFile}')
+      return
+
     timestampMarkers = []
 
     # First grab timestamps from the filenames. Those are used to calculate the real timestamps with the elapsed time from each record.
