@@ -59,7 +59,7 @@ class ExtractFlightData(tk.Tk):
     ["#ffffff","#ff0000","#00ff00","#0000ff","#ffff00","#000000"]
   ]
   displayMode = "ATOM"
-  columns = ('flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected')
+  columns = ('flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','motor1status','motor2status','motor3status','motor4status')
   showColsAtom = ('flight','tod','time','distance3','altitude2','speed2','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected')
   showColsDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
   zipFilename = None
@@ -615,8 +615,6 @@ class ExtractFlightData(tk.Tk):
 
     filenameTs = timestampMarkers[0]
     prevReadingTs = timestampMarkers[0]
-    prevHomeLat = None
-    prevHomeLon = None
     firstTs = None
     maxDist = 0;
     maxAlt = 0;
@@ -651,6 +649,19 @@ class ExtractFlightData(tk.Tk):
           dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
           dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
           dist3 = self.distVal(struct.unpack('f', fcRecord[431:435])[0]) # Distance from home point, as reported by the drone.
+          #special = struct.unpack('f', fcRecord[279:283])[0] # Undetermined
+          #sdff = (special - 2) * 4 * 60 * 1000
+          #elms = 0 if sdff < 0 else datetime.timedelta(milliseconds=sdff) # possibly elapsed flight time??
+          #flightCount = struct.unpack('<B', fcRecord[303:304])[0] # Some sort of counter.
+          #spec4 = struct.unpack('<B', fcRecord[304:305])[0] # ?
+          #spec5 = struct.unpack('<B', fcRecord[305:306])[0] # ?
+          #spec6 = struct.unpack('<B', fcRecord[306:307])[0] # ?
+          #spec7 = struct.unpack('<B', fcRecord[307:308])[0] # ?
+          motor1Stat = struct.unpack('<B', fcRecord[312:313])[0] # ?
+          motor2Stat = struct.unpack('<B', fcRecord[314:315])[0] # ?
+          motor3Stat = struct.unpack('<B', fcRecord[316:317])[0] # ?
+          motor4Stat = struct.unpack('<B', fcRecord[318:319])[0] # ?
+          #flag1 = struct.unpack('<B', fcRecord[295:296])[0] # Flag 1
 
           if (dist3 > maxDist):
             maxDist = dist3
@@ -684,23 +695,26 @@ class ExtractFlightData(tk.Tk):
               sanDist = self.haversine(ctrllat, ctrllon, dronelat, dronelon)
             except:
               sanDist = 9999
-            
+
           hasValidCoords = sanDist < 20 and hasDroneCoords and (hasCtrlCoords or hasHomeCoords)
-          
-          takeOff = (hasHomeCoords) and (homelat != prevHomeLat or homelon != prevHomeLon)
-          prevHomeLat = homelat
-          prevHomeLon = homelon
+
+          motorLift = motor1Stat > 4 or motor2Stat > 4 or motor3Stat > 4 or motor4Stat > 4
+          motorIdling = (not motorLift) and (motor1Stat == 4 or motor2Stat == 4 or motor3Stat == 4 or motor4Stat == 4)
+          motorOff = motor1Stat == 3 and motor2Stat == 3 and motor3Stat == 3 and motor4Stat == 3
+          statusChanged = False
           if isFlying:
-            if not hasHomeCoords:
+            if not motorLift:
               isFlying = False
-          elif takeOff:
+              statusChanged = True
+          elif motorLift:
             isFlying = True
+            statusChanged = True
 
 
           # Build paths for each flight. TODO - improve this logic as it's not always correct.
           pathNum = 0
           if (hasValidCoords):
-            if (not hasHomeCoords or takeOff): # distance is zero when ctrl coords are refreshed.
+            if (statusChanged): # distance is zero when ctrl coords are refreshed.
               if (len(pathCoord) > 0):
                 self.pathCoords.append(pathCoord)
                 pathCoord = []
@@ -750,7 +764,7 @@ class ExtractFlightData(tk.Tk):
           if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {pathNum}'] = len(self.tree.get_children())
             isNewPath = False
-          self.tree.insert('', tk.END, value=(pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", f"{self.fmtNum(dist3)}", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", f"{self.fmtNum(speed1)}", f"{self.fmtNum(speed1lat)}", f"{self.fmtNum(speed1lon)}", f"{self.fmtNum(speed2)}", f"{self.fmtNum(speed2lat)}", f"{self.fmtNum(speed2lon)}", f"{self.fmtNum(speed1vert)}", f"{self.fmtNum(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected))
+          self.tree.insert('', tk.END, value=(pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", f"{self.fmtNum(dist3)}", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", f"{self.fmtNum(speed1)}", f"{self.fmtNum(speed1lat)}", f"{self.fmtNum(speed1lon)}", f"{self.fmtNum(speed2)}", f"{self.fmtNum(speed2lat)}", f"{self.fmtNum(speed2lon)}", f"{self.fmtNum(speed1vert)}", f"{self.fmtNum(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, motor1Stat, motor2Stat, motor3Stat, motor4Stat))
           if (setctrl and hasValidCoords and alt2 > 0): # Record home location from the moment the drone ascends.
             self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
@@ -1229,6 +1243,14 @@ class ExtractFlightData(tk.Tk):
     self.tree.heading('remoteconnected', text='Remote Connected')
     #self.tree.column("highdbm", anchor=tk.W, stretch=tk.NO, width=120)
     #self.tree.heading('highdbm', text='High Dbm')
+    self.tree.column("motor1status", anchor=tk.E, stretch=tk.NO, width=colWidth5)
+    self.tree.heading('motor1status', text=f'motor 1 Status')
+    self.tree.column("motor2status", anchor=tk.E, stretch=tk.NO, width=colWidth5)
+    self.tree.heading('motor2status', text=f'motor 2 Status')
+    self.tree.column("motor3status", anchor=tk.E, stretch=tk.NO, width=colWidth5)
+    self.tree.heading('motor3status', text=f'motor 3 Status')
+    self.tree.column("motor4status", anchor=tk.E, stretch=tk.NO, width=colWidth5)
+    self.tree.heading('motor4status', text=f'motor 4 Status')
     self.tree.bind('<<TreeviewSelect>>', self.item_selected)
     self.tree.grid(row=0, column=0, sticky=tk.NSEW)
     verScroll = ttk.Scrollbar(dataFrame, orient=tk.VERTICAL, command=self.tree.yview)
