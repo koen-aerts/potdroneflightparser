@@ -714,9 +714,12 @@ class ExtractFlightData(tk.Tk):
             droneMotorStatus = MotorStatus.LIFT
           elif motor1Stat == 4 or motor2Stat == 4 or motor3Stat == 4 or motor4Stat == 4:
             droneMotorStatus = MotorStatus.IDLE
+            firstTs = None
           elif motor1Stat == 3 and motor2Stat == 3 and motor3Stat == 3 and motor4Stat == 3:
             droneMotorStatus = MotorStatus.OFF
-          #print(f"STATUS:{dir(droneMotorStatus)['name']}")
+            firstTs = None
+          else:
+            firstTs = None
           statusChanged = False
           if isFlying:
             if droneMotorStatus != MotorStatus.LIFT:
