@@ -21,12 +21,18 @@ To solve this, you can remove the Extended Attributes from the file. You will ha
 
 ```sh
 % cd ~/Downloads
-% unzip ./extractFlightData_macos_x86_v1.2.0.zip
+% unzip ./extractFlightData_macos_x86_v1.4.2.zip
 % xattr -r -d "com.apple.quarantine" extractFlightData.app
 % sudo mv extractFlightData.app /Applications
 ```
 
 On Windows, your may see a similar warning about dangerous content from the Internet, or Microsoft Defender can raise a false positive about the binary being infected. The binaries are not signed (because I'm not willing to pay Microsoft for this) and contain Python binaries, which also tend to throw off Defender. It should give you the option to ignore and continue.
+
+![Windows Defender Warning](<resources/wd1.png> "Windows Defender Warning")
+
+![Windows Defender Run Anyway](<resources/wd2.png> "Windows Defender Run Anyway")
+
+Likewise, any other virus scanner could flag a false positive on any binary you download from the Internet. You should be able to tell your scanner to ignore the warning. If you are unsure, you may be able to upload the contents of the "Flight Data Viewer" directory under "C:\Program Files (x86)" to your virus scanner website and ask for it to be whitelisted. They will analyse the app and whitelist it if deemed safe.
 
 ## From Source
 If you don't have MacOS or Windows, you can run the application directly on almost any other platform that supports Python.
@@ -50,7 +56,7 @@ You can also run this software on Android devices that can run [Pydroid 3](<http
 pip3 install platformdirs
 pip3 install pyinstaller
 pyinstaller extractFlightData.py --noconsole --onefile -i ./resources/app-icon256.png
-sed -i -- "s/0\.0\.0/1.4.1/" dist/extractFlightData.app/Contents/Info.plist
+sed -i -- "s/0\.0\.0/1.4.2/" dist/extractFlightData.app/Contents/Info.plist
 ```
 
 ## Windows
