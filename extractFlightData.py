@@ -66,7 +66,7 @@ class ExtractFlightData(tk.Tk):
     ["#ffffff","#ff0000","#00ff00","#0000ff","#ffff00","#000000"]
   ]
   displayMode = "ATOM"
-  columns = ('flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
+  columns = ('recnum', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
   showColsAtom = ('flight','tod','time','flightstatus','distance3','altitude2','speed2','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected','gps')
   showColsDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
   zipFilename = None
@@ -788,7 +788,7 @@ class ExtractFlightData(tk.Tk):
           if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {pathNum}'] = len(self.tree.get_children())
             isNewPath = False
-          self.tree.insert('', tk.END, value=(pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, droneMotorStatus.value, f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", f"{self.fmtNum(dist3)}", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", f"{self.fmtNum(speed1)}", f"{self.fmtNum(speed1lat)}", f"{self.fmtNum(speed1lon)}", f"{self.fmtNum(speed2)}", f"{self.fmtNum(speed2lat)}", f"{self.fmtNum(speed2lon)}", f"{self.fmtNum(speed1vert)}", f"{self.fmtNum(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, gpsStatus, inUse, motor1Stat, motor2Stat, motor3Stat, motor4Stat))
+          self.tree.insert('', tk.END, value=(recordCount, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, droneMotorStatus.value, f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", f"{self.fmtNum(dist3)}", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", f"{self.fmtNum(speed1)}", f"{self.fmtNum(speed1lat)}", f"{self.fmtNum(speed1lon)}", f"{self.fmtNum(speed2)}", f"{self.fmtNum(speed2lat)}", f"{self.fmtNum(speed2lon)}", f"{self.fmtNum(speed1vert)}", f"{self.fmtNum(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, gpsStatus, inUse, motor1Stat, motor2Stat, motor3Stat, motor4Stat))
           if (setctrl and hasValidCoords and alt2 > 0): # Record home location from the moment the drone ascends.
             self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
@@ -968,7 +968,7 @@ class ExtractFlightData(tk.Tk):
           if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {pathNum}'] = len(self.tree.get_children())
             isNewPath = False
-          self.tree.insert('', tk.END, value=(pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, "", f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", "", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon), "", "", "", "", "", "", "", "", ""))
+          self.tree.insert('', tk.END, value=(recordCount, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, "", f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", "", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon), "", "", "", "", "", "", "", "", ""))
           if (setctrl and hasValidCoords and alt1 > 0): # Record home location from the moment the drone ascends.
             self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
@@ -1199,6 +1199,8 @@ class ExtractFlightData(tk.Tk):
 
     style.configure("Treeview", rowheight=int(round(charWidth * 1.75)))
     self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom, height=self.defaultDataRows.get())
+    self.tree.column("recnum", anchor=tk.W, stretch=tk.NO, width=colWidth5)
+    self.tree.heading('recnum', text='Rec #')
     self.tree.column("flight", anchor=tk.W, stretch=tk.NO, width=colWidth5)
     self.tree.heading('flight', text='#')
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=colWidth1)
