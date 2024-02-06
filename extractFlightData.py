@@ -636,6 +636,12 @@ class ExtractFlightData(tk.Tk):
     isNewPath = True
     isFlying = False
     for file in files:
+      offset1 = 0
+      offset2 = 0
+      if file.endswith(".fc"):
+        offset1 = -6
+        offset2 = -10
+        print("offset")
       with open(file, mode='rb') as flightFile:
         while True:
           fcRecord = flightFile.read(512)
@@ -647,19 +653,19 @@ class ExtractFlightData(tk.Tk):
           if (elapsed == 0):
             continue # handle rare case of invalid record
           satellites = struct.unpack('<B', fcRecord[46:47])[0] # Number of satellites.
-          dronelat = struct.unpack('<i', fcRecord[53:57])[0]/10000000 # Drone coords.
-          dronelon = struct.unpack('<i', fcRecord[57:61])[0]/10000000
-          ctrllat = struct.unpack('<i', fcRecord[159:163])[0]/10000000 # Controller coords.
-          ctrllon = struct.unpack('<i', fcRecord[163:167])[0]/10000000
-          homelat = struct.unpack('<i', fcRecord[435:439])[0]/10000000 # Home Point coords (for Return To Home).
-          homelon = struct.unpack('<i', fcRecord[439:443])[0]/10000000
-          dist1lat = self.distVal(struct.unpack('f', fcRecord[235:239])[0]) # Distance home point vs controller??
-          dist1lon = self.distVal(struct.unpack('f', fcRecord[239:243])[0])
-          dist2lat = self.distVal(struct.unpack('f', fcRecord[319:323])[0]) # Distance home point vs controller??
-          dist2lon = self.distVal(struct.unpack('f', fcRecord[323:327])[0])
+          dronelat = struct.unpack('<i', fcRecord[53+offset1:57+offset1])[0]/10000000 # Drone coords.
+          dronelon = struct.unpack('<i', fcRecord[57+offset1:61+offset1])[0]/10000000
+          ctrllat = struct.unpack('<i', fcRecord[159+offset2:163+offset2])[0]/10000000 # Controller coords.
+          ctrllon = struct.unpack('<i', fcRecord[163+offset2:167+offset2])[0]/10000000
+          homelat = struct.unpack('<i', fcRecord[435+offset2:439+offset2])[0]/10000000 # Home Point coords (for Return To Home).
+          homelon = struct.unpack('<i', fcRecord[439+offset2:443+offset2])[0]/10000000
+          dist1lat = self.distVal(struct.unpack('f', fcRecord[235+offset2:239+offset2])[0]) # Distance home point vs controller??
+          dist1lon = self.distVal(struct.unpack('f', fcRecord[239+offset2:243+offset2])[0])
+          dist2lat = self.distVal(struct.unpack('f', fcRecord[319+offset2:323+offset2])[0]) # Distance home point vs controller??
+          dist2lon = self.distVal(struct.unpack('f', fcRecord[323+offset2:327+offset2])[0])
           dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
           dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
-          dist3 = self.distVal(struct.unpack('f', fcRecord[431:435])[0]) # Distance from home point, as reported by the drone.
+          dist3 = self.distVal(struct.unpack('f', fcRecord[431+offset2:435+offset2])[0]) # Distance from home point, as reported by the drone.
           #special = struct.unpack('f', fcRecord[279:283])[0] # Undetermined
           #sdff = (special - 2) * 4 * 60 * 1000
           #elms = 0 if sdff < 0 else datetime.timedelta(milliseconds=sdff) # possibly elapsed flight time??
@@ -668,28 +674,28 @@ class ExtractFlightData(tk.Tk):
           #spec5 = struct.unpack('<B', fcRecord[305:306])[0] # ?
           #spec6 = struct.unpack('<B', fcRecord[306:307])[0] # ?
           #spec7 = struct.unpack('<B', fcRecord[307:308])[0] # ?
-          motor1Stat = struct.unpack('<B', fcRecord[312:313])[0] # Motor 1 speed
-          motor2Stat = struct.unpack('<B', fcRecord[314:315])[0] # Motor 2 speed
-          motor3Stat = struct.unpack('<B', fcRecord[316:317])[0] # Motor 3 speed
-          motor4Stat = struct.unpack('<B', fcRecord[318:319])[0] # Motor 4 speed
+          motor1Stat = struct.unpack('<B', fcRecord[312+offset2:313+offset2])[0] # Motor 1 speed
+          motor2Stat = struct.unpack('<B', fcRecord[314+offset2:315+offset2])[0] # Motor 2 speed
+          motor3Stat = struct.unpack('<B', fcRecord[316+offset2:317+offset2])[0] # Motor 3 speed
+          motor4Stat = struct.unpack('<B', fcRecord[318+offset2:319+offset2])[0] # Motor 4 speed
           #flag1 = struct.unpack('<B', fcRecord[295:296])[0] # Flag 1
 
           if (dist3 > maxDist):
             maxDist = dist3
-          alt1 = round(self.distVal(-struct.unpack('f', fcRecord[243:247])[0]), 2) # Relative height from controller vs distance to ground??
-          alt2 = round(self.distVal(-struct.unpack('f', fcRecord[343:347])[0]), 2) # Relative height from controller vs distance to ground??
+          alt1 = round(self.distVal(-struct.unpack('f', fcRecord[243+offset2:247+offset2])[0]), 2) # Relative height from controller vs distance to ground??
+          alt2 = round(self.distVal(-struct.unpack('f', fcRecord[343+offset2:347+offset2])[0]), 2) # Relative height from controller vs distance to ground??
           if (alt2 > maxAlt):
             maxAlt = alt2
-          speed1lat = self.speedVal(struct.unpack('f', fcRecord[247:251])[0])
-          speed1lon = self.speedVal(struct.unpack('f', fcRecord[251:255])[0])
-          speed2lat = self.speedVal(struct.unpack('f', fcRecord[327:331])[0])
-          speed2lon = self.speedVal(struct.unpack('f', fcRecord[331:335])[0])
+          speed1lat = self.speedVal(struct.unpack('f', fcRecord[247+offset2:251+offset2])[0])
+          speed1lon = self.speedVal(struct.unpack('f', fcRecord[251+offset2:255+offset2])[0])
+          speed2lat = self.speedVal(struct.unpack('f', fcRecord[327+offset2:331+offset2])[0])
+          speed2lon = self.speedVal(struct.unpack('f', fcRecord[331+offset2:335+offset2])[0])
           speed1 = round(math.sqrt(math.pow(speed1lat, 2) + math.pow(speed1lon, 2)), 2) # Pythagoras to calculate real speed.
           speed2 = round(math.sqrt(math.pow(speed2lat, 2) + math.pow(speed2lon, 2)), 2) # Pythagoras to calculate real speed.
           if (speed2 > maxSpeed):
             maxSpeed = speed2
-          speed1vert = self.speedVal(-struct.unpack('f', fcRecord[255:259])[0])
-          speed2vert = self.speedVal(-struct.unpack('f', fcRecord[347:351])[0])
+          speed1vert = self.speedVal(-struct.unpack('f', fcRecord[255+offset2:259+offset2])[0])
+          speed2vert = self.speedVal(-struct.unpack('f', fcRecord[347+offset2:351+offset2])[0])
 
           # Some checks to handle cases with bad or incomplete GPS data.
           hasDroneCoords = dronelat != 0.0 and dronelon != 0.0
