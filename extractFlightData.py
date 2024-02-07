@@ -34,6 +34,29 @@ class MotorStatus(Enum):
   LIFT = 'Flying'
 
 
+class SelectableMetrics(Enum):
+  BASIC = 'Basic'
+  ADVANCED = 'Advanced'
+  DIAGNOSTICS = 'Diagnostics'
+
+
+class SelectableTileServer(Enum):
+  OPENSTREETMAP = 'OpenStreetMap'
+  GOOGLE_STANDARD = 'Google Standard'
+  GOOGLE_SATELLITE = 'Google Satellite'
+  OPEN_TOPO = 'Open Topo'
+
+
+class SelectablePlaybackSpeeds(Enum):
+  REALTIME = 'Real-Time'
+  FAST = 'Fast'
+  FAST2 = 'Fast 2x'
+  FAST4 = 'Fast 4x'
+  FAST8 = 'Fast 8x'
+  FAST16 = 'Fast 16x'
+  FAST32 = 'Fast 32x'
+
+
 class ExtractFlightData(tk.Tk):
 
 
@@ -67,8 +90,10 @@ class ExtractFlightData(tk.Tk):
   ]
   displayMode = "ATOM"
   columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
-  showColsAtom = ('flight','tod','time','flightstatus','distance3','altitude2','speed2','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected','gps')
-  showColsDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
+  showColsBasicAtom = ('flight','tod','time','flightstatus','distance3','altitude2','speed2','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected','gps')
+  showColsAdvAtom = ('flight','timestamp','tod','time','flightstatus','distance2','distance3','altitude1','altitude2','speed1','speed2','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected','gps','rssi','remoteconnected')
+  showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
+  showColsAdvDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
   zipFilename = None
   tree = None
   map_widget = None
@@ -97,7 +122,7 @@ class ExtractFlightData(tk.Tk):
   showMarkerCtrl = None
   showMarkerHome = None
   showPath = None
-  showAll = None
+  selectedTableView = None
   labelFile = None
   userPath = None
   configParser = None
@@ -108,7 +133,7 @@ class ExtractFlightData(tk.Tk):
 
 
   '''
-  Calculate distance between 2 sets of coordinates (lat/lon). Note: Can't find the distance in the flight data itself.
+  Calculate distance between 2 sets of coordinates (lat/lon). Used for sanity checking, i.e. handle bad GPS data.
   '''
   def haversine(self, lat1: float, long1: float, lat2: float, long2: float):
     degree_to_rad = float(math.pi / 180.0)
@@ -131,26 +156,31 @@ class ExtractFlightData(tk.Tk):
       speed = self.selectPlaySpeeds.get() # skip frames to play faster.
       skipFrames = 1
       pause = False
-      if (speed == 'Real-Time'):
+      if (speed == SelectablePlaybackSpeeds.REALTIME.value):
         pause = True
-      elif (speed != 'Fast'):
+      elif (speed != SelectablePlaybackSpeeds.FAST.value):
         skipFrames = int(re.sub("[^0-9]", "", speed))
       rows = self.tree.get_children()
       oldIdx = self.tree.index(self.currentRow)
       nextIdx = oldIdx + skipFrames
       if (len(rows) > nextIdx+1):
         nextRow = rows[nextIdx]
-        if (pause):
-          thisFrameTs = datetime.datetime.now()
-          lastFrameDiff = thisFrameTs - self.lastFrameTs
-          droneDiffTs = self.getDatetime(self.tree.item(nextRow)['values'][self.columns.index('timestamp')]) - self.getDatetime(self.tree.item(self.currentRow)['values'][self.columns.index('timestamp')])
-          extraWaitSec = droneDiffTs.total_seconds() - lastFrameDiff.total_seconds()
-          if (extraWaitSec > 0):
-            if (extraWaitSec > 1):
-              extraWaitSec = 1
-            time.sleep(extraWaitSec)
-          self.lastFrameTs = thisFrameTs
-        self.currentRow = nextRow
+        nextFlightNum = self.tree.item(nextRow)['values'][self.columns.index('flight')]
+        if nextFlightNum == 0:
+          self.currentRow = None
+          self.isPlaying = False
+        else:
+          if (pause):
+            thisFrameTs = datetime.datetime.now()
+            lastFrameDiff = thisFrameTs - self.lastFrameTs
+            droneDiffTs = self.getDatetime(self.tree.item(nextRow)['values'][self.columns.index('timestamp')]) - self.getDatetime(self.tree.item(self.currentRow)['values'][self.columns.index('timestamp')])
+            extraWaitSec = droneDiffTs.total_seconds() - lastFrameDiff.total_seconds()
+            if (extraWaitSec > 0):
+              if (extraWaitSec > 1):
+                extraWaitSec = 1
+              time.sleep(extraWaitSec)
+            self.lastFrameTs = thisFrameTs
+          self.currentRow = nextRow
       else:
         self.currentRow = None
         self.isPlaying = False
@@ -172,6 +202,10 @@ class ExtractFlightData(tk.Tk):
     self.lastFrameTs = datetime.datetime.now()
     selectedRows = self.tree.selection()
     self.currentRow = allRows[0] if len(selectedRows) == 0 else selectedRows[0]
+    flightNum = self.tree.item(self.currentRow)['values'][self.columns.index('flight')]
+    if flightNum == 0:
+      showinfo(title='Select Flight', message='Select a flight to play back.')
+      return
     self.isPlaying = True;
     threading.Thread(target=self.setFrame, args=()).start()
 
@@ -212,7 +246,7 @@ class ExtractFlightData(tk.Tk):
     self.ctrllabel = 'Ctrl'
     self.homelabel = 'Home'
     self.dronelabel = 'Drone'
-    self.selectPlaySpeeds.set('Fast 4x')
+    self.selectPlaySpeeds.set(SelectablePlaybackSpeeds.FAST4.value)
     self.tree.delete(*self.tree.get_children())
     self.map_widget.set_zoom(self.defaultBlankMapZoom)
     self.map_widget.set_position(51.50722, -0.1275)
@@ -238,6 +272,7 @@ class ExtractFlightData(tk.Tk):
     if (not self.tinyScreen):
       self.labelFile['text'] = ''
     self.zipFilename = None
+    self.setTileSource(None)
 
 
   '''
@@ -478,27 +513,35 @@ class ExtractFlightData(tk.Tk):
   '''
   def setTileSource(self, event):
     tileSource = self.selectedTile.get()
-    if (tileSource == 'Google Standard'):
+    if (tileSource == SelectableTileServer.GOOGLE_STANDARD.value):
       self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google normal
-    elif (tileSource == 'Google Satellite'):
+    elif (tileSource == SelectableTileServer.GOOGLE_SATELLITE.value):
       self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google satellite
-    elif (tileSource == 'Open Topo'):
+    elif (tileSource == SelectableTileServer.OPEN_TOPO.value):
       self.map_widget.set_tile_server("https://tile.opentopomap.org/{z}/{x}/{y}.png")
     else:
       self.map_widget.set_tile_server("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png")  # OpenStreetMap (default)
+    if event is not None:
+      self.saveConfig()
 
 
   '''
-  Called when checkbox to show all drone metrics is selected.
+  Called when table view dropdown has changed.
   '''
-  def setShowAll(self):
-    if (self.showAll.get() == 'Y'):
+  def setTableView(self, event):
+    tableView = self.selectedTableView.get()
+    if (tableView == SelectableMetrics.DIAGNOSTICS.value):
       self.tree['displaycolumns'] = self.columns
+    elif (tableView == SelectableMetrics.ADVANCED.value):
+      if (self.displayMode == "DREAMER"):
+        self.tree['displaycolumns'] = self.showColsAdvDreamer
+      else:
+        self.tree['displaycolumns'] = self.showColsAdvAtom
     else:
       if (self.displayMode == "DREAMER"):
-        self.tree['displaycolumns'] = self.showColsDreamer
+        self.tree['displaycolumns'] = self.showColsBasicDreamer
       else:
-        self.tree['displaycolumns'] = self.showColsAtom
+        self.tree['displaycolumns'] = self.showColsBasicAtom
 
 
   '''
@@ -548,6 +591,7 @@ class ExtractFlightData(tk.Tk):
     showinfo(title='Export Completed', message=f'Data has been exported to {csvFilename}')
 
 
+
   '''
   Open the selected Flight Data Zip file.
   '''
@@ -584,7 +628,7 @@ class ExtractFlightData(tk.Tk):
     self.stop()
     self.reset()
     self.displayMode = "ATOM"
-    self.setShowAll()
+    self.setTableView(None)
     self.zipFilename = selectedFile
 
     # First read the FPV file. The presence of this file is optional. The format of this
@@ -642,7 +686,6 @@ class ExtractFlightData(tk.Tk):
       if file.endswith(".fc"):
         offset1 = -6
         offset2 = -10
-        print("offset")
       with open(file, mode='rb') as flightFile:
         while True:
           fcRecord = flightFile.read(512)
@@ -843,7 +886,7 @@ class ExtractFlightData(tk.Tk):
     self.stop()
     self.reset()
     self.displayMode = "DREAMER"
-    self.setShowAll()
+    self.setTableView(None)
     self.zipFilename = selectedFile
 
     # First read the FPV file. The presence of this file is optional.
@@ -1028,7 +1071,7 @@ class ExtractFlightData(tk.Tk):
   '''
   def exportFlightFile(self):
     if (self.zipFilename != None):
-      ext = "-All.csv" if self.showAll.get() == 'Y' else ".csv"
+      ext = "-" + self.selectedTableView.get() + ".csv"
       self.saveFile(re.sub("\.zip$", "", self.zipFilename) + ext)
     else:
       showwarning(title='Nothing to Export', message='There is nothing to Export. Please open a Flight Data file first (.zip file).')
@@ -1072,6 +1115,7 @@ class ExtractFlightData(tk.Tk):
       self.imperial.set(comCfg['Imperial'] if 'Imperial' in comCfg else 'N')
       self.rounded.set(comCfg['RoundedMetrics'] if 'RoundedMetrics' in comCfg else 'Y')
       self.defaultDataRows.set(comCfg['DefaultDataRows'] if 'DefaultDataRows' in comCfg else 4)
+      self.selectedTile.set(comCfg['SelectedTileServer'] if 'SelectedTileServer' in comCfg else SelectableTileServer.OPENSTREETMAP.value)
     else:
       self.pathWidth.set(1)
       self.markerColorSet.set(0)
@@ -1079,6 +1123,7 @@ class ExtractFlightData(tk.Tk):
       self.imperial.set('N')
       self.defaultDataRows.set(4)
       self.rounded.set('Y')
+      self.selectedTile.set(SelectableTileServer.OPENSTREETMAP.value)
       self.saveConfig()
 
 
@@ -1092,7 +1137,8 @@ class ExtractFlightData(tk.Tk):
       'PathColorScheme': self.pathColorSet.get(),
       'Imperial': self.imperial.get(),
       'RoundedMetrics': self.rounded.get(),
-      'DefaultDataRows': self.defaultDataRows.get()
+      'DefaultDataRows': self.defaultDataRows.get(),
+      'SelectedTileServer': self.selectedTile.get()
     }
     with open(self.configPath, 'w') as cfile:
       self.configParser.write(cfile)
@@ -1139,6 +1185,7 @@ class ExtractFlightData(tk.Tk):
     self.markerColorSet = tk.StringVar()
     self.pathColorSet = tk.StringVar()
     self.defaultDataRows = tk.StringVar()
+    self.selectedTile = tk.StringVar()
     self.userPath = user_data_dir("Flight Data Viewer", "extractFlightData")
     Path(self.userPath).mkdir(parents=True, exist_ok=True)
     self.configPath = os.path.join(self.userPath, self.configFilename)
@@ -1202,13 +1249,13 @@ class ExtractFlightData(tk.Tk):
     menubar.add_cascade(label='File', menu=file_menu)
 
     style.configure("Treeview", rowheight=int(round(charWidth * 1.75)))
-    self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsAtom, height=self.defaultDataRows.get())
+    self.tree = ttk.Treeview(dataFrame, columns=self.columns, show='headings', selectmode='browse', displaycolumns=self.showColsBasicAtom, height=self.defaultDataRows.get())
     self.tree.column("recnum", anchor=tk.W, stretch=tk.NO, width=colWidth5)
     self.tree.heading('recnum', text='Rec #')
     self.tree.column("recid", anchor=tk.W, stretch=tk.NO, width=colWidth5)
     self.tree.heading('recid', text='Row Id')
     self.tree.column("flight", anchor=tk.W, stretch=tk.NO, width=colWidth5)
-    self.tree.heading('flight', text='#')
+    self.tree.heading('flight', text='Flight')
     self.tree.column("timestamp", anchor=tk.W, stretch=tk.NO, width=colWidth1)
     self.tree.heading('timestamp', text='Timestamp (ISO)')
     self.tree.column("tod", anchor=tk.W, stretch=tk.NO, width=colWidth3)
@@ -1303,7 +1350,7 @@ class ExtractFlightData(tk.Tk):
     playbackFrame.pack(fill=tk.BOTH, expand=False)
     self.selectPlaySpeeds = ttk.Combobox(playbackFrame, state="readonly", exportselection=0, width=16)
     self.selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=7, pady=0)
-    self.selectPlaySpeeds['values'] = ('Real-Time', 'Fast', 'Fast 2x', 'Fast 4x', 'Fast 8x', 'Fast 16x', 'Fast 32x')
+    self.selectPlaySpeeds['values'] = (SelectablePlaybackSpeeds.REALTIME.value, SelectablePlaybackSpeeds.FAST.value, SelectablePlaybackSpeeds.FAST2.value, SelectablePlaybackSpeeds.FAST4.value, SelectablePlaybackSpeeds.FAST8.value, SelectablePlaybackSpeeds.FAST16.value, SelectablePlaybackSpeeds.FAST32.value)
     buttonPrev = ttk.Button(playbackFrame, text='<<', command=self.prevPath, width=2)
     buttonPrev.grid(row=0, column=1, sticky=tk.E, padx=0, pady=0)
     buttonPlay = ttk.Button(playbackFrame, text='>', command=self.play, width=1)
@@ -1312,7 +1359,7 @@ class ExtractFlightData(tk.Tk):
     buttonStop.grid(row=0, column=3, sticky=tk.E, padx=0, pady=0)
     buttonNext = ttk.Button(playbackFrame, text='>>', command=self.nextPath, width=2)
     buttonNext.grid(row=0, column=4, sticky=tk.E, padx=0, pady=0)
-    
+
     if (not self.tinyScreen):
       # Controller and Home selection checkboxes.
       self.showMarkerCtrl = tk.StringVar()
@@ -1332,12 +1379,10 @@ class ExtractFlightData(tk.Tk):
     # Map and Flight selections.
     fileInfoFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 5))
     fileInfoFrame.pack(fill=tk.BOTH, expand=False)
-    self.selectedTile = tk.StringVar()
     selectTileSource = ttk.Combobox(fileInfoFrame, textvariable=self.selectedTile, state="readonly", exportselection=0, width=16)
     selectTileSource.grid(row=0, column=0, sticky=tk.E, padx=7, pady=0)
-    selectTileSource['values'] = ('OpenStreetMap', 'Google Standard', 'Google Satellite', 'Open Topo')
+    selectTileSource['values'] = (SelectableTileServer.OPENSTREETMAP.value, SelectableTileServer.GOOGLE_STANDARD.value, SelectableTileServer.GOOGLE_SATELLITE.value, SelectableTileServer.OPEN_TOPO.value)
     selectTileSource.bind('<<ComboboxSelected>>', self.setTileSource)
-    self.selectedTile.set('OpenStreetMap')
     self.selectedPath = tk.StringVar()
     self.selectPath = ttk.Combobox(fileInfoFrame, textvariable=self.selectedPath, state="readonly", exportselection=0, width=14)
     self.selectPath.grid(row=0, column=1, sticky=tk.E, padx=7, pady=0)
@@ -1349,10 +1394,12 @@ class ExtractFlightData(tk.Tk):
       pathView = ttk.Checkbutton(fileInfoFrame, text='Flight Paths', command=self.setPathView, variable=self.showPath, onvalue='Y', offvalue='N')
       pathView.grid(row=0, column=2, sticky=tk.E, padx=2, pady=0)
       self.showPath.set('Y')
-      self.showAll = tk.StringVar()
-      allMetricView = ttk.Checkbutton(fileInfoFrame, text='All Metrics', command=self.setShowAll, variable=self.showAll, onvalue='Y', offvalue='N')
-      allMetricView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
-      self.showAll.set('N')
+      self.selectedTableView = tk.StringVar()
+      selectTableView = ttk.Combobox(fileInfoFrame, textvariable=self.selectedTableView, state="readonly", exportselection=0, width=16)
+      selectTableView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
+      selectTableView['values'] = (SelectableMetrics.BASIC.value, SelectableMetrics.ADVANCED.value, SelectableMetrics.DIAGNOSTICS.value)
+      selectTableView.bind('<<ComboboxSelected>>', self.setTableView)
+      self.selectedTableView.set(SelectableMetrics.BASIC.value)
     else:
       optionsFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 0))
       optionsFrame.pack(fill=tk.BOTH, expand=False)
@@ -1370,10 +1417,12 @@ class ExtractFlightData(tk.Tk):
       pathView = ttk.Checkbutton(optionsFrame, text='Paths', command=self.setPathView, variable=self.showPath, onvalue='Y', offvalue='N')
       pathView.grid(row=0, column=2, sticky=tk.E, padx=2, pady=0)
       self.showPath.set('Y')
-      self.showAll = tk.StringVar()
-      allMetricView = ttk.Checkbutton(optionsFrame, text='Metrics', command=self.setShowAll, variable=self.showAll, onvalue='Y', offvalue='N')
-      allMetricView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
-      self.showAll.set('N')
+      self.selectedTableView = tk.StringVar()
+      selectTableView = ttk.Combobox(optionsFrame, textvariable=self.selectedTableView, state="readonly", exportselection=0, width=16)
+      selectTableView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
+      selectTableView['values'] = (SelectableMetrics.BASIC.value, SelectableMetrics.ADVANCED.value, SelectableMetrics.DIAGNOSTICS.value)
+      selectTableView.bind('<<ComboboxSelected>>', self.setTableView)
+      self.selectedTableView.set(SelectableMetrics.BASIC.value)
 
     if (not self.smallScreen):
       # Max values of the flights.
