@@ -97,7 +97,6 @@ class ExtractFlightData(tk.Tk):
   zipFilename = None
   tree = None
   map_widget = None
-  selectPlaySpeeds = None
   flightPaths = None
   pathCoords = None
   flightStarts = None
@@ -110,6 +109,7 @@ class ExtractFlightData(tk.Tk):
   isPlaying = False
   currentRow = None
   labelFlight = None
+  selectedPlaySpeed = None
   selectedTile = None
   selectPath = None
   selectedPath = None
@@ -153,7 +153,7 @@ class ExtractFlightData(tk.Tk):
       self.tree.see(self.currentRow)
       self.tree.selection_set(self.currentRow)
       self.setMarkers(self.currentRow)
-      speed = self.selectPlaySpeeds.get() # skip frames to play faster.
+      speed = self.selectedPlaySpeed.get() # skip frames to play faster.
       skipFrames = 1
       pause = False
       if (speed == SelectablePlaybackSpeeds.REALTIME.value):
@@ -246,7 +246,6 @@ class ExtractFlightData(tk.Tk):
     self.ctrllabel = 'Ctrl'
     self.homelabel = 'Home'
     self.dronelabel = 'Drone'
-    self.selectPlaySpeeds.set(SelectablePlaybackSpeeds.FAST4.value)
     self.tree.delete(*self.tree.get_children())
     self.map_widget.set_zoom(self.defaultBlankMapZoom)
     self.map_widget.set_position(51.50722, -0.1275)
@@ -272,6 +271,7 @@ class ExtractFlightData(tk.Tk):
     if (not self.tinyScreen):
       self.labelFile['text'] = ''
     self.zipFilename = None
+    self.setTableView(None)
     self.setTileSource(None)
 
 
@@ -440,6 +440,22 @@ class ExtractFlightData(tk.Tk):
 
 
   '''
+  Called when Controller Marker checkbox has been selected.
+  '''
+  def setMarkerCtrl(self):
+    self.saveConfig()
+    self.reDrawMap()
+
+
+  '''
+  Called when Home Marker checkbox has been selected.
+  '''
+  def setMarkerHome(self):
+    self.saveConfig()
+    self.reDrawMap()
+
+
+  '''
   Called when flight path width has been changed. Redraw path if it's currently visible.
   '''
   def setPathWidth(self):
@@ -526,6 +542,14 @@ class ExtractFlightData(tk.Tk):
 
 
   '''
+  Called when playback speed dropdown has changed.
+  '''
+  def setPlaySpeed(self, event):
+    if event is not None:
+      self.saveConfig()
+
+
+  '''
   Called when table view dropdown has changed.
   '''
   def setTableView(self, event):
@@ -542,12 +566,16 @@ class ExtractFlightData(tk.Tk):
         self.tree['displaycolumns'] = self.showColsBasicDreamer
       else:
         self.tree['displaycolumns'] = self.showColsBasicAtom
+    if event is not None:
+      self.saveConfig()
 
 
   '''
   Called when checkbox for Path view is selected (to show or hide drone path on the map).
   '''
   def setPathView(self):
+    if not self.pathCoords:
+      return
     if (self.showPath.get() == 'Y'):
       colors = self.pathColors[int(self.pathColorSet.get())]
       self.flightPaths = []
@@ -1115,7 +1143,11 @@ class ExtractFlightData(tk.Tk):
       self.imperial.set(comCfg['Imperial'] if 'Imperial' in comCfg else 'N')
       self.rounded.set(comCfg['RoundedMetrics'] if 'RoundedMetrics' in comCfg else 'Y')
       self.defaultDataRows.set(comCfg['DefaultDataRows'] if 'DefaultDataRows' in comCfg else 4)
+      self.selectedPlaySpeed.set(comCfg['SelectedPlaySpeed'] if 'SelectedPlaySpeed' in comCfg else SelectablePlaybackSpeeds.FAST.value)
       self.selectedTile.set(comCfg['SelectedTileServer'] if 'SelectedTileServer' in comCfg else SelectableTileServer.OPENSTREETMAP.value)
+      self.selectedTableView.set(comCfg['SelectedTableView'] if 'SelectedTableView' in comCfg else SelectableMetrics.BASIC.value)
+      self.showMarkerCtrl.set(comCfg['ShowControllerMarker'] if 'ShowControllerMarker' in comCfg else 'Y')
+      self.showMarkerHome.set(comCfg['ShowHomeMarker'] if 'ShowHomeMarker' in comCfg else 'N')
     else:
       self.pathWidth.set(1)
       self.markerColorSet.set(0)
@@ -1123,7 +1155,11 @@ class ExtractFlightData(tk.Tk):
       self.imperial.set('N')
       self.defaultDataRows.set(4)
       self.rounded.set('Y')
+      self.selectedPlaySpeed.set(SelectablePlaybackSpeeds.FAST.value)
       self.selectedTile.set(SelectableTileServer.OPENSTREETMAP.value)
+      self.selectedTableView.set(SelectableMetrics.BASIC.value)
+      self.showMarkerCtrl.set('Y')
+      self.showMarkerHome.set('N')
       self.saveConfig()
 
 
@@ -1138,7 +1174,11 @@ class ExtractFlightData(tk.Tk):
       'Imperial': self.imperial.get(),
       'RoundedMetrics': self.rounded.get(),
       'DefaultDataRows': self.defaultDataRows.get(),
-      'SelectedTileServer': self.selectedTile.get()
+      'SelectedPlaySpeed': self.selectedPlaySpeed.get(),
+      'SelectedTileServer': self.selectedTile.get(),
+      'SelectedTableView': self.selectedTableView.get(),
+      'ShowControllerMarker': self.showMarkerCtrl.get(),
+      'ShowHomeMarker': self.showMarkerHome.get()
     }
     with open(self.configPath, 'w') as cfile:
       self.configParser.write(cfile)
@@ -1185,7 +1225,11 @@ class ExtractFlightData(tk.Tk):
     self.markerColorSet = tk.StringVar()
     self.pathColorSet = tk.StringVar()
     self.defaultDataRows = tk.StringVar()
+    self.selectedPlaySpeed = tk.StringVar()
     self.selectedTile = tk.StringVar()
+    self.selectedTableView = tk.StringVar()
+    self.showMarkerCtrl = tk.StringVar()
+    self.showMarkerHome = tk.StringVar()
     self.userPath = user_data_dir("Flight Data Viewer", "extractFlightData")
     Path(self.userPath).mkdir(parents=True, exist_ok=True)
     self.configPath = os.path.join(self.userPath, self.configFilename)
@@ -1348,9 +1392,10 @@ class ExtractFlightData(tk.Tk):
     # Speed selection, Play and Stop buttons.
     playbackFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 0))
     playbackFrame.pack(fill=tk.BOTH, expand=False)
-    self.selectPlaySpeeds = ttk.Combobox(playbackFrame, state="readonly", exportselection=0, width=16)
-    self.selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=7, pady=0)
-    self.selectPlaySpeeds['values'] = (SelectablePlaybackSpeeds.REALTIME.value, SelectablePlaybackSpeeds.FAST.value, SelectablePlaybackSpeeds.FAST2.value, SelectablePlaybackSpeeds.FAST4.value, SelectablePlaybackSpeeds.FAST8.value, SelectablePlaybackSpeeds.FAST16.value, SelectablePlaybackSpeeds.FAST32.value)
+    selectPlaySpeeds = ttk.Combobox(playbackFrame, textvariable=self.selectedPlaySpeed, state="readonly", exportselection=0, width=16)
+    selectPlaySpeeds.grid(row=0, column=0, sticky=tk.E, padx=7, pady=0)
+    selectPlaySpeeds['values'] = (SelectablePlaybackSpeeds.REALTIME.value, SelectablePlaybackSpeeds.FAST.value, SelectablePlaybackSpeeds.FAST2.value, SelectablePlaybackSpeeds.FAST4.value, SelectablePlaybackSpeeds.FAST8.value, SelectablePlaybackSpeeds.FAST16.value, SelectablePlaybackSpeeds.FAST32.value)
+    selectPlaySpeeds.bind('<<ComboboxSelected>>', self.setPlaySpeed)
     buttonPrev = ttk.Button(playbackFrame, text='<<', command=self.prevPath, width=2)
     buttonPrev.grid(row=0, column=1, sticky=tk.E, padx=0, pady=0)
     buttonPlay = ttk.Button(playbackFrame, text='>', command=self.play, width=1)
@@ -1362,14 +1407,10 @@ class ExtractFlightData(tk.Tk):
 
     if (not self.tinyScreen):
       # Controller and Home selection checkboxes.
-      self.showMarkerCtrl = tk.StringVar()
-      markerCtrlView = ttk.Checkbutton(playbackFrame, text='Controller', variable=self.showMarkerCtrl, onvalue='Y', offvalue='N')
+      markerCtrlView = ttk.Checkbutton(playbackFrame, text='Controller', command=self.setMarkerCtrl, variable=self.showMarkerCtrl, onvalue='Y', offvalue='N')
       markerCtrlView.grid(row=0, column=5, sticky=tk.E, padx=4, pady=0)
-      self.showMarkerCtrl.set('Y')
-      self.showMarkerHome = tk.StringVar()
-      markerHomeView = ttk.Checkbutton(playbackFrame, text='Home', variable=self.showMarkerHome, onvalue='Y', offvalue='N')
+      markerHomeView = ttk.Checkbutton(playbackFrame, text='Home', command=self.setMarkerHome, variable=self.showMarkerHome, onvalue='Y', offvalue='N')
       markerHomeView.grid(row=0, column=6, sticky=tk.E, padx=4, pady=0)
-      self.showMarkerHome.set('N')
 
     if (not self.smallScreen):
       # Current drone location metrics.
@@ -1394,35 +1435,27 @@ class ExtractFlightData(tk.Tk):
       pathView = ttk.Checkbutton(fileInfoFrame, text='Flight Paths', command=self.setPathView, variable=self.showPath, onvalue='Y', offvalue='N')
       pathView.grid(row=0, column=2, sticky=tk.E, padx=2, pady=0)
       self.showPath.set('Y')
-      self.selectedTableView = tk.StringVar()
       selectTableView = ttk.Combobox(fileInfoFrame, textvariable=self.selectedTableView, state="readonly", exportselection=0, width=16)
       selectTableView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
       selectTableView['values'] = (SelectableMetrics.BASIC.value, SelectableMetrics.ADVANCED.value, SelectableMetrics.DIAGNOSTICS.value)
       selectTableView.bind('<<ComboboxSelected>>', self.setTableView)
-      self.selectedTableView.set(SelectableMetrics.BASIC.value)
     else:
       optionsFrame = ttk.Frame(mapFrame, height=10, padding=(5, 0, 5, 0))
       optionsFrame.pack(fill=tk.BOTH, expand=False)
       # Controller and Home selection checkboxes.
-      self.showMarkerCtrl = tk.StringVar()
-      markerCtrlView = ttk.Checkbutton(optionsFrame, text='Ctrl', variable=self.showMarkerCtrl, onvalue='Y', offvalue='N')
+      markerCtrlView = ttk.Checkbutton(optionsFrame, text='Ctrl', command=self.setMarkerCtrl, variable=self.showMarkerCtrl, onvalue='Y', offvalue='N')
       markerCtrlView.grid(row=0, column=0, sticky=tk.E, padx=4, pady=0)
-      self.showMarkerCtrl.set('Y')
-      self.showMarkerHome = tk.StringVar()
-      markerHomeView = ttk.Checkbutton(optionsFrame, text='Home', variable=self.showMarkerHome, onvalue='Y', offvalue='N')
+      markerHomeView = ttk.Checkbutton(optionsFrame, text='Home', command=self.setMarkerHome, variable=self.showMarkerHome, onvalue='Y', offvalue='N')
       markerHomeView.grid(row=0, column=1, sticky=tk.E, padx=4, pady=0)
-      self.showMarkerHome.set('N')
       # Flight Path and All Metrics selection checkboxes.
       self.showPath = tk.StringVar()
       pathView = ttk.Checkbutton(optionsFrame, text='Paths', command=self.setPathView, variable=self.showPath, onvalue='Y', offvalue='N')
       pathView.grid(row=0, column=2, sticky=tk.E, padx=2, pady=0)
       self.showPath.set('Y')
-      self.selectedTableView = tk.StringVar()
       selectTableView = ttk.Combobox(optionsFrame, textvariable=self.selectedTableView, state="readonly", exportselection=0, width=16)
       selectTableView.grid(row=0, column=3, sticky=tk.E, padx=4, pady=0)
       selectTableView['values'] = (SelectableMetrics.BASIC.value, SelectableMetrics.ADVANCED.value, SelectableMetrics.DIAGNOSTICS.value)
       selectTableView.bind('<<ComboboxSelected>>', self.setTableView)
-      self.selectedTableView.set(SelectableMetrics.BASIC.value)
 
     if (not self.smallScreen):
       # Max values of the flights.
