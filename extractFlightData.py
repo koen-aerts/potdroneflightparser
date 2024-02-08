@@ -130,6 +130,7 @@ class ExtractFlightData(tk.Tk):
   configPath = None
   defaultFontsize = 13 # 13 is default font size on development machine.
   lastFrameTs = None
+  flightStats = None
 
 
   '''
@@ -243,6 +244,7 @@ class ExtractFlightData(tk.Tk):
   Reset the application as it were before opening a file.
   '''
   def reset(self):
+    self.title(f"Flight Data Viewer - {self.version}")
     self.ctrllabel = 'Ctrl'
     self.homelabel = 'Home'
     self.dronelabel = 'Drone'
@@ -273,6 +275,7 @@ class ExtractFlightData(tk.Tk):
     self.zipFilename = None
     self.setTableView(None)
     self.setTileSource(None)
+    self.flightStats = None
 
 
   '''
@@ -350,6 +353,7 @@ class ExtractFlightData(tk.Tk):
     pathNum = record[self.columns.index('flight')]
     if pathNum != 0:
       self.selectPath.set(f'Flight {pathNum}')
+    self.setFlightSummary(pathNum)
 
 
   '''
@@ -398,10 +402,35 @@ class ExtractFlightData(tk.Tk):
 
 
   '''
+  Called when the flight summary on the screen should be updated.
+  '''
+  def setFlightSummary(self, pathNum):
+    if (self.displayMode == "DREAMER"):
+      if (not self.tinyScreen):
+        if (self.smallScreen):
+          self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:8.2f}  /  Max Alt ({self.distUnit()}): {maxAlt:7.2f}'
+        else:
+          self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}'
+    else:
+      if (not self.tinyScreen):
+        if (self.smallScreen):
+          if self.rounded.get() == 'Y':
+            self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:6.0f}  /  Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:5.0f}  /  Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:4.0f}'
+          else:
+            self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:8.2f}  /  Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:7.2f}  /  Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:6.2f}'
+        else:
+          if self.rounded.get() == 'Y':
+            self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:6.0f}   /   Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:5.0f}   /   Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:4.0f}'
+          else:
+            self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:8.2f}   /   Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:7.2f}   /   Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:6.2f}'
+
+
+  '''
   Called when a flight path has been selected from the dropdown.
   '''
   def choosePath(self, event):
     if (self.selectedPath.get() == '--'):
+      self.setFlightSummary(0)
       return
     idx = self.flightStarts[self.selectedPath.get()]
     gotoRow = self.tree.get_children()[idx]
@@ -413,6 +442,7 @@ class ExtractFlightData(tk.Tk):
     dronelat = float(record[self.columns.index('dronelat')])
     dronelon = float(record[self.columns.index('dronelon')])
     self.map_widget.set_position(dronelat, dronelon)
+    self.setFlightSummary(int(re.sub(r"[^0-9]", r"", self.selectedPath.get())))
 
 
   '''
@@ -704,6 +734,7 @@ class ExtractFlightData(tk.Tk):
     maxSpeed = 0;
     self.pathCoords = []
     self.flightStarts = {}
+    self.flightStats = []
     pathCoord = []
     isNewPath = True
     isFlying = False
@@ -714,6 +745,7 @@ class ExtractFlightData(tk.Tk):
       if file.endswith(".fc"):
         offset1 = -6
         offset2 = -10
+      flightStat = [0, 0, 0] # Max dist, max alt, max speed
       with open(file, mode='rb') as flightFile:
         while True:
           fcRecord = flightFile.read(512)
@@ -806,20 +838,10 @@ class ExtractFlightData(tk.Tk):
           elif droneMotorStatus == MotorStatus.LIFT:
             isFlying = True
             statusChanged = True
+          else:
+            firstTs = None
 
-
-          # Build paths for each flight.
-          pathNum = 0
-          if (hasValidCoords):
-            if (statusChanged): # start new flight path if current one ends or new one begins.
-              if (len(pathCoord) > 0):
-                self.pathCoords.append(pathCoord)
-                pathCoord = []
-                isNewPath = True
-            if (isFlying): # Only trace path when the drone's motors are spinning faster than idle speeds.
-              pathNum = len(self.pathCoords)+1
-              pathCoord.append((dronelat, dronelon))
-
+          # Calculate timestamp for the record.
           readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
           while (readingTs < prevReadingTs):
             # Line up to the next valid timestamp marker (pulled from the filenames).
@@ -829,6 +851,44 @@ class ExtractFlightData(tk.Tk):
             except:
               # Handle rare case where log files contain mismatched "elapsed" indicators and times in bin filenames.
               readingTs = prevReadingTs
+
+          # Calculate elapsed time for the flight.
+          if firstTs is None:
+            firstTs = readingTs
+          elapsedTs = readingTs - firstTs
+          elapsedTs = elapsedTs - datetime.timedelta(microseconds=elapsedTs.microseconds)
+          prevReadingTs = readingTs
+
+          # Build paths for each flight and keep metric summaries of each path (flight), as well as for the entire log file.
+          pathNum = 0
+          if pathNum == len(self.flightStats):
+            self.flightStats.append([dist3, alt2, speed2, None])
+          else:
+            if dist3 > self.flightStats[pathNum][0]:
+              self.flightStats[pathNum][0] = dist3
+            if alt2 > self.flightStats[pathNum][1]:
+              self.flightStats[pathNum][1] = alt2
+            if speed2 > self.flightStats[pathNum][2]:
+              self.flightStats[pathNum][2] = speed2
+          if (hasValidCoords):
+            if (statusChanged): # start new flight path if current one ends or new one begins.
+              if (len(pathCoord) > 0):
+                self.pathCoords.append(pathCoord)
+                pathCoord = []
+                isNewPath = True
+            if (isFlying): # Only trace path when the drone's motors are spinning faster than idle speeds.
+              pathNum = len(self.pathCoords)+1
+              pathCoord.append((dronelat, dronelon))
+              if pathNum == len(self.flightStats):
+                self.flightStats.append([dist3, alt2, speed2, elapsedTs])
+              else:
+                if dist3 > self.flightStats[pathNum][0]:
+                  self.flightStats[pathNum][0] = dist3
+                if alt2 > self.flightStats[pathNum][1]:
+                  self.flightStats[pathNum][1] = alt2
+                if speed2 > self.flightStats[pathNum][2]:
+                  self.flightStats[pathNum][2] = speed2
+                self.flightStats[pathNum][3] = elapsedTs
 
           # Get corresponding record from the controller. There may not be one, or any at all. Match up to 5 seconds ago.
           fpvRssi = ""
@@ -853,11 +913,6 @@ class ExtractFlightData(tk.Tk):
             fpvRemoteConnected = "1" if fpvFlags & 4 == 4 else "0"
             #fpvHighDbm = "1" if fpvFlags & 32 == 32 else "0"
 
-          if firstTs is None:
-            firstTs = readingTs
-          elapsedTs = readingTs - firstTs
-          elapsedTs = elapsedTs - datetime.timedelta(microseconds=elapsedTs.microseconds)
-          prevReadingTs = readingTs
           if (isNewPath and len(pathCoord) > 0):
             self.flightStarts[f'Flight {pathNum}'] = len(self.tree.get_children())
             isNewPath = False
@@ -877,20 +932,10 @@ class ExtractFlightData(tk.Tk):
 
     shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
 
+    self.title(f"Flight Data Viewer - {self.version} - {PurePath(selectedFile).name}")
     if (len(pathCoord) > 0):
       self.pathCoords.append(pathCoord)
     self.setPathView()
-    if (not self.tinyScreen):
-      if (self.smallScreen):
-        if self.rounded.get() == 'Y':
-          self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:6.0f}  /  Max Alt ({self.distUnit()}): {maxAlt:5.0f}  /  Max Speed ({self.speedUnit()}): {maxSpeed:4.0f}  /  {PurePath(selectedFile).name}'
-        else:
-          self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:8.2f}  /  Max Alt ({self.distUnit()}): {maxAlt:7.2f}  /  Max Speed ({self.speedUnit()}): {maxSpeed:6.2f}  /  {PurePath(selectedFile).name}'
-      else:
-        if self.rounded.get() == 'Y':
-          self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:6.0f}   /   Max Alt ({self.distUnit()}): {maxAlt:5.0f}   /   Max Speed ({self.speedUnit()}): {maxSpeed:4.0f}   /   File: {PurePath(selectedFile).name}'
-        else:
-          self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}   /   Max Speed ({self.speedUnit()}): {maxSpeed:6.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     if (len(pathNames) > 0):
       self.selectPath['values'] = pathNames
@@ -1062,11 +1107,6 @@ class ExtractFlightData(tk.Tk):
     if (len(pathCoord) > 0):
       self.pathCoords.append(pathCoord)
     self.setPathView()
-    if (not self.tinyScreen):
-      if (self.smallScreen):
-        self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:8.2f}  /  Max Alt ({self.distUnit()}): {maxAlt:7.2f}  /  {PurePath(selectedFile).name}'
-      else:
-        self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}   /   File: {PurePath(selectedFile).name}'
     pathNames = list(self.flightStarts.keys())
     if (len(pathNames) > 0):
       self.selectPath['values'] = pathNames
