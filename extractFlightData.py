@@ -439,9 +439,9 @@ class ExtractFlightData(tk.Tk):
     if (self.displayMode == "DREAMER"):
       if (not self.tinyScreen):
         if (self.smallScreen):
-          self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {maxDist:8.2f}  /  Max Alt ({self.distUnit()}): {maxAlt:7.2f}'
+          self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:8.2f}  /  Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:7.2f}  /  Duration: {self.flightStats[pathNum][3]}'
         else:
-          self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {maxDist:8.2f}   /   Max Alt ({self.distUnit()}): {maxAlt:7.2f}'
+          self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:8.2f}   /   Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:7.2f}   /   Duration: {self.flightStats[pathNum][3]}'
     else:
       if (not self.tinyScreen):
         if (self.smallScreen):
@@ -1039,9 +1039,13 @@ class ExtractFlightData(tk.Tk):
     maxSpeed = 0;
     self.pathCoords = []
     self.flightStarts = {}
+    self.flightEnds = {}
+    self.flightStats = []
     pathCoord = []
     isNewPath = True
+    isFlying = False
     recordCount = 0
+    tableLen = 0
     for file in files:
       with open(file, mode='rb') as flightFile:
         while True:
@@ -1071,30 +1075,60 @@ class ExtractFlightData(tk.Tk):
           real1lon = dronelon + (((dist1lon) * coeff) / (math.cos(dronelat * math.pi / 180)))
           #real1lon = dronelon + (((dist1lon) * coeff) / (math.cos(dronelat * 0.018)))
 
-          if (dist1 > maxDist):
-            maxDist = dist1
-          if (alt1 > maxAlt):
-            maxAlt = alt1
-
           hasValidCoords = dronelat != 0.0 and dronelon != 0.0
 
-          # Build paths for each flight. TODO - improve this logic as it's not always correct.
-          pathNum = 0
-          if (hasValidCoords):
-            if (dist1 == 0): # distance is zero when ctrl coords are refreshed.
-              if (len(pathCoord) > 0):
-                self.pathCoords.append(pathCoord)
-                pathCoord = []
-                isNewPath = True
-            elif (alt1 > 0): # Only trace path where the drone is off the ground.
-              pathNum = len(self.pathCoords)+1
-              pathCoord.append((real1lat, real1lon))
+          statusChanged = False
+          if isFlying:
+            if dist1 == 0 and alt1 == 0:
+              isFlying = False
+              statusChanged = True
+              firstTs = None
+          elif alt1 > 0:
+            isFlying = True
+            statusChanged = True
+          else:
+            firstTs = None
 
+          # Calculate timestamp for the record.
           readingTs = readingTs + datetime.timedelta(milliseconds=(elapsed/1000000))
           while (readingTs < prevReadingTs):
             # Line up to the next valid timestamp marker (pulled from the filenames).
             filenameTs = timestampMarkers.pop(0)
             readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000000))
+
+          # Calculate elapsed time for the flight. TODO - should reset for each flight.
+          if firstTs is None:
+            firstTs = readingTs
+          elapsedTs = readingTs - firstTs
+          elapsedTs = elapsedTs - datetime.timedelta(microseconds=elapsedTs.microseconds)
+          prevReadingTs = readingTs
+
+          # Build paths for each flight. TODO - improve this logic as it's based on limited metrics, not on drone status flags.
+          pathNum = 0
+          if pathNum == len(self.flightStats):
+            self.flightStats.append([dist1, alt1, None, None])
+          else:
+            if dist1 > self.flightStats[pathNum][0]:
+              self.flightStats[pathNum][0] = dist1
+            if alt1 > self.flightStats[pathNum][1]:
+              self.flightStats[pathNum][1] = alt1
+          if (hasValidCoords):
+            if (statusChanged): # start new flight path if current one ends or new one begins.
+              if (len(pathCoord) > 0):
+                self.pathCoords.append(pathCoord)
+                pathCoord = []
+                isNewPath = True
+            if (isFlying): # Only trace path where the drone is off the ground.
+              pathNum = len(self.pathCoords)+1
+              pathCoord.append((real1lat, real1lon))
+              if pathNum == len(self.flightStats):
+                self.flightStats.append([dist1, alt1, None, elapsedTs])
+              else:
+                if dist1 > self.flightStats[pathNum][0]:
+                  self.flightStats[pathNum][0] = dist1
+                if alt1 > self.flightStats[pathNum][1]:
+                  self.flightStats[pathNum][1] = alt1
+                self.flightStats[pathNum][3] = elapsedTs
 
           # Get corresponding record from the controller. There may not be one, or any at all. Match up to 5 seconds ago.
           fpvRssi = ""
@@ -1119,15 +1153,13 @@ class ExtractFlightData(tk.Tk):
             fpvRemoteConnected = "1" if fpvFlags & 4 == 4 else "0"
             #fpvHighDbm = "1" if fpvFlags & 32 == 32 else "0"
 
-          if firstTs is None:
-            firstTs = readingTs
-          elapsedTs = readingTs - firstTs
-          elapsedTs = elapsedTs - datetime.timedelta(microseconds=elapsedTs.microseconds)
-          prevReadingTs = readingTs
           if (isNewPath and len(pathCoord) > 0):
-            self.flightStarts[f'Flight {pathNum}'] = len(self.tree.get_children())
+            self.flightStarts[f'Flight {pathNum}'] = tableLen
             isNewPath = False
+          if pathNum > 0:
+            self.flightEnds[f'Flight {pathNum}'] = tableLen
           self.tree.insert('', tk.END, value=(recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, "", f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", "", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon), "", "", "", "", "", "", "", "", ""))
+          tableLen = tableLen + 1
           if (setctrl and hasValidCoords and alt1 > 0): # Record home location from the moment the drone ascends.
             #self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
