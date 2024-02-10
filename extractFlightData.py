@@ -91,7 +91,7 @@ class ExtractFlightData(tk.Tk):
   displayMode = "ATOM"
   columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
   showColsBasicAtom = ('flight','tod','time','flightstatus','distance3','altitude2','speed2','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected','gps')
-  showColsAdvAtom = ('flight','timestamp','tod','time','flightstatus','distance2','distance3','altitude1','altitude2','speed1','speed2','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected','gps','rssi','remoteconnected')
+  showColsAdvAtom = ('flight','tod','time','flightstatus','distance2','distance3','altitude1','altitude2','speed1','speed2','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','flightctrlconnected','gps','rssi','remoteconnected')
   showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
   showColsAdvDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
   zipFilename = None
@@ -219,25 +219,55 @@ class ExtractFlightData(tk.Tk):
 
 
   '''
-  Jump to previous flightpath.
+  Jump to beginning of current flight, or the end of the previous one.
   '''
   def prevPath(self):
     self.isPlaying = False;
     idx = self.selectPath['values'].index(self.selectPath.get())
-    if idx > 0:
-      self.selectPath.set(self.selectPath['values'][idx-1])
-    self.choosePath(None)
+    for selected_item in self.tree.selection():
+      currentRowIdx = self.tree.index(selected_item)
+      startFlightIdx = self.flightStarts[self.selectedPath.get()]
+      if currentRowIdx == startFlightIdx:
+        if idx > 0:
+          self.selectPath.set(self.selectPath['values'][idx-1])
+          rowIdx = self.flightEnds[self.selectedPath.get()]
+          gotoRow = self.tree.get_children()[rowIdx]
+          self.tree.see(gotoRow)
+          self.tree.selection_set(gotoRow)
+          # Center the map at the drone landing position.
+          item = self.tree.item(gotoRow)
+          record = item['values']
+          dronelat = float(record[self.columns.index('dronelat')])
+          dronelon = float(record[self.columns.index('dronelon')])
+          self.map_widget.set_position(dronelat, dronelon)
+          self.setFlightSummary(int(re.sub(r"[^0-9]", r"", self.selectedPath.get())))
+      else:
+        rowIdx = self.flightStarts[self.selectedPath.get()]
+        gotoRow = self.tree.get_children()[rowIdx]
+        self.tree.see(gotoRow)
+        self.tree.selection_set(gotoRow)
+      break
 
 
   '''
-  Jump to next flight path.
+  Jump to end of current flight, or the beginning of the next one.
   '''
   def nextPath(self):
     self.isPlaying = False;
     idx = self.selectPath['values'].index(self.selectPath.get())
-    if idx < len(self.selectPath['values'])-1:
-      self.selectPath.set(self.selectPath['values'][idx+1])
-    self.choosePath(None)
+    for selected_item in self.tree.selection():
+      currentRowIdx = self.tree.index(selected_item)
+      endFlightIdx = self.flightEnds[self.selectedPath.get()]
+      if currentRowIdx == endFlightIdx:
+        if idx < len(self.selectPath['values'])-1:
+          self.selectPath.set(self.selectPath['values'][idx+1])
+          self.choosePath(None)
+      else:
+        rowIdx = self.flightEnds[self.selectedPath.get()]
+        gotoRow = self.tree.get_children()[rowIdx]
+        self.tree.see(gotoRow)
+        self.tree.selection_set(gotoRow)
+      break
 
 
   '''
@@ -267,6 +297,7 @@ class ExtractFlightData(tk.Tk):
       self.dronemarker = None
     self.pathCoords = None
     self.flightStarts = None
+    self.flightEnds = None
     self.selectPath['values'] = ('--')
     self.selectedPath.set('--')
     self.labelFlight['text'] = ''
@@ -415,14 +446,14 @@ class ExtractFlightData(tk.Tk):
       if (not self.tinyScreen):
         if (self.smallScreen):
           if self.rounded.get() == 'Y':
-            self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:6.0f}  /  Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:5.0f}  /  Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:4.0f}'
+            self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:6.0f}  /  Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:5.0f}  /  Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:4.0f}  /  Duration: {self.flightStats[pathNum][3]}'
           else:
-            self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:8.2f}  /  Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:7.2f}  /  Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:6.2f}'
+            self.labelFile['text'] = f'Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:8.2f}  /  Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:7.2f}  /  Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:6.2f}  /  Duration: {self.flightStats[pathNum][3]}'
         else:
           if self.rounded.get() == 'Y':
-            self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:6.0f}   /   Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:5.0f}   /   Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:4.0f}'
+            self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:6.0f}   /   Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:5.0f}   /   Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:4.0f}   /   Duration: {self.flightStats[pathNum][3]}'
           else:
-            self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:8.2f}   /   Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:7.2f}   /   Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:6.2f}'
+            self.labelFile['text'] = f'    Max Dist ({self.distUnit()}): {self.flightStats[pathNum][0]:8.2f}   /   Max Alt ({self.distUnit()}): {self.flightStats[pathNum][1]:7.2f}   /   Max Speed ({self.speedUnit()}): {self.flightStats[pathNum][2]:6.2f}   /   Duration: {self.flightStats[pathNum][3]}'
 
 
   '''
@@ -649,7 +680,6 @@ class ExtractFlightData(tk.Tk):
     showinfo(title='Export Completed', message=f'Data has been exported to {csvFilename}')
 
 
-
   '''
   Open the selected Flight Data Zip file.
   '''
@@ -668,7 +698,6 @@ class ExtractFlightData(tk.Tk):
       if (not 'atom' in droneModel.lower()):
         showwarning(title='Unsupported Model', message=f'This drone model may not be supported in this software: {droneModel}')
       self.parseAtomLogs(droneModel, selectedFile)
-
 
 
   '''
@@ -697,7 +726,7 @@ class ExtractFlightData(tk.Tk):
     fpvStat = {}
     files = sorted(glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True))
     for file in files:
-      self.ctrllabel = re.sub(r".*-\(?([^\)-]+)\)?-.*", r"\1", PurePath(file).name)
+      #self.ctrllabel = re.sub(r".*-\(?([^\)-]+)\)?-.*", r"\1", PurePath(file).name)
       with open(file, mode='rb') as fpvFile:
         while True:
           fpvRecord = fpvFile.readline().decode("utf-8")
@@ -734,11 +763,13 @@ class ExtractFlightData(tk.Tk):
     maxSpeed = 0;
     self.pathCoords = []
     self.flightStarts = {}
+    self.flightEnds = {}
     self.flightStats = []
     pathCoord = []
     isNewPath = True
     isFlying = False
     recordCount = 0
+    tableLen = 0
     for file in files:
       offset1 = 0
       offset2 = 0
@@ -914,11 +945,14 @@ class ExtractFlightData(tk.Tk):
             #fpvHighDbm = "1" if fpvFlags & 32 == 32 else "0"
 
           if (isNewPath and len(pathCoord) > 0):
-            self.flightStarts[f'Flight {pathNum}'] = len(self.tree.get_children())
+            self.flightStarts[f'Flight {pathNum}'] = tableLen
             isNewPath = False
+          if pathNum > 0:
+            self.flightEnds[f'Flight {pathNum}'] = tableLen
           self.tree.insert('', tk.END, value=(recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, droneMotorStatus.value, f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", f"{self.fmtNum(dist3)}", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", f"{self.fmtNum(speed1)}", f"{self.fmtNum(speed1lat)}", f"{self.fmtNum(speed1lon)}", f"{self.fmtNum(speed2)}", f"{self.fmtNum(speed2lat)}", f"{self.fmtNum(speed2lon)}", f"{self.fmtNum(speed1vert)}", f"{self.fmtNum(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, gpsStatus, inUse, motor1Stat, motor2Stat, motor3Stat, motor4Stat))
+          tableLen = tableLen + 1
           if (setctrl and hasValidCoords and alt2 > 0): # Record home location from the moment the drone ascends.
-            self.dronelabel = droneModel
+            #self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
             self.map_widget.set_position(dronelat, dronelon)
             self.ctrlmarker = self.map_widget.set_marker(
@@ -940,7 +974,12 @@ class ExtractFlightData(tk.Tk):
     if (len(pathNames) > 0):
       self.selectPath['values'] = pathNames
       self.selectedPath.set(pathNames[0])
-    self.prevPath()
+    self.choosePath(None)
+    for i in range(1, len(self.flightStats)):
+      if self.flightStats[0][3] == None:
+        self.flightStats[0][3] = self.flightStats[i][3]
+      else:
+        self.flightStats[0][3] = self.flightStats[0][3] + self.flightStats[i][3]
 
 
 
@@ -966,7 +1005,7 @@ class ExtractFlightData(tk.Tk):
     fpvStat = {}
     files = sorted(glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True))
     for file in files:
-      self.ctrllabel = re.sub(r".*-\(?([^\)-]+)\)?-.*", r"\1", PurePath(file).name)
+      #self.ctrllabel = re.sub(r".*-\(?([^\)-]+)\)?-.*", r"\1", PurePath(file).name)
       with open(file, mode='rb') as fpvFile:
         while True:
           fpvRecord = fpvFile.readline().decode("utf-8")
@@ -1090,7 +1129,7 @@ class ExtractFlightData(tk.Tk):
             isNewPath = False
           self.tree.insert('', tk.END, value=(recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, "", f"{self.fmtNum(dist1)}", f"{self.fmtNum(dist1lat)}", f"{self.fmtNum(dist1lon)}", f"{self.fmtNum(dist2)}", f"{self.fmtNum(dist2lat)}", f"{self.fmtNum(dist2lon)}", "", f"{self.fmtNum(alt1)}", f"{self.fmtNum(alt2)}", "", "", "", "", "", "", "", "", str(satellites), "", "", str(dronelat), str(dronelon), str(real1lat), str(real1lon), "", "", "", "", "", "", "", "", ""))
           if (setctrl and hasValidCoords and alt1 > 0): # Record home location from the moment the drone ascends.
-            self.dronelabel = droneModel
+            #self.dronelabel = droneModel
             self.map_widget.set_zoom(self.defaultDroneZoom)
             self.map_widget.set_position(real1lat, real1lon)
             self.ctrlmarker = self.map_widget.set_marker(
@@ -1111,7 +1150,7 @@ class ExtractFlightData(tk.Tk):
     if (len(pathNames) > 0):
       self.selectPath['values'] = pathNames
       self.selectedPath.set(pathNames[0])
-    self.prevPath()
+    self.choosePath(None)
 
 
 
