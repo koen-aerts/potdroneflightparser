@@ -195,6 +195,7 @@ class ExtractFlightData(tk.Tk):
   '''
   def play(self):
     if (self.isPlaying):
+      self.isPlaying = False;
       return
     self.currentRow = None
     allRows = self.tree.get_children()
@@ -1510,12 +1511,10 @@ class ExtractFlightData(tk.Tk):
     selectPlaySpeeds.bind('<<ComboboxSelected>>', self.setPlaySpeed)
     buttonPrev = ttk.Button(playbackFrame, text='<<', command=self.prevPath, width=2)
     buttonPrev.grid(row=0, column=1, sticky=tk.E, padx=0, pady=0)
-    buttonPlay = ttk.Button(playbackFrame, text='>', command=self.play, width=1)
+    buttonPlay = ttk.Button(playbackFrame, text='|>', command=self.play, width=2)
     buttonPlay.grid(row=0, column=2, sticky=tk.E, padx=0, pady=0)
-    buttonStop = ttk.Button(playbackFrame, text='||', command=self.stop, width=1)
-    buttonStop.grid(row=0, column=3, sticky=tk.E, padx=0, pady=0)
     buttonNext = ttk.Button(playbackFrame, text='>>', command=self.nextPath, width=2)
-    buttonNext.grid(row=0, column=4, sticky=tk.E, padx=0, pady=0)
+    buttonNext.grid(row=0, column=3, sticky=tk.E, padx=0, pady=0)
 
     if (not self.tinyScreen):
       # Controller and Home selection checkboxes.
