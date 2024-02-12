@@ -1375,6 +1375,7 @@ class ExtractFlightData(tk.Tk):
     pref_menu.add_radiobutton(label='Marker Colour Scheme 1', command=self.setMarkerColorSet, variable=self.markerColorSet, value=0)
     pref_menu.add_radiobutton(label='Marker Colour Scheme 2', command=self.setMarkerColorSet, variable=self.markerColorSet, value=1)
     pref_menu.add_radiobutton(label='Marker Colour Scheme 3', command=self.setMarkerColorSet, variable=self.markerColorSet, value=2)
+    pref_menu.add_radiobutton(label='Marker Colour Scheme 4', command=self.setMarkerColorSet, variable=self.markerColorSet, value=3)
     pref_menu.add_separator()
     pref_menu.add_radiobutton(label='Path Colour Scheme 1', command=self.setPathColorSet, variable=self.pathColorSet, value=0)
     pref_menu.add_radiobutton(label='Path Colour Scheme 2', command=self.setPathColorSet, variable=self.pathColorSet, value=1)
