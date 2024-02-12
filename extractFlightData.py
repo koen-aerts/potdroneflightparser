@@ -81,12 +81,12 @@ class ExtractFlightData(tk.Tk):
     ["#417dd6","#ab27a9","#e54f14","#ffa900","#00a31f"],
     ["#c6c6c6","#cfcfcf","#e0e0e0","#4c4c4c","#2d2d2d"],
     ["#ffed49","#ffcb00","#ffa800","#ff6e2c","#fa5b46"],
-    ["#ff0000","#00ff00","#0000ff","#ffff00","#000000","#ffffff"],
-    ["#00ff00","#0000ff","#ffff00","#000000","#ffffff","#ff0000"],
-    ["#0000ff","#ffff00","#000000","#ffffff","#ff0000","#00ff00"],
-    ["#ffff00","#000000","#ffffff","#ff0000","#00ff00","#0000ff"],
-    ["#000000","#ffffff","#ff0000","#00ff00","#0000ff","#ffff00"],
-    ["#ffffff","#ff0000","#00ff00","#0000ff","#ffff00","#000000"]
+    ["#ff0000","#aad2fa","#0000ff","#ffff00","#000000","#ffffff"],
+    ["#aad2fa","#0000ff","#ffff00","#000000","#ffffff","#ff0000"],
+    ["#0000ff","#ffff00","#000000","#ffffff","#ff0000","#aad2fa"],
+    ["#ffff00","#000000","#ffffff","#ff0000","#aad2fa","#0000ff"],
+    ["#000000","#ffffff","#ff0000","#aad2fa","#0000ff","#ffff00"],
+    ["#ffffff","#ff0000","#aad2fa","#0000ff","#ffff00","#000000"]
   ]
   displayMode = "ATOM"
   columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
