@@ -70,13 +70,13 @@ class ExtractFlightData(tk.Tk):
   cpl = 137 # 137.84615384615384 characters fit on development machine screen.
   defaultDroneZoom = 18
   defaultBlankMapZoom = 1
-  ctrlMarkerColor1  = ["#5b96f7", "#2d2d2d", "#00b9f7"]
-  ctrlMarkerColor2  = ["#aaccf6", "#c6c6c6", "#00c7dd"]
-  homeMarkerColor1  = ["#9B261E", "#4c4c4c", "#5068c2"]
-  homeMarkerColor2  = ["#C5542D", "#cfcfcf", "#23a9f6"]
-  droneMarkerColor1 = ["#f59e00", "#e0e0e0", "#ae44bf"]
-  droneMarkerColor2 = ["#c6dfb3", "#2d2d2d", "#7b54c4"]
-  markerLabelColor  = ["#652A22", "#cfcfcf", "#f03977"]
+  ctrlMarkerColor1  = ["#3880f5", "#4b4b4b", "#aaccf6", "#c8c8c8"]
+  ctrlMarkerColor2  = ["#aaccf6", "#c8c8c8", "#3880f5", "#4b4b4b"]
+  homeMarkerColor1  = ["#dc5145", "#4040ff", "#e49781", "#00ffff"]
+  homeMarkerColor2  = ["#e49781", "#00ffff", "#dc5145", "#4040ff"]
+  droneMarkerColor1 = ["#d98d00", "#008000", "#c6dfb3", "#00ff00"]
+  droneMarkerColor2 = ["#c6dfb3", "#00ff00", "#d98d00", "#008000"]
+  markerLabelColor  = ["#c0c0c0", "#ffc1ff", "#3c3c3c", "#575757"]
   pathColors = [
     ["#417dd6","#ab27a9","#e54f14","#ffa900","#00a31f"],
     ["#c6c6c6","#cfcfcf","#e0e0e0","#4c4c4c","#2d2d2d"],
