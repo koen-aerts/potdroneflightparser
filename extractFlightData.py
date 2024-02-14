@@ -1359,7 +1359,8 @@ class ExtractFlightData(tk.Tk):
 
     mapFrame = ttk.Frame(self, height=self.scaledHeight(400))
 
-    pw.add(dataFrame)
+    if self.defaultDataRows.get() != '0':
+      pw.add(dataFrame)
     pw.add(mapFrame)
     pw.pack(fill=tk.BOTH, expand=True)
 
@@ -1392,6 +1393,7 @@ class ExtractFlightData(tk.Tk):
     pref_menu.add_radiobutton(label='Path Colour Scheme 8', command=self.setPathColorSet, variable=self.pathColorSet, value=7)
     pref_menu.add_radiobutton(label='Path Colour Scheme 9', command=self.setPathColorSet, variable=self.pathColorSet, value=8)
     pref_menu.add_separator()
+    pref_menu.add_radiobutton(label='Rows Displayed: 0', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=0)
     pref_menu.add_radiobutton(label='Rows Displayed: 1', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=1)
     pref_menu.add_radiobutton(label='Rows Displayed: 2', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=2)
     pref_menu.add_radiobutton(label='Rows Displayed: 4', command=self.setDefaultDataRows, variable=self.defaultDataRows, value=4)
