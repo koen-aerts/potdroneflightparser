@@ -223,7 +223,9 @@ class ExtractFlightData(tk.Tk):
   Jump to beginning of current flight, or the end of the previous one.
   '''
   def prevPath(self):
-    self.isPlaying = False;
+    self.stop()
+    while (self.isPlaying):
+      time.sleep(0.5)
     idx = self.selectPath['values'].index(self.selectPath.get())
     for selected_item in self.tree.selection():
       currentRowIdx = self.tree.index(selected_item)
@@ -254,7 +256,9 @@ class ExtractFlightData(tk.Tk):
   Jump to end of current flight, or the beginning of the next one.
   '''
   def nextPath(self):
-    self.isPlaying = False;
+    self.stop()
+    while (self.isPlaying):
+      time.sleep(0.5)
     idx = self.selectPath['values'].index(self.selectPath.get())
     for selected_item in self.tree.selection():
       currentRowIdx = self.tree.index(selected_item)
@@ -1511,7 +1515,7 @@ class ExtractFlightData(tk.Tk):
     selectPlaySpeeds.bind('<<ComboboxSelected>>', self.setPlaySpeed)
     buttonPrev = ttk.Button(playbackFrame, text='<<', command=self.prevPath, width=2)
     buttonPrev.grid(row=0, column=1, sticky=tk.E, padx=0, pady=0)
-    buttonPlay = ttk.Button(playbackFrame, text='|>', command=self.play, width=2)
+    buttonPlay = ttk.Button(playbackFrame, text='||>', command=self.play, width=2)
     buttonPlay.grid(row=0, column=2, sticky=tk.E, padx=0, pady=0)
     buttonNext = ttk.Button(playbackFrame, text='>>', command=self.nextPath, width=2)
     buttonNext.grid(row=0, column=3, sticky=tk.E, padx=0, pady=0)
