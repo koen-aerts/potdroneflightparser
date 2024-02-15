@@ -376,7 +376,7 @@ class ExtractFlightData(tk.Tk):
     alt = record[self.columns.index('altitude2')]
     Hspeed = record[self.columns.index('speed2')]
     Vspeed = record[self.columns.index('speed2vert')]
-    rssi = record[self.columns.index('rssi')]
+    sats = record[self.columns.index('satellites')]
     droneconnected = 'Y' if (record[self.columns.index('flightctrlconnected')]) == 1 else 'N'
     flightTs = record[self.columns.index('time')]
     labelPad = '' if self.smallScreen else '    '
@@ -385,7 +385,7 @@ class ExtractFlightData(tk.Tk):
     elif (self.smallScreen):
       self.labelFlight['text'] = f'{labelPad}Time: {flightTs} / Dist: {dist}{self.distUnit()} / Alt: {alt}{self.distUnit()} / H Speed: {Hspeed}{self.speedUnit()}  / V Speed: {Vspeed}{self.speedUnit()}'
     else:
-      self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance ({self.distUnit()}): {dist}   /   Altitude ({self.distUnit()}): {alt}   /   Horiz. Speed ({self.speedUnit()}): {Hspeed}   /   Vert. Speed ({self.speedUnit()}): {Vspeed}   /   RSSI: {rssi}   /   Connected: {droneconnected}'
+      self.labelFlight['text'] = f'{labelPad}Time: {flightTs}   /   Distance ({self.distUnit()}): {dist}   /   Altitude ({self.distUnit()}): {alt}   /   Horiz. Speed ({self.speedUnit()}): {Hspeed}   /   Vert. Speed ({self.speedUnit()}): {Vspeed}   /   Satellites: {sats}   /   Connected: {droneconnected}'
     pathNum = record[self.columns.index('flight')]
     if pathNum != 0:
       self.selectPath.set(f'Flight {pathNum}')
