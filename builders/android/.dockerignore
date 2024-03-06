@@ -1,0 +1,7 @@
+.dockerignore
+.buildozer
+requirements.txt
+bin
+Dockerfile
+build.sh
+remove_docker_artifacts.sh

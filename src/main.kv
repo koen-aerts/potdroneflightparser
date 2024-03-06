@@ -1,0 +1,339 @@
+#:import platform kivy.utils.platform
+
+<TopNavBar@MDTopAppBar>
+    pos: 0, 0
+    type: "small"
+    size_hint: (1, None)
+    height: dp(40)
+
+<ValLabel@MDLabel>
+    #halign: "left"
+    #valign: "top"
+    #width: dp(60)
+    role: "small"
+
+<StatLabel@MDLabel>
+    halign: "right"
+    valign: "top"
+    padding_x: dp(2)
+    max_lines: 1
+    size_hint: (None, 1)
+    height: dp(10)
+    width: dp(70)
+    role: "small"
+
+<StatValue@MDLabel>
+    halign: "right"
+    valign: "top"
+    padding_x: dp(2)
+    max_lines: 1
+    size_hint: (None, 1)
+    height: dp(10)
+    width: dp(90)
+    role: "small"
+
+<StatDivider@MDDivider>
+    size_hint: (1, None)
+    divider_width: dp(0.75)
+
+<PrefLabel@MDLabel>
+    halign: "right"
+    valign: "top"
+    padding_x: dp(2)
+    max_lines: 1
+    size_hint: (None, 1)
+    height: dp(10)
+    width: dp(240)
+    right: 1
+
+<PrefSelect@MDDropDownItem>
+    #padding_x: dp(2)
+
+<PrefCheck@MDCheckbox>
+    #padding_x: dp(2)
+
+MDGridLayout:
+    cols: 1
+    id: theapp
+    is_desktop: True if platform in ('linux', 'win', 'macosx') else False
+    show_nav_section: True
+    MDScreenManager:
+        id: screen_manager
+        BaseScreen:
+            name: "Screen 1"
+            MDGridLayout:
+                cols: 1
+                size: root.width, root.height
+                TopNavBar:
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "import"
+                            on_release: app.open_file_dialog()
+                        MDActionTopAppBarButton:
+                            icon: "cancel"
+                            on_release: app.reset()
+                    MDTopAppBarTitle:
+                        text: app.appTitle
+                        pos_hint: {"center_x": .5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "speedometer"
+                            on_release: theapp.show_nav_section = not theapp.show_nav_section
+                        MDActionTopAppBarButton:
+                            icon: "table"
+                            on_release: root.ids.screen_manager.current = "Screen 2"
+                        MDActionTopAppBarButton:
+                            icon: "wrench-cog-outline"
+                            on_release: root.ids.screen_manager.current = "Screen 3"
+                MDGridLayout:
+                    cols: 2
+                    md_bg_color: self.theme_cls.backgroundColor
+                    MDRelativeLayout:
+                        id: navsection
+                        width: dp(200) if theapp.show_nav_section else 0
+                        opacity: 1 if theapp.show_nav_section else 0
+                        size_hint: (None, 1)
+                        MDGridLayout:
+                            cols: 2
+                            size_hint: (1, 1)
+                            pos_hint: {"y": 0, "right": 1}
+                            md_bg_color: self.theme_cls.backgroundColor
+                            row_default_height: dp(14)
+                            #adaptive_height: True
+                            StatLabel:
+                                text: "Max Dist:"
+                            StatValue:
+                                id: value_maxdist
+                                text: ""
+                            StatLabel:
+                                text: "Max Alt:"
+                            StatValue:
+                                id: value_maxalt
+                                text: ""
+                            StatLabel:
+                                text: "Max Speed:"
+                            StatValue:
+                                id: value_maxspeed
+                                text: ""
+                            StatLabel:
+                                text: "Duration:"
+                            StatValue:
+                                id: value_duration
+                                text: ""
+                            StatDivider:
+                            StatDivider:
+                            StatLabel:
+                                text: "Distance:"
+                            StatValue:
+                                id: value1_dist
+                                text: ""
+                            StatLabel:
+                                text: "Altitude:"
+                            StatValue:
+                                id: value1_alt
+                                text: ""
+                            StatLabel:
+                                text: "H. Speed:"
+                            StatValue:
+                                id: value1_hspeed
+                                text: ""
+                            StatLabel:
+                                text: "V. Speed:"
+                            StatValue:
+                                id: value1_vspeed
+                                text: ""
+                            StatLabel:
+                                text: "Sats:"
+                            StatValue:
+                                id: value1_sats
+                                text: ""
+                            StatLabel:
+                                text: "Time:"
+                            StatValue:
+                                id: value1_elapsed
+                                text: ""
+                            StatDivider:
+                            StatDivider:
+                            StatLabel:
+                                text: "Flight:"
+                                bold: True
+                            MDDropDownItem:
+                                on_release: app.open_flight_selection(*args)
+                                MDDropDownItemText:
+                                    font_style: "Title"
+                                    role: "small"
+                                    id: selected_path
+                                    text: "--"
+                    MDRelativeLayout:
+                        size_hint: (1 - (dp(200) if theapp.show_nav_section else 0), 1)
+                        MapView:
+                            id: map
+                            size_hint: (1, 1)
+                            pos_hint: {"x": 0, "y": 0}
+                            zoom: 3
+                            lat: 51.50722
+                            lon: -0.1275
+                        MDGridLayout:
+                            size_hint: (None, None)
+                            pos_hint: {"center_x": .5, "y": 0.01}
+                            cols: 4
+                            adaptive_size: True
+                            MDIconButton:
+                                style: "filled"
+                                icon: "skip-previous"
+                            MDIconButton:
+                                id: playbutton
+                                style: "filled"
+                                icon: "play"
+                                on_release: app.play_flight()
+                            MDIconButton:
+                                style: "filled"
+                                icon: "skip-next"
+                            MDIconButton:
+                                style: "filled"
+                                icon: "crosshairs-gps"
+                                on_release: app.center_map()
+                        MDGridLayout:
+                            id: mapnav
+                            pos_hint: {"x": 0.01, "top": 0.99} if theapp.is_desktop else {"x": 1, "top": 0}
+                            rows: 2
+                            adaptive_size: True
+                            MDIconButton:
+                                style: "filled"
+                                icon: "plus"
+                                on_release: app.map_zoom(True)
+                            MDIconButton:
+                                style: "filled"
+                                icon: "minus"
+                                on_release: app.map_zoom(False)
+                        MDGridLayout:
+                            size_hint: (None, None)
+                            pos_hint: {"right": .99, "top": 1}
+                            size_hint: (.7, None)
+                            height: 0 if theapp.show_nav_section else dp(16)
+                            opacity: 0 if theapp.show_nav_section else .8
+                            adaptive_height: True
+                            rows: 1
+                            md_bg_color: self.theme_cls.backgroundColor
+                            ValLabel:
+                                id: value2_dist
+                                text: ""
+                            ValLabel:
+                                id: value2_alt
+                                text: ""
+                            ValLabel:
+                                id: value2_hspeed
+                                text: ""
+                            ValLabel:
+                                id: value2_vspeed
+                                text: ""
+                            ValLabel:
+                                id: value2_sats
+                                text: ""
+                            ValLabel:
+                                id: value2_elapsed
+                                text: ""
+        BaseScreen:
+            name: "Screen 2"
+            MDGridLayout:
+                cols: 1
+                size: root.width, root.height
+                md_bg_color: self.theme_cls.backgroundColor
+                TopNavBar:
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "content-save"
+                        MDActionTopAppBarButton:
+                            icon: "content-save-move"
+                    MDTopAppBarTitle:
+                        text: "Flight Summaries"
+                        pos_hint: {"center_x": .5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "map-outline"
+                            on_release: root.ids.screen_manager.current = "Screen 1"
+                        MDActionTopAppBarButton:
+                            icon: "wrench-cog-outline"
+                            on_release: root.ids.screen_manager.current = "Screen 3"
+                MDGridLayout:
+                    cols: 5
+                    id: flight_stats_grid
+                    md_bg_color: self.theme_cls.backgroundColor
+                    row_default_height: dp(30)
+                    adaptive_height: True
+        BaseScreen:
+            name: "Screen 3"
+            MDGridLayout:
+                cols: 1
+                size: root.width, root.height
+                md_bg_color: self.theme_cls.backgroundColor
+                TopNavBar:
+                    MDTopAppBarTitle:
+                        text: "Preferences"
+                        pos_hint: {"center_x": .5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "map-outline"
+                            on_release: root.ids.screen_manager.current = "Screen 1"
+                        MDActionTopAppBarButton:
+                            icon: "table"
+                            on_release: root.ids.screen_manager.current = "Screen 2"
+                MDGridLayout:
+                    cols: 4
+                    md_bg_color: self.theme_cls.backgroundColor
+                    row_default_height: dp(30)
+                    adaptive_height: True
+                    PrefLabel:
+                        text: "Unit of Measure:"
+                    PrefSelect:
+                        on_release: app.uom_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_uom
+                            text: ""
+                    PrefLabel:
+                        text: "Display Home (RTH) Marker:"
+                    PrefCheck:
+                        on_release: app.home_marker_selection(*args)
+                        id: selected_home_marker
+                        active: True
+                    PrefLabel:
+                        text: "Playback Refresh Rate:"
+                    PrefSelect:
+                        on_release: app.refresh_rate_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_refresh_rate
+                            text: ""
+                    PrefLabel:
+                        text: "Display Controller Marker:"
+                    PrefCheck:
+                        on_release: app.ctrl_marker_selection(*args)
+                        id: selected_ctrl_marker
+                        active: True
+                    PrefLabel:
+                        text: "Flight Path Line Width:"
+                    PrefSelect:
+                        on_release: app.flight_path_width_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_flight_path_width
+                            text: ""
+                    PrefLabel:
+                        text: "Rounded Values:"
+                    PrefCheck:
+                        on_release: app.rounding_selection(*args)
+                        id: selected_rounding
+                        active: True
+                    PrefLabel:
+                        text: "Map Tile Server:"
+                    PrefSelect:
+                        on_release: app.open_mapsource_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_mapsource
+                            text: ""
