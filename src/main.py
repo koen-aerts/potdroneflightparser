@@ -319,7 +319,7 @@ class MainApp(MDApp):
                             pathNum = len(self.pathCoords)+1
                             lastCoord = pathCoord[len(pathCoord)-1] if len(pathCoord) > 0 else [0, 0]
                             distMoved = haversine(lastCoord[0], lastCoord[1], dronelon, dronelat)
-                            if distMoved >= 0.001:
+                            if distMoved >= 0.0015:
                                 pathCoord.append([dronelon, dronelat])
                             #print(f"{sanDist},{recordCount},{dronelon},{dronelat}")
                             if pathNum == len(self.flightStats):
@@ -650,7 +650,7 @@ class MainApp(MDApp):
     '''
     def refresh_rate_selection(self, item):
         menu_items = []
-        for refreshRate in ['0.25ms', '0.50ms', '0.75ms', '1.00ms', '1.25ms', '1.50ms']:
+        for refreshRate in ['0.25s', '0.50s', '0.75s', '1.00s', '1.25s', '1.50s']:
             menu_items.append({"text": refreshRate, "on_release": lambda x=refreshRate: self.refresh_rate_selection_callback(x)})
         MDDropdownMenu(caller = item, items = menu_items).open()
     def refresh_rate_selection_callback(self, text_item):
@@ -1020,7 +1020,7 @@ class MainApp(MDApp):
             'unit_of_measure': "metric",
             'rounded_readings': True,
             'flight_path_width': "1.0",
-            'refresh_rate': "1.00ms",
+            'refresh_rate': "1.00s",
             'show_flight_path': True,
             'show_marker_home': True,
             'show_marker_ctrl': False,
