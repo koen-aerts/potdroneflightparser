@@ -19,7 +19,7 @@
     max_lines: 1
     size_hint: (None, 1)
     height: dp(10)
-    width: dp(70)
+    width: dp(80)
     role: "small"
 
 <StatValue@MDLabel>
@@ -29,7 +29,7 @@
     max_lines: 1
     size_hint: (None, 1)
     height: dp(10)
-    width: dp(90)
+    width: dp(70)
     role: "small"
 
 <StatDivider@MDDivider>
@@ -90,7 +90,7 @@ MDGridLayout:
                     md_bg_color: self.theme_cls.backgroundColor
                     MDRelativeLayout:
                         id: navsection
-                        width: dp(200) if theapp.show_nav_section else 0
+                        width: dp(170) if theapp.show_nav_section else 0
                         opacity: 1 if theapp.show_nav_section else 0
                         size_hint: (None, 1)
                         MDGridLayout:
@@ -123,6 +123,11 @@ MDGridLayout:
                             StatDivider:
                             StatDivider:
                             StatLabel:
+                                text: "Time:"
+                            StatValue:
+                                id: value1_elapsed
+                                text: ""
+                            StatLabel:
                                 text: "Distance:"
                             StatValue:
                                 id: value1_dist
@@ -142,20 +147,10 @@ MDGridLayout:
                             StatValue:
                                 id: value1_vspeed
                                 text: ""
-                            StatLabel:
-                                text: "Sats:"
-                            StatValue:
-                                id: value1_sats
-                                text: ""
-                            StatLabel:
-                                text: "Time:"
-                            StatValue:
-                                id: value1_elapsed
-                                text: ""
                             StatDivider:
                             StatDivider:
                             StatLabel:
-                                text: "Flight:"
+                                text: "Flight #:"
                                 bold: True
                             MDDropDownItem:
                                 on_release: app.open_flight_selection(*args)
@@ -165,7 +160,7 @@ MDGridLayout:
                                     id: selected_path
                                     text: "--"
                     MDRelativeLayout:
-                        size_hint: (1 - (dp(200) if theapp.show_nav_section else 0), 1)
+                        size_hint: (1 - (dp(170) if theapp.show_nav_section else 0), 1)
                         MapView:
                             id: map
                             size_hint: (1, 1)
@@ -176,7 +171,7 @@ MDGridLayout:
                         MDGridLayout:
                             size_hint: (None, None)
                             pos_hint: {"center_x": .5, "y": 0.01}
-                            cols: 4
+                            rows: 1
                             adaptive_size: True
                             MDIconButton:
                                 style: "filled"

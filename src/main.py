@@ -9,7 +9,9 @@ import time
 import re
 import threading
 import configparser
+import locale
 from enum import Enum
+from decimal import Decimal
 
 from multiprocessing.connection import wait
 from kivy.core.window import Window
@@ -387,6 +389,7 @@ class MainApp(MDApp):
         self.select_flight()
         for i in range(1, len(self.flightStats)):
             if self.flightStats[0][3] == None:
+                self.flightStats[0][2] = self.flightStats[i][2]
                 self.flightStats[0][3] = self.flightStats[i][3]
                 self.flightStats[0][4] = self.flightStats[i][4]
                 self.flightStats[0][5] = self.flightStats[i][5]
@@ -394,6 +397,8 @@ class MainApp(MDApp):
                 self.flightStats[0][7] = self.flightStats[i][7]
             else:
                 self.flightStats[0][3] = self.flightStats[0][3] + self.flightStats[i][3]
+                if self.flightStats[i][2] > self.flightStats[0][2]:
+                    self.flightStats[0][2] = self.flightStats[i][2]
                 if self.flightStats[i][4] < self.flightStats[0][4]:
                     self.flightStats[0][4] = self.flightStats[i][4]
                 if self.flightStats[i][5] < self.flightStats[0][5]:
@@ -707,7 +712,8 @@ class MainApp(MDApp):
     def fmt_num(self, num):
         if (num is None):
             return ''
-        return f"{num:.0f}" if self.root.ids.selected_rounding.active else f"{num:.2f}"
+        #return f"{num:.0f}" if self.root.ids.selected_rounding.active else f"{num:.2f}"
+        return locale.format_string("%.0f", num, True) if self.root.ids.selected_rounding.active else locale.format_string("%.2f", num, True)
 
 
     '''
@@ -747,7 +753,6 @@ class MainApp(MDApp):
             self.root.ids.value2_hspeed.text = ""
             self.root.ids.value1_vspeed.text = ""
             self.root.ids.value2_vspeed.text = ""
-            self.root.ids.value1_sats.text = ""
             self.root.ids.value2_sats.text = ""
             self.root.ids.value1_elapsed.text = ""
             self.root.ids.value2_elapsed.text = ""
@@ -804,7 +809,6 @@ class MainApp(MDApp):
         self.root.ids.value2_hspeed.text = f"HS: {record[19]} {self.speed_unit()}"
         self.root.ids.value1_vspeed.text = f"{record[23]} {self.speed_unit()}"
         self.root.ids.value2_vspeed.text = f"VS: {record[23]} {self.speed_unit()}"
-        self.root.ids.value1_sats.text = record[24]
         self.root.ids.value2_sats.text = f"Sats: {record[24]}"
         if self.playStartTs:
             elapsed = datetime.datetime.now() - self.playStartTs
@@ -988,6 +992,7 @@ class MainApp(MDApp):
     def __init__(self, **kwargs):
         print("constructor...")
         super().__init__(**kwargs)
+        locale.setlocale(locale.LC_ALL, '')
         if platform == 'android':
             request_permissions([Permission.INTERNET, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE])
             self.chosenFile = None
