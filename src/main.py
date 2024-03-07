@@ -310,12 +310,15 @@ class MainApp(MDApp):
                         if (statusChanged): # start new flight path if current one ends or new one begins.
                             if (len(pathCoord) > 0):
                                 self.pathCoords.append(pathCoord)
-                                print(f"{pathCoord}")
+                                #print(f"{pathCoord}")
                                 pathCoord = []
                                 isNewPath = True
                         if (isFlying): # Only trace path when the drone's motors are spinning faster than idle speeds.
                             pathNum = len(self.pathCoords)+1
-                            pathCoord.append([dronelon, dronelat])
+                            lastCoord = pathCoord[len(pathCoord)-1] if len(pathCoord) > 0 else [0, 0]
+                            distMoved = haversine(lastCoord[0], lastCoord[1], dronelon, dronelat)
+                            if distMoved >= 0.001:
+                                pathCoord.append([dronelon, dronelat])
                             #print(f"{sanDist},{recordCount},{dronelon},{dronelat}")
                             if pathNum == len(self.flightStats):
                                 self.flightStats.append([dist3, alt2, speed2, elapsedTs, dronelat, dronelon, dronelat, dronelon])
