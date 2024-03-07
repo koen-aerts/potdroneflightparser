@@ -312,16 +312,21 @@ class MainApp(MDApp):
                         if (statusChanged): # start new flight path if current one ends or new one begins.
                             if (len(pathCoord) > 0):
                                 self.pathCoords.append(pathCoord)
-                                #print(f"{pathCoord}")
                                 pathCoord = []
                                 isNewPath = True
                         if (isFlying): # Only trace path when the drone's motors are spinning faster than idle speeds.
                             pathNum = len(self.pathCoords)+1
-                            lastCoord = pathCoord[len(pathCoord)-1] if len(pathCoord) > 0 else [0, 0]
-                            distMoved = haversine(lastCoord[0], lastCoord[1], dronelon, dronelat)
-                            if distMoved >= 0.0015:
-                                pathCoord.append([dronelon, dronelat])
-                            #print(f"{sanDist},{recordCount},{dronelon},{dronelat}")
+                            if len(pathCoord) == 0:
+                                pathCoord.append([])
+                            lastSegment = pathCoord[len(pathCoord)-1]
+                            lastCoord = lastSegment[len(lastSegment)-1] if len(lastSegment) > 0 else [9999, 9999]
+                            if lastCoord[0] != dronelon or lastCoord[1] != dronelat: # Only include the point if it is different from the previous (i.e. drone moved)
+                                if len(lastSegment) >= 200: # Break flight paths into segments because the map widget cannot handle too many points per path otherwise.
+                                    lastCoord = lastSegment[len(lastSegment)-1]
+                                    pathCoord.append([])
+                                    lastSegment = pathCoord[len(pathCoord)-1]
+                                    lastSegment.append(lastCoord)
+                                lastSegment.append([dronelon, dronelat])
                             if pathNum == len(self.flightStats):
                                 self.flightStats.append([dist3, alt2, speed2, elapsedTs, dronelat, dronelon, dronelat, dronelon])
                             else:
@@ -474,24 +479,27 @@ class MainApp(MDApp):
         self.flightPaths = []
         if not self.pathCoords:
             return
-        colors = self.pathColors[0]
+        colors = self.pathColors[int(re.sub("[^0-9\.]", "", self.root.ids.selected_flight_path_colors.text))-1]
         idx = 0
         for pathCoord in self.pathCoords:
-            geojson = {
-                "geojson": {
-                    "type": "Feature",
-                    "properties": {
-                        "stroke": colors[idx%len(colors)],
-                        "stroke-width": self.root.ids.selected_flight_path_width.text
-                    },
-                    "geometry": {
-                        "type": "LineString",
-                        "coordinates": pathCoord
+            flightPath = []
+            for pathSegment in pathCoord:
+                geojson = {
+                    "geojson": {
+                        "type": "Feature",
+                        "properties": {
+                            "stroke": colors[idx%len(colors)],
+                            "stroke-width": self.root.ids.selected_flight_path_width.text
+                        },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": pathSegment
+                        }
                     }
                 }
-            }
-            maplayer = GeoJsonMapLayer(**geojson)
-            self.flightPaths.append(maplayer)
+                maplayer = GeoJsonMapLayer(**geojson)
+                flightPath.append(maplayer)
+            self.flightPaths.append(flightPath)
             idx = idx + 1
 
 
@@ -501,11 +509,12 @@ class MainApp(MDApp):
     def remove_layers(self):
         if not self.flightPaths:
             return
-        for maplayer in self.flightPaths:
-            try:
-                self.root.ids.map.remove_layer(maplayer)
-            except:
-                ... # Do nothing
+        for flightPath in self.flightPaths:
+            for maplayer in flightPath:
+                try:
+                    self.root.ids.map.remove_layer(maplayer)
+                except:
+                    ... # Do nothing
 
 
     '''
@@ -558,6 +567,26 @@ class MainApp(MDApp):
 
 
     '''
+    Flight Path Colours functions.
+    '''
+    def flight_path_colors_selection(self, item):
+        if self.flightOptions is None:
+            return
+        menu_items = []
+        for pathColor in ['Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5', 'Option 6', 'Option 7', 'Option 8', 'Option 9']:
+            menu_items.append({"text": pathColor, "on_release": lambda x=pathColor: self.flight_path_colors_callback(x)})
+        MDDropdownMenu(caller = item, items = menu_items).open()
+    def flight_path_colors_callback(self, text_item):
+        self.root.ids.selected_flight_path_colors.text = text_item
+        self.config.set('preferences', 'flight_path_colors', text_item)
+        self.config.write()
+        self.stop_flight(True)
+        self.remove_layers()
+        self.generate_map_layers()
+        self.select_flight()
+
+
+    '''
     Flight Path dropdown functions.
     '''
     def open_flight_selection(self, item):
@@ -578,12 +607,14 @@ class MainApp(MDApp):
         flightNum = 0 if (self.root.ids.selected_path.text == '--') else int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
         if (flightNum == 0):
             # TODO - map does not always refresh right away...
-            for maplayer in self.flightPaths:
-                self.root.ids.map.add_layer(maplayer)
+            for flightPath in self.flightPaths:
+                for maplayer in flightPath:
+                    self.root.ids.map.add_layer(maplayer)
         else:
             flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
-            maplayer = self.flightPaths[flightNum-1]
-            self.root.ids.map.add_layer(maplayer)
+            flightPath = self.flightPaths[flightNum-1]
+            for maplayer in flightPath:
+                self.root.ids.map.add_layer(maplayer)
             self.currentStartIdx = self.flightStarts[self.root.ids.selected_path.text]
             self.currentEndIdx = self.flightEnds[self.root.ids.selected_path.text]
             self.currentRowIdx = self.currentStartIdx
@@ -907,7 +938,9 @@ class MainApp(MDApp):
                 self.parse_file(self.chosenFile)
         else:
             # Open standard file manager on non-android platform
-            myPath = os.path.expanduser("~")
+            myPath = self.config.get('preferences', 'last_directory')
+            if not os.path.exists(myPath):
+                myPath = os.path.expanduser("~")
             print(f"file_manager_open path1 {myPath}")
             self.file_manager.show(myPath)  # output manager to the screen
             #self.file_manager.show(os.path.curdir)  # output manager to the screen
@@ -932,6 +965,11 @@ class MainApp(MDApp):
     File Manager, called when a file has been selected on a non-android platform.
     '''
     def file_manager_callback(self, path: str):
+        selectedDir = path
+        if not os.path.isdir(selectedDir):
+            selectedDir = os.path.dirname(selectedDir)
+        self.config.set('preferences', 'last_directory', selectedDir)
+        self.config.write()
         self.exit_manager()
         self.parse_file(path)
         #MDSnackbar(MDSnackbarText(text=path), y=dp(24), pos_hint={"center_x": 0.5}, size_hint_x=0.8).open()
@@ -981,6 +1019,7 @@ class MainApp(MDApp):
         self.root.ids.selected_home_marker.active = self.config.getboolean('preferences', 'show_marker_home')
         self.root.ids.selected_ctrl_marker.active = self.config.getboolean('preferences', 'show_marker_ctrl')
         self.root.ids.selected_flight_path_width.text = self.config.get('preferences', 'flight_path_width')
+        self.root.ids.selected_flight_path_colors.text = self.config.get('preferences', 'flight_path_colors')
         self.root.ids.selected_rounding.active = self.config.getboolean('preferences', 'rounded_readings')
         self.root.ids.selected_mapsource.text = self.config.get('preferences', 'map_tile_server')
         self.root.ids.selected_refresh_rate.text = self.config.get('preferences', 'refresh_rate')
@@ -1001,9 +1040,9 @@ class MainApp(MDApp):
             self.manager_open = False # To track non-Android File Manager
             self.file_manager = MDFileManager(exit_manager = self.exit_manager, select_path = self.file_manager_callback, ext = ['.zip'])
         Window.bind(on_keyboard=self.events)
-        self.ctrlmarker = MapMarker(source="assets/Arturo-Wibawa-Akar-Game-controller.48.png", anchor_y=0.5)
-        self.homemarker = MapMarker(source="assets/Custom-Icon-Design-Mono-General-3-Home.48.png", anchor_y=0.5)
-        self.dronemarker = MapMarker(source="assets/Iconoir-Team-Iconoir-Drone.48.png", anchor_y=0.5)
+        self.ctrlmarker = MapMarker(source="assets/controller.png", anchor_y=0.5)
+        self.homemarker = MapMarker(source="assets/home.png", anchor_y=0.5)
+        self.dronemarker = MapMarker(source="assets/drone.png", anchor_y=0.5)
         cfgloc = self.get_application_config()
         print(f"cfg loc: {cfgloc}")
         self.flightPaths = None
@@ -1020,11 +1059,13 @@ class MainApp(MDApp):
             'unit_of_measure': "metric",
             'rounded_readings': True,
             'flight_path_width': "1.0",
+            'flight_path_colors': "Option 1",
             'refresh_rate': "1.00s",
             'show_flight_path': True,
             'show_marker_home': True,
             'show_marker_ctrl': False,
-            'map_tile_server': SelectableTileServer.OPENSTREETMAP.value
+            'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
+            'last_directory': os.path.expanduser("~")
         })
 
 

@@ -339,3 +339,12 @@ MDGridLayout:
                             role: "medium"
                             id: selected_mapsource
                             text: ""
+                    PrefLabel:
+                        text: "Flight Path Colours:"
+                    PrefSelect:
+                        on_release: app.flight_path_colors_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_flight_path_colors
+                            text: ""
