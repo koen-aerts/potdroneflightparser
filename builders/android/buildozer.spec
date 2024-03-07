@@ -4,7 +4,7 @@
 title = Flight Log Viewer
 
 # (str) Package name
-package.name = potdroneviewer
+package.name = flightlogviewer
 
 # (str) Package domain (needed for android/ios packaging)
 package.domain = ca.koenaerts
@@ -29,7 +29,7 @@ source.include_exts = py,png,jpg,kv,atlas
 #source.exclude_patterns = license,images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version = 2.0
+version = 2.0.0
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]

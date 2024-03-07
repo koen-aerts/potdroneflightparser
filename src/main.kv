@@ -182,10 +182,16 @@ MDGridLayout:
                                 style: "filled"
                                 icon: "skip-previous"
                             MDIconButton:
+                                style: "filled"
+                                icon: "rewind"
+                            MDIconButton:
                                 id: playbutton
                                 style: "filled"
                                 icon: "play"
                                 on_release: app.play_flight()
+                            MDIconButton:
+                                style: "filled"
+                                icon: "fast-forward"
                             MDIconButton:
                                 style: "filled"
                                 icon: "skip-next"
@@ -255,12 +261,13 @@ MDGridLayout:
                         MDActionTopAppBarButton:
                             icon: "wrench-cog-outline"
                             on_release: root.ids.screen_manager.current = "Screen 3"
-                MDGridLayout:
-                    cols: 5
-                    id: flight_stats_grid
-                    md_bg_color: self.theme_cls.backgroundColor
-                    row_default_height: dp(30)
-                    adaptive_height: True
+                MDScrollView:
+                    MDGridLayout:
+                        cols: 5
+                        id: flight_stats_grid
+                        md_bg_color: self.theme_cls.backgroundColor
+                        row_default_height: dp(30)
+                        adaptive_height: True
         BaseScreen:
             name: "Screen 3"
             MDGridLayout:

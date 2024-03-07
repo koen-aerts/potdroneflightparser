@@ -310,11 +310,13 @@ class MainApp(MDApp):
                         if (statusChanged): # start new flight path if current one ends or new one begins.
                             if (len(pathCoord) > 0):
                                 self.pathCoords.append(pathCoord)
+                                print(f"{pathCoord}")
                                 pathCoord = []
                                 isNewPath = True
                         if (isFlying): # Only trace path when the drone's motors are spinning faster than idle speeds.
                             pathNum = len(self.pathCoords)+1
                             pathCoord.append([dronelon, dronelat])
+                            #print(f"{sanDist},{recordCount},{dronelon},{dronelat}")
                             if pathNum == len(self.flightStats):
                                 self.flightStats.append([dist3, alt2, speed2, elapsedTs, dronelat, dronelon, dronelat, dronelon])
                             else:
@@ -732,6 +734,7 @@ class MainApp(MDApp):
             self.remove_layers()
             self.root.ids.value_maxdist.text = ""
             self.root.ids.value_maxalt.text = ""
+            self.root.ids.value_maxspeed.text = ""
             self.root.ids.value_duration.text = ""
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""

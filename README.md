@@ -1,5 +1,5 @@
-# Flight Data Viewer
-Flight Data Viewer that can read from Potensic flight-log files.
+# Flight Log Viewer
+Flight Log Viewer that can read from Potensic flight-log files.
 
 Models confirmed working are the Atom and Atom SE (both first and second generations).
 
@@ -11,7 +11,7 @@ This project is based on reverse engineering of the Potensic flight bin files (m
 
 # How to run
 ## Pre-Built
-On Windows or MacOS (x64/ARM) you can download and run one of the executables from the [Releases](<../../releases> "Releases") section.
+On Windows, MacOS (x64/ARM), or Android devices, you can download and run one of the executables from the [Releases](<../../releases> "Releases") section.
 
 On MacOS, you may see warnings or errors that will prevent you from running the app. This is a standard defense mechanism to prevent users from accidentally running arbitrary content that comes from the Internet. Depending on your version, the message could say something along the lines of the app is broken or dangerous, and it will prevent you from executing it and instead give you a cancel or delete option.
 
@@ -26,7 +26,7 @@ To solve this, you can remove the Extended Attributes from the file. You will ha
 % sudo mv extractFlightData.app /Applications
 ```
 
-On Windows, your may see a similar warning about dangerous content from the Internet, or Microsoft Defender can raise a false positive about the binary being infected. The binaries are not signed (because I'm not willing to pay Microsoft for this) and contain Python binaries, which also tend to throw off Defender. It should give you the option to ignore and continue.
+On Windows, your may see a similar warning about dangerous content from the Internet, or Microsoft Defender can raise a false positive about the binary being infected. The binaries are not signed (because I am not willing to pay Microsoft for this) and contain Python binaries, which also tend to throw off Defender. It should give you the option to ignore and continue.
 
 ![Windows Defender Warning](<resources/wd1.png> "Windows Defender Warning")
 
@@ -35,7 +35,7 @@ On Windows, your may see a similar warning about dangerous content from the Inte
 Likewise, any other virus scanner could flag a false positive on any binary you download from the Internet. You should be able to tell your scanner to ignore the warning. If you are unsure, you may be able to upload the contents of the "Flight Data Viewer" directory under "C:\Program Files (x86)" to your virus scanner website and ask for it to be whitelisted. They will analyse the app and whitelist it if deemed safe.
 
 ## From Source
-If you don't have MacOS or Windows, you can run the application directly on almost any other platform that supports Python.
+If you don't have MacOS, Windows or an Android device, you can run the application directly on almost any other platform that supports Python.
 
 First, you need to [install Python](<https://www.python.org/downloads/> "Download Python") on your platform. Version 3.11 or greater is recommended.
 
@@ -68,7 +68,7 @@ create-version-file ./resources/app-version.yml --outfile file_version_info.txt
 pyinstaller extractFlightData.py --noconsole --onefile -i ./resources/app-icon256.png --version-file file_version_info.txt
 ```
 
-![selfie from a Potensic Atom SE](<resources/app-icon256.png> "Atom SE selfie")
+![selfie from a Potensic Atom SE](<src/assets/app-icon256.png> "Atom SE selfie")
 
 # More Info
 Check [here](<https://koenaerts.ca/micro-drones/parsing-potensic-flight-data-files/> "Parsing Potensic Flight Data Files").

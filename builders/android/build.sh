@@ -24,7 +24,8 @@ echo "Running docker build container..."
 docker run -it -u builder -v ${SRC}:/home/builder/source fdv-apk-builder:latest /bin/sh -lc "cd source; buildozer android debug"
 
 # Grab the generated apk.
-mv ${SRC}/bin/*.apk ${LOC}
+APKNAME=`ls ${SRC}/bin/*.apk | sed -E "s/.*\/([^-]+-[^-]+)[^\.]*.(.*)/\1.\2/"`
+mv ${SRC}/bin/*.apk ${LOC}/${APKNAME}
 
 # Clean up
-${LOC}/../remove_build_artifacts.sh
+#${LOC}/../remove_build_artifacts.sh
