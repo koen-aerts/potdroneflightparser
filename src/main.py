@@ -34,6 +34,8 @@ from kivy_garden.mapview.utils import haversine
 if platform == 'android':
     from android.permissions import request_permissions, Permission
     from androidstorage4kivy import SharedStorage, Chooser
+else:
+    from plyer import filechooser
 
 #from platformdirs import user_data_dir
 from pathlib import Path, PurePath
@@ -434,9 +436,11 @@ class MainApp(MDApp):
         menu_items = []
         for mapOption in SelectableTileServer:
             menu_items.append({"text": mapOption.value, "on_release": lambda x=mapOption.value: self.mapsource_selection_callback(x)})
-        MDDropdownMenu(caller = item, items = menu_items).open()
+        self.mapsource_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.mapsource_selection_menu.open()
     def mapsource_selection_callback(self, text_item):
         self.root.ids.selected_mapsource.text = text_item
+        self.mapsource_selection_menu.dismiss()
         self.config.set('preferences', 'map_tile_server', text_item)
         self.config.write()
         self.select_map_source()
@@ -461,9 +465,11 @@ class MainApp(MDApp):
         menu_items = []
         for pathWidth in ['0.5', '1.0', '1.5', '2.0', '2.5', '3.0']:
             menu_items.append({"text": pathWidth, "on_release": lambda x=pathWidth: self.flight_path_width_selection_callback(x)})
-        MDDropdownMenu(caller = item, items = menu_items).open()
+        self.flight_path_width_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.flight_path_width_selection_menu.open()
     def flight_path_width_selection_callback(self, text_item):
         self.root.ids.selected_flight_path_width.text = text_item
+        self.flight_path_width_selection_menu.dismiss()
         self.config.set('preferences', 'flight_path_width', text_item)
         self.config.write()
         self.stop_flight(True)
@@ -574,16 +580,45 @@ class MainApp(MDApp):
             return
         menu_items = []
         for pathColor in ['Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5', 'Option 6', 'Option 7', 'Option 8', 'Option 9']:
-            menu_items.append({"text": pathColor, "on_release": lambda x=pathColor: self.flight_path_colors_callback(x)})
-        MDDropdownMenu(caller = item, items = menu_items).open()
-    def flight_path_colors_callback(self, text_item):
+            menu_items.append({"text": pathColor, "on_release": lambda x=pathColor: self.flight_path_colors_selection_callback(x)})
+        self.flight_path_colors_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.flight_path_colors_selection_menu.open()
+    def flight_path_colors_selection_callback(self, text_item):
         self.root.ids.selected_flight_path_colors.text = text_item
+        self.flight_path_colors_selection_menu.dismiss()
         self.config.set('preferences', 'flight_path_colors', text_item)
         self.config.write()
         self.stop_flight(True)
         self.remove_layers()
         self.generate_map_layers()
         self.select_flight()
+
+
+    '''
+    Marker Colour functions.
+    '''
+    def marker_color_selection(self, item):
+        if self.flightOptions is None:
+            return
+        menu_items = []
+        for markerColor in ['1', '2', '3', '4', '5']:
+            menu_items.append({"text": markerColor, "on_release": lambda x=markerColor: self.marker_color_selection_callback(x)})
+        self.marker_color_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.marker_color_selection_menu.open()
+    def marker_color_selection_callback(self, text_item):
+        self.root.ids.selected_marker_color.text = text_item
+        self.marker_color_selection_menu.dismiss()
+        self.config.set('preferences', 'marker_color', text_item)
+        self.config.write()
+        self.stop_flight(True)
+        self.remove_markers()
+        self.set_marker_color()
+        self.add_markers()
+        self.set_markers()
+    def set_marker_color(self):
+        self.ctrlmarker = MapMarker(source=f"assets/Controller-{self.root.ids.selected_marker_color.text}.png", anchor_y=0.5)
+        self.homemarker = MapMarker(source=f"assets/Home-{self.root.ids.selected_marker_color.text}.png", anchor_y=0.5)
+        self.dronemarker = MapMarker(source=f"assets/Drone-{self.root.ids.selected_marker_color.text}.png", anchor_y=0.5)
 
 
     '''
@@ -596,9 +631,11 @@ class MainApp(MDApp):
         menu_items.append({"text": "--", "on_release": lambda x="--": self.flight_selection_callback(x)})
         for flightOption in self.flightOptions:
             menu_items.append({"text": flightOption, "on_release": lambda x=flightOption: self.flight_selection_callback(x)})
-        MDDropdownMenu(caller = item, items = menu_items).open()
+        self.flight_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.flight_selection_menu.open()
     def flight_selection_callback(self, text_item):
         self.root.ids.selected_path.text = text_item
+        self.flight_selection_menu.dismiss()
         self.select_flight()
     def select_flight(self):
         self.stop_flight(True)
@@ -667,9 +704,11 @@ class MainApp(MDApp):
         menu_items = []
         for pathWidth in ['metric', 'imperial']:
             menu_items.append({"text": pathWidth, "on_release": lambda x=pathWidth: self.uom_selection_callback(x)})
-        MDDropdownMenu(caller = item, items = menu_items).open()
+        self.uom_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.uom_selection_menu.open()
     def uom_selection_callback(self, text_item):
         self.root.ids.selected_uom.text = text_item
+        self.uom_selection_menu.dismiss()
         self.config.set('preferences', 'unit_of_measure', text_item)
         self.config.write()
         self.stop_flight(True)
@@ -683,9 +722,11 @@ class MainApp(MDApp):
         menu_items = []
         for refreshRate in ['0.25s', '0.50s', '0.75s', '1.00s', '1.25s', '1.50s']:
             menu_items.append({"text": refreshRate, "on_release": lambda x=refreshRate: self.refresh_rate_selection_callback(x)})
-        MDDropdownMenu(caller = item, items = menu_items).open()
+        self.refresh_rate_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.refresh_rate_selection_menu.open()
     def refresh_rate_selection_callback(self, text_item):
         self.root.ids.selected_refresh_rate.text = text_item
+        self.refresh_rate_selection_menu.dismiss()
         self.config.set('preferences', 'refresh_rate', text_item)
         self.config.write()
         self.stop_flight(True)
@@ -800,6 +841,7 @@ class MainApp(MDApp):
         self.zipFilename = None
         self.flightStats = None
         self.playStartTs = None
+        self.currentRowIdx = None
         if self.root:
             self.center_map()
 
@@ -831,6 +873,8 @@ class MainApp(MDApp):
     Update ctrl/home/drone markers on the map as well as other labels with flight information.
     '''
     def set_markers(self):
+        if not self.currentRowIdx:
+            return
         record = self.logdata[self.currentRowIdx]
         self.root.ids.value1_alt.text = f"{record[15]} {self.dist_unit()}"
         self.root.ids.value2_alt.text = f"Alt: {record[15]} {self.dist_unit()}"
@@ -929,6 +973,8 @@ class MainApp(MDApp):
             # Open Android Shared Storage. This opens in a separate thread so we wait here
             # until that dialog has closed. Otherwise the map drawing will be triggered from
             # a thread other than the main Kivy one and it will complain about that.
+            # Note that "plyer" also supports Android File Manager but it seems to have some
+            # issues, so we're using androidstorage4kivy instead.
             self.chosenFile = None
             self.chooser.choose_content("application/zip")
             self.chooser_open = True
@@ -937,14 +983,14 @@ class MainApp(MDApp):
             if self.chosenFile is not None:
                 self.parse_file(self.chosenFile)
         else:
-            # Open standard file manager on non-android platform
-            myPath = self.config.get('preferences', 'last_directory')
-            if not os.path.exists(myPath):
-                myPath = os.path.expanduser("~")
-            print(f"file_manager_open path1 {myPath}")
-            self.file_manager.show(myPath)  # output manager to the screen
-            #self.file_manager.show(os.path.curdir)  # output manager to the screen
-            self.manager_open = True
+            myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
+            if myFiles and len(myFiles) > 0 and os.path.isfile(myFiles[0]):
+                self.parse_file(myFiles[0])
+
+
+    def file_selection_callback(self, file_list):
+        print(f"files: {file_list}")
+        self.android_files_selected = file_list if file_list is not None else []
 
 
     '''
@@ -962,99 +1008,39 @@ class MainApp(MDApp):
 
 
     '''
-    File Manager, called when a file has been selected on a non-android platform.
-    '''
-    def file_manager_callback(self, path: str):
-        selectedDir = path
-        if not os.path.isdir(selectedDir):
-            selectedDir = os.path.dirname(selectedDir)
-        self.config.set('preferences', 'last_directory', selectedDir)
-        self.config.write()
-        self.exit_manager()
-        self.parse_file(path)
-        #MDSnackbar(MDSnackbarText(text=path), y=dp(24), pos_hint={"center_x": 0.5}, size_hint_x=0.8).open()
-
-
-    '''
-    Closes the File Manager.
-    '''
-    def exit_manager(self, *args):
-        '''Called when the user reaches the root of the directory tree.'''
-        self.manager_open = False
-        self.file_manager.close()
-
-
-    '''
     Capture keyboard input.
     '''
     def events(self, instance, keyboard, keycode, text, modifiers):
         '''Called when buttons are pressed on the mobile device.'''
         if keyboard in (1001, 27):
-            if self.manager_open:
-                self.file_manager.back()
-            else:
-                self.stop()
+            self.stop()
         return True
-
-
-    def on_start(self):
-        self.root.ids.selected_path.text = '--'
-        self.select_map_source()
-        return super().on_start()
-
-
-    '''
-    Called when the app is exited.
-    '''
-    def on_stop(self):
-        self.stop_flight(True)
-        return super().on_stop()
-
-
-    '''
-    Read configs from storage.
-    '''
-    def readConfig(self):
-        self.root.ids.selected_uom.text = self.config.get('preferences', 'unit_of_measure')
-        self.root.ids.selected_home_marker.active = self.config.getboolean('preferences', 'show_marker_home')
-        self.root.ids.selected_ctrl_marker.active = self.config.getboolean('preferences', 'show_marker_ctrl')
-        self.root.ids.selected_flight_path_width.text = self.config.get('preferences', 'flight_path_width')
-        self.root.ids.selected_flight_path_colors.text = self.config.get('preferences', 'flight_path_colors')
-        self.root.ids.selected_rounding.active = self.config.getboolean('preferences', 'rounded_readings')
-        self.root.ids.selected_mapsource.text = self.config.get('preferences', 'map_tile_server')
-        self.root.ids.selected_refresh_rate.text = self.config.get('preferences', 'refresh_rate')
 
 
     '''
     Constructor
     '''
     def __init__(self, **kwargs):
-        print("constructor...")
         super().__init__(**kwargs)
         locale.setlocale(locale.LC_ALL, '')
         if platform == 'android':
             request_permissions([Permission.INTERNET, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE])
             self.chosenFile = None
             self.chooser_open = False # To track Android File Manager (Chooser)
-        else:
-            self.manager_open = False # To track non-Android File Manager
-            self.file_manager = MDFileManager(exit_manager = self.exit_manager, select_path = self.file_manager_callback, ext = ['.zip'])
+            self.chooser = Chooser(self.chooser_callback)
         Window.bind(on_keyboard=self.events)
-        self.ctrlmarker = MapMarker(source="assets/controller.png", anchor_y=0.5)
-        self.homemarker = MapMarker(source="assets/home.png", anchor_y=0.5)
-        self.dronemarker = MapMarker(source="assets/drone.png", anchor_y=0.5)
         cfgloc = self.get_application_config()
         print(f"cfg loc: {cfgloc}")
         self.flightPaths = None
         self.flightOptions = None
         self.isPlaying = False
+        self.currentRowIdx = None
 
 
     '''
     Generate a config file with default settings.
     '''
     def build_config(self, config):
-        print(f"build_config {config}")
         config.setdefaults('preferences', {
             'unit_of_measure': "metric",
             'rounded_readings': True,
@@ -1065,17 +1051,39 @@ class MainApp(MDApp):
             'show_marker_home': True,
             'show_marker_ctrl': False,
             'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
-            'last_directory': os.path.expanduser("~")
+            'marker_color': '1'
         })
 
 
     def build(self):
-        print("build...")
         print(self.root.ids.map.cache_dir)
-        if platform == 'android':
-            self.chooser = Chooser(self.chooser_callback)
-        self.readConfig()
+        self.root.ids.selected_uom.text = self.config.get('preferences', 'unit_of_measure')
+        self.root.ids.selected_home_marker.active = self.config.getboolean('preferences', 'show_marker_home')
+        self.root.ids.selected_ctrl_marker.active = self.config.getboolean('preferences', 'show_marker_ctrl')
+        self.root.ids.selected_flight_path_width.text = self.config.get('preferences', 'flight_path_width')
+        self.root.ids.selected_flight_path_colors.text = self.config.get('preferences', 'flight_path_colors')
+        self.root.ids.selected_rounding.active = self.config.getboolean('preferences', 'rounded_readings')
+        self.root.ids.selected_mapsource.text = self.config.get('preferences', 'map_tile_server')
+        self.root.ids.selected_refresh_rate.text = self.config.get('preferences', 'refresh_rate')
+        self.root.ids.selected_marker_color.text = self.config.get('preferences', 'marker_color')
+
+
+    def on_start(self):
+        print("start")
+        self.root.ids.selected_path.text = '--'
+        self.set_marker_color()
+        self.select_map_source()
         self.reset()
+        return super().on_start()
+
+
+    '''
+    Called when the app is exited.
+    '''
+    def on_stop(self):
+        self.stop_flight(True)
+        return super().on_stop()
+
 
 if __name__ == "__main__":
     #print(Config.get('graphics', 'fullscreen'))

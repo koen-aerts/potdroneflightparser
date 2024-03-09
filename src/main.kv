@@ -47,10 +47,8 @@
     right: 1
 
 <PrefSelect@MDDropDownItem>
-    #padding_x: dp(2)
 
 <PrefCheck@MDCheckbox>
-    #padding_x: dp(2)
 
 MDGridLayout:
     cols: 1
@@ -331,6 +329,15 @@ MDGridLayout:
                         id: selected_rounding
                         active: True
                     PrefLabel:
+                        text: "Flight Path Colours:"
+                    PrefSelect:
+                        on_release: app.flight_path_colors_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_flight_path_colors
+                            text: ""
+                    PrefLabel:
                         text: "Map Tile Server:"
                     PrefSelect:
                         on_release: app.open_mapsource_selection(*args)
@@ -340,11 +347,11 @@ MDGridLayout:
                             id: selected_mapsource
                             text: ""
                     PrefLabel:
-                        text: "Flight Path Colours:"
+                        text: "Marker Colours:"
                     PrefSelect:
-                        on_release: app.flight_path_colors_selection(*args)
+                        on_release: app.marker_color_selection(*args)
                         MDDropDownItemText:
                             font_style: "Title"
                             role: "medium"
-                            id: selected_flight_path_colors
+                            id: selected_marker_color
                             text: ""
