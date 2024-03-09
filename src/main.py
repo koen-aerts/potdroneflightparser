@@ -983,7 +983,11 @@ class MainApp(MDApp):
             if self.chosenFile is not None:
                 self.parse_file(self.chosenFile)
         else:
+            oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
             if myFiles and len(myFiles) > 0 and os.path.isfile(myFiles[0]):
                 self.parse_file(myFiles[0])
 
