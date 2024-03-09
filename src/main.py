@@ -595,30 +595,78 @@ class MainApp(MDApp):
 
 
     '''
-    Marker Colour functions.
+    Drone Marker Colour functions.
     '''
-    def marker_color_selection(self, item):
+    def marker_drone_color_selection(self, item):
         if self.flightOptions is None:
             return
         menu_items = []
-        for markerColor in ['1', '2', '3', '4', '5']:
-            menu_items.append({"text": markerColor, "on_release": lambda x=markerColor: self.marker_color_selection_callback(x)})
-        self.marker_color_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
-        self.marker_color_selection_menu.open()
-    def marker_color_selection_callback(self, text_item):
-        self.root.ids.selected_marker_color.text = text_item
-        self.marker_color_selection_menu.dismiss()
-        self.config.set('preferences', 'marker_color', text_item)
+        for markerColor in ['1', '2', '3', '4', '5', '6']:
+            menu_items.append({"text": markerColor, "on_release": lambda x=markerColor: self.marker_drone_color_selection_callback(x)})
+        self.marker_drone_color_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.marker_drone_color_selection_menu.open()
+    def marker_drone_color_selection_callback(self, text_item):
+        self.root.ids.selected_marker_drone_color.text = text_item
+        self.marker_drone_color_selection_menu.dismiss()
+        self.config.set('preferences', 'marker_drone_color', text_item)
         self.config.write()
         self.stop_flight(True)
         self.remove_markers()
-        self.set_marker_color()
+        self.set_marker_drone_color()
         self.add_markers()
         self.set_markers()
-    def set_marker_color(self):
-        self.ctrlmarker = MapMarker(source=f"assets/Controller-{self.root.ids.selected_marker_color.text}.png", anchor_y=0.5)
-        self.homemarker = MapMarker(source=f"assets/Home-{self.root.ids.selected_marker_color.text}.png", anchor_y=0.5)
-        self.dronemarker = MapMarker(source=f"assets/Drone-{self.root.ids.selected_marker_color.text}.png", anchor_y=0.5)
+    def set_marker_drone_color(self):
+        self.dronemarker = MapMarker(source=f"assets/Drone-{self.root.ids.selected_marker_drone_color.text}.png", anchor_y=0.5)
+
+
+    '''
+    Controller Marker Colour functions.
+    '''
+    def marker_ctrl_color_selection(self, item):
+        if self.flightOptions is None:
+            return
+        menu_items = []
+        for markerColor in ['1', '2', '3', '4', '5', '6']:
+            menu_items.append({"text": markerColor, "on_release": lambda x=markerColor: self.marker_ctrl_color_selection_callback(x)})
+        self.marker_ctrl_color_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.marker_ctrl_color_selection_menu.open()
+    def marker_ctrl_color_selection_callback(self, text_item):
+        self.root.ids.selected_marker_ctrl_color.text = text_item
+        self.marker_ctrl_color_selection_menu.dismiss()
+        self.config.set('preferences', 'marker_ctrl_color', text_item)
+        self.config.write()
+        self.stop_flight(True)
+        self.remove_markers()
+        self.set_marker_ctrl_color()
+        self.add_markers()
+        self.set_markers()
+    def set_marker_ctrl_color(self):
+        self.ctrlmarker = MapMarker(source=f"assets/Controller-{self.root.ids.selected_marker_ctrl_color.text}.png", anchor_y=0.5)
+
+
+    '''
+    Home Marker Colour functions.
+    '''
+    def marker_home_color_selection(self, item):
+        if self.flightOptions is None:
+            return
+        menu_items = []
+        for markerColor in ['1', '2', '3', '4', '5', '6']:
+            menu_items.append({"text": markerColor, "on_release": lambda x=markerColor: self.marker_home_color_selection_callback(x)})
+        self.marker_home_color_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.marker_home_color_selection_menu.open()
+    def marker_home_color_selection_callback(self, text_item):
+        self.root.ids.selected_marker_home_color.text = text_item
+        self.marker_home_color_selection_menu.dismiss()
+        self.config.set('preferences', 'marker_home_color', text_item)
+        self.config.write()
+        self.stop_flight(True)
+        self.remove_markers()
+        self.set_marker_home_color()
+        self.add_markers()
+        self.set_markers()
+    def set_marker_home_color(self):
+        self.homemarker = MapMarker(source=f"assets/Home-{self.root.ids.selected_marker_home_color.text}.png", anchor_y=0.5)
 
 
     '''
@@ -1055,7 +1103,9 @@ class MainApp(MDApp):
             'show_marker_home': True,
             'show_marker_ctrl': False,
             'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
-            'marker_color': '1'
+            'marker_drone_color': '1',
+            'marker_ctrl_color': '1',
+            'marker_home_color': '1'
         })
 
 
@@ -1069,13 +1119,17 @@ class MainApp(MDApp):
         self.root.ids.selected_rounding.active = self.config.getboolean('preferences', 'rounded_readings')
         self.root.ids.selected_mapsource.text = self.config.get('preferences', 'map_tile_server')
         self.root.ids.selected_refresh_rate.text = self.config.get('preferences', 'refresh_rate')
-        self.root.ids.selected_marker_color.text = self.config.get('preferences', 'marker_color')
+        self.root.ids.selected_marker_drone_color.text = self.config.get('preferences', 'marker_drone_color')
+        self.root.ids.selected_marker_ctrl_color.text = self.config.get('preferences', 'marker_ctrl_color')
+        self.root.ids.selected_marker_home_color.text = self.config.get('preferences', 'marker_home_color')
 
 
     def on_start(self):
         print("start")
         self.root.ids.selected_path.text = '--'
-        self.set_marker_color()
+        self.set_marker_drone_color()
+        self.set_marker_ctrl_color()
+        self.set_marker_home_color()
         self.select_map_source()
         self.reset()
         return super().on_start()

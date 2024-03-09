@@ -338,6 +338,15 @@ MDGridLayout:
                             id: selected_flight_path_colors
                             text: ""
                     PrefLabel:
+                        text: "Drone Marker Colours:"
+                    PrefSelect:
+                        on_release: app.marker_drone_color_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_marker_drone_color
+                            text: ""
+                    PrefLabel:
                         text: "Map Tile Server:"
                     PrefSelect:
                         on_release: app.open_mapsource_selection(*args)
@@ -347,11 +356,24 @@ MDGridLayout:
                             id: selected_mapsource
                             text: ""
                     PrefLabel:
-                        text: "Marker Colours:"
+                        text: "Controller Marker Colours:"
                     PrefSelect:
-                        on_release: app.marker_color_selection(*args)
+                        on_release: app.marker_ctrl_color_selection(*args)
                         MDDropDownItemText:
                             font_style: "Title"
                             role: "medium"
-                            id: selected_marker_color
+                            id: selected_marker_ctrl_color
+                            text: ""
+                    PrefLabel:
+                        text: ""
+                    PrefLabel:
+                        text: ""
+                    PrefLabel:
+                        text: "Home Marker Colours:"
+                    PrefSelect:
+                        on_release: app.marker_home_color_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_marker_home_color
                             text: ""
