@@ -15,7 +15,7 @@
 <StatLabel@MDLabel>
     halign: "right"
     valign: "top"
-    padding_x: dp(2)
+    #padding: [0, dp(2)]
     max_lines: 1
     size_hint: (None, 1)
     height: dp(10)
@@ -25,7 +25,7 @@
 <StatValue@MDLabel>
     halign: "right"
     valign: "top"
-    padding_x: dp(2)
+    #padding_x: dp(2)
     max_lines: 1
     size_hint: (None, 1)
     height: dp(10)
@@ -35,20 +35,58 @@
 <StatDivider@MDDivider>
     size_hint: (1, None)
     divider_width: dp(0.75)
+    padding: 0
 
 <PrefLabel@MDLabel>
     halign: "right"
-    valign: "top"
-    padding_x: dp(2)
+    valign: "bottom"
+    #radius: [dp(4),dp(4)]
+    #padding_x: dp(2)
+    #pos_hint: {'right': 1.0, 'top': 1}
     max_lines: 1
-    size_hint: (None, 1)
-    height: dp(10)
-    width: dp(240)
-    right: 1
+    #pos_hint: {"y": 0}
+    size_hint: (None, None)
+    height: dp(40)
+    width: dp(210)
+    text_size: self.size
+    padding: dp(4)
+    #right: 1
 
 <PrefSelect@MDDropDownItem>
+    halign: "left"
+    valign: "top"
+    text_size: self.size
 
 <PrefCheck@MDCheckbox>
+    halign: "left"
+    valign: "bottom"
+    #pos_hint: {'x': 0, 'top': 1.0}
+    text_size: self.size
+    height: dp(40)
+    padding: [0, dp(4)]
+
+<PrefSlider@MDSlider>
+    halign: "left"
+    valign: "bottom"
+    #pos_hint: {"x": 0, "y": 0}
+    height: dp(15)
+    size_hint: (None, dp(1))
+    width: dp(160)
+    text_size: self.size
+    #height: dp(10)
+    #radius: [0,0,0,0]
+    track_active_width: dp(10)
+    track_inactive_width: dp(10)
+    #step_point_size: 0
+    #track_active_color: "#cccccc"
+    #track_inactive_color: "#dddddd"
+    #track_active_step_point_color: "#556700"
+    #track_inactive_step_point_color: "#000000"
+
+<PrefSliderHandle@MDSliderHandle>
+    #radius: [0,0,0,0]
+    size: [dp(14), dp(14)]
+    state_layer_color: "#008800"
 
 MDGridLayout:
     cols: 1
@@ -329,24 +367,6 @@ MDGridLayout:
                         id: selected_rounding
                         active: True
                     PrefLabel:
-                        text: "Flight Path Colours:"
-                    PrefSelect:
-                        on_release: app.flight_path_colors_selection(*args)
-                        MDDropDownItemText:
-                            font_style: "Title"
-                            role: "medium"
-                            id: selected_flight_path_colors
-                            text: ""
-                    PrefLabel:
-                        text: "Drone Marker Colours:"
-                    PrefSelect:
-                        on_release: app.marker_drone_color_selection(*args)
-                        MDDropDownItemText:
-                            font_style: "Title"
-                            role: "medium"
-                            id: selected_marker_drone_color
-                            text: ""
-                    PrefLabel:
                         text: "Map Tile Server:"
                     PrefSelect:
                         on_release: app.open_mapsource_selection(*args)
@@ -356,24 +376,47 @@ MDGridLayout:
                             id: selected_mapsource
                             text: ""
                     PrefLabel:
+                        text: ""
+                    PrefLabel:
+                        text: ""
+                    PrefLabel:
+                        text: "Flight Path Colour:"
+                    PrefSlider:
+                        id: selected_flight_path_color
+                        min: 0
+                        max: len(app.pathColors)-1
+                        step: 1
+                        value: 0
+                        on_value_pos: app.flight_path_color_selection(*args)
+                        #value_track_color: [1,15,77,34]
+                        PrefSliderHandle:
+                    PrefLabel:
                         text: "Controller Marker Colours:"
-                    PrefSelect:
-                        on_release: app.marker_ctrl_color_selection(*args)
-                        MDDropDownItemText:
-                            font_style: "Title"
-                            role: "medium"
-                            id: selected_marker_ctrl_color
-                            text: ""
+                    PrefSlider:
+                        id: selected_marker_ctrl_color
+                        on_value_pos: app.marker_ctrl_color_selection(*args)
+                        min: 0
+                        max: len(app.markerColors)-1
+                        step: 1
+                        value: 0
+                        PrefSliderHandle:
                     PrefLabel:
-                        text: ""
-                    PrefLabel:
-                        text: ""
+                        text: "Drone Marker Colours:"
+                    PrefSlider:
+                        id: selected_marker_drone_color
+                        on_value_pos: app.marker_drone_color_selection(*args)
+                        min: 0
+                        max: len(app.markerColors)-1
+                        step: 1
+                        value: 0
+                        PrefSliderHandle:
                     PrefLabel:
                         text: "Home Marker Colours:"
-                    PrefSelect:
-                        on_release: app.marker_home_color_selection(*args)
-                        MDDropDownItemText:
-                            font_style: "Title"
-                            role: "medium"
-                            id: selected_marker_home_color
-                            text: ""
+                    PrefSlider:
+                        id: selected_marker_home_color
+                        on_value_pos: app.marker_home_color_selection(*args)
+                        min: 0
+                        max: len(app.markerColors)-1
+                        step: 1
+                        value: 0
+                        PrefSliderHandle:
