@@ -73,7 +73,7 @@ class SelectablePlaybackSpeeds(Enum):
 
 
 class BaseScreen(MDScreen):
-    print(f"MDScreen:{MDScreen}")
+    ...
 
 
 class MainApp(MDApp):
@@ -85,8 +85,9 @@ class MainApp(MDApp):
     appName = "Flight Log Viewer"
     appTitle = f"{appName} - {appVersion}"
     defaultMapZoom = 3
-    pathColors = [ "#417dd6", "#c6c6c6", "#ffed49", "#ff0000", "#00ff00", "#0000ff", "#ffff00", "#000000", "#ffffff" ]
-    markerColors = [ "#870015", "#3f48cc", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000" ]
+    pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
+    pathColors = [ "#a349a4", "#c6c6c6", "#7f7f7f", "#ff0000", "#99d9ea", "#0000ff", "#ffff00", "#000000", "#ffffff" ]
+    markerColors = [ "#870015", "#3f48cc", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#fff200", "#a349a4", "#aad2fa" ]
     displayMode = "ATOM"
     columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
@@ -452,16 +453,8 @@ class MainApp(MDApp):
     '''
     Change Flight Path Line Width (Preferences).
     '''
-    def flight_path_width_selection(self, item):
-        menu_items = []
-        for pathWidth in ['1.0', '1.5', '2.0', '2.5', '3.0']:
-            menu_items.append({"text": pathWidth, "on_release": lambda x=pathWidth: self.flight_path_width_selection_callback(x)})
-        self.flight_path_width_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
-        self.flight_path_width_selection_menu.open()
-    def flight_path_width_selection_callback(self, text_item):
-        self.root.ids.selected_flight_path_width.text = text_item
-        self.flight_path_width_selection_menu.dismiss()
-        self.config.set('preferences', 'flight_path_width', text_item)
+    def flight_path_width_selection(self, slider, coords):
+        self.config.set('preferences', 'flight_path_width', int(slider.value))
         self.config.write()
         self.stop_flight(True)
         self.remove_layers()
@@ -485,7 +478,7 @@ class MainApp(MDApp):
                         "type": "Feature",
                         "properties": {
                             "stroke": color,
-                            "stroke-width": self.root.ids.selected_flight_path_width.text
+                            "stroke-width": self.pathWidths[int(self.root.ids.selected_flight_path_width.value)]
                         },
                         "geometry": {
                             "type": "LineString",
@@ -1064,7 +1057,7 @@ class MainApp(MDApp):
         config.setdefaults('preferences', {
             'unit_of_measure': "metric",
             'rounded_readings': True,
-            'flight_path_width': "1.0",
+            'flight_path_width': 0,
             'flight_path_color': 0,
             'marker_drone_color': 0,
             'marker_ctrl_color': 0,
@@ -1082,7 +1075,7 @@ class MainApp(MDApp):
         self.root.ids.selected_uom.text = self.config.get('preferences', 'unit_of_measure')
         self.root.ids.selected_home_marker.active = self.config.getboolean('preferences', 'show_marker_home')
         self.root.ids.selected_ctrl_marker.active = self.config.getboolean('preferences', 'show_marker_ctrl')
-        self.root.ids.selected_flight_path_width.text = self.config.get('preferences', 'flight_path_width')
+        self.root.ids.selected_flight_path_width.value = self.config.get('preferences', 'flight_path_width')
         self.root.ids.selected_flight_path_color.value = self.config.getint('preferences', 'flight_path_color')
         self.root.ids.selected_marker_drone_color.value = self.config.getint('preferences', 'marker_drone_color')
         self.root.ids.selected_marker_ctrl_color.value = self.config.getint('preferences', 'marker_ctrl_color')
