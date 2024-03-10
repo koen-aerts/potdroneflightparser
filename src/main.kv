@@ -65,20 +65,10 @@
 <PrefSlider@MDSlider>
     halign: "left"
     valign: "bottom"
-    #pos_hint: {"x": 0, "y": 0}
-    height: dp(15)
-    size_hint: (None, dp(1))
     width: dp(160)
     text_size: self.size
-    #height: dp(10)
-    #radius: [0,0,0,0]
     track_active_width: dp(10)
     track_inactive_width: dp(10)
-    #step_point_size: 0
-    #track_active_color: "#cccccc"
-    #track_inactive_color: "#dddddd"
-    #track_active_step_point_color: "#556700"
-    #track_inactive_step_point_color: "#000000"
 
 <PrefSliderHandle@MDSliderHandle>
     #radius: [0,0,0,0]
@@ -375,6 +365,11 @@ MDGridLayout:
                         max: len(app.pathWidths)-1
                         step: 1
                         value: 0
+                        height: dp(40)
+                        padding: 4
+                        pos_hint: {None, None}
+                        size_hint: (None, None)
+                        width: dp(160)
                         PrefSliderHandle:
                     PrefLabel:
                         text: ""
@@ -384,11 +379,16 @@ MDGridLayout:
                         text: "Flight Path Colour:"
                     PrefSlider:
                         id: selected_flight_path_color
+                        on_value_pos: app.flight_path_color_selection(*args)
                         min: 0
                         max: len(app.pathColors)-1
                         step: 1
                         value: 0
-                        on_value_pos: app.flight_path_color_selection(*args)
+                        height: dp(40)
+                        padding: 4
+                        pos_hint: {None, None}
+                        size_hint: (None, None)
+                        width: dp(160)
                         #value_track_color: [1,15,77,34]
                         PrefSliderHandle:
                     PrefLabel:
@@ -400,6 +400,11 @@ MDGridLayout:
                         max: len(app.markerColors)-1
                         step: 1
                         value: 0
+                        height: dp(40)
+                        padding: 4
+                        pos_hint: {None, None}
+                        size_hint: (None, None)
+                        width: dp(160)
                         PrefSliderHandle:
                     PrefLabel:
                         text: "Drone Marker Colour:"
@@ -410,6 +415,11 @@ MDGridLayout:
                         max: len(app.markerColors)-1
                         step: 1
                         value: 0
+                        height: dp(40)
+                        padding: 4
+                        pos_hint: {None, None}
+                        size_hint: (None, None)
+                        width: dp(160)
                         PrefSliderHandle:
                     PrefLabel:
                         text: "Home Marker Colour:"
@@ -420,4 +430,9 @@ MDGridLayout:
                         max: len(app.markerColors)-1
                         step: 1
                         value: 0
+                        height: dp(40)
+                        padding: 4
+                        pos_hint: {None, None}
+                        size_hint: (None, None)
+                        width: dp(160)
                         PrefSliderHandle:
