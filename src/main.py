@@ -86,8 +86,7 @@ class MainApp(MDApp):
     appTitle = f"{appName} - {appVersion}"
     defaultMapZoom = 3
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
-    pathColors = [ "#a349a4", "#c6c6c6", "#7f7f7f", "#ff0000", "#99d9ea", "#0000ff", "#ffff00", "#000000", "#ffffff" ]
-    markerColors = [ "#870015", "#3f48cc", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#fff200", "#a349a4", "#aad2fa" ]
+    assetColors = [ "#ed1c24", "#0000ff", "#00ff00", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
     displayMode = "ATOM"
     columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
@@ -469,7 +468,7 @@ class MainApp(MDApp):
         self.flightPaths = []
         if not self.pathCoords:
             return
-        color = self.pathColors[int(self.root.ids.selected_flight_path_color.value)]
+        color = self.assetColors[int(self.root.ids.selected_flight_path_color.value)]
         for pathCoord in self.pathCoords:
             flightPath = []
             for pathSegment in pathCoord:
@@ -561,8 +560,8 @@ class MainApp(MDApp):
     '''
     def flight_path_color_selection(self, slider, coords):
         colorIdx = int(slider.value)
-        slider.track_active_color = self.pathColors[colorIdx]
-        slider.track_inactive_color = self.pathColors[colorIdx]
+        slider.track_active_color = self.assetColors[colorIdx]
+        slider.track_inactive_color = self.assetColors[colorIdx]
         self.config.set('preferences', 'flight_path_color', colorIdx)
         self.config.write()
         self.stop_flight(True)
@@ -576,8 +575,8 @@ class MainApp(MDApp):
     '''
     def marker_drone_color_selection(self, slider, coords):
         colorIdx = int(slider.value)
-        slider.track_active_color = self.markerColors[colorIdx]
-        slider.track_inactive_color = self.markerColors[colorIdx]
+        slider.track_active_color = self.assetColors[colorIdx]
+        slider.track_inactive_color = self.assetColors[colorIdx]
         self.config.set('preferences', 'marker_drone_color', colorIdx)
         self.config.write()
         self.stop_flight(True)
@@ -594,8 +593,8 @@ class MainApp(MDApp):
     '''
     def marker_ctrl_color_selection(self, slider, coords):
         colorIdx = int(slider.value)
-        slider.track_active_color = self.markerColors[colorIdx]
-        slider.track_inactive_color = self.markerColors[colorIdx]
+        slider.track_active_color = self.assetColors[colorIdx]
+        slider.track_inactive_color = self.assetColors[colorIdx]
         self.config.set('preferences', 'marker_ctrl_color', colorIdx)
         self.config.write()
         self.stop_flight(True)
@@ -612,8 +611,8 @@ class MainApp(MDApp):
     '''
     def marker_home_color_selection(self, slider, coords):
         colorIdx = int(slider.value)
-        slider.track_active_color = self.markerColors[colorIdx]
-        slider.track_inactive_color = self.markerColors[colorIdx]
+        slider.track_active_color = self.assetColors[colorIdx]
+        slider.track_inactive_color = self.assetColors[colorIdx]
         self.config.set('preferences', 'marker_home_color', colorIdx)
         self.config.write()
         self.stop_flight(True)
