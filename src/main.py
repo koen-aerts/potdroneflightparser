@@ -8,8 +8,10 @@ import tempfile
 import time
 import re
 import threading
-import configparser
 import locale
+
+import kivymd.icon_definitions # Conditional import; making it explicit here to satisfy pyinstaller.
+
 from enum import Enum
 from decimal import Decimal
 
@@ -23,7 +25,6 @@ from kivy.config import Config
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.menu import MDDropdownMenu
-from kivymd.uix.filemanager import MDFileManager
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarText
 from kivymd.uix.label import MDLabel
 from kivy.metrics import dp
@@ -36,8 +37,8 @@ if platform == 'android':
     from androidstorage4kivy import SharedStorage, Chooser
 else:
     from plyer import filechooser
+    from platformdirs import user_data_dir
 
-#from platformdirs import user_data_dir
 from pathlib import Path, PurePath
 from zipfile import ZipFile
 
@@ -90,7 +91,7 @@ class MainApp(MDApp):
     displayMode = "ATOM"
     columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
-    configFilename = 'extractFlightData.ini'
+    configFilename = 'FlightLogViewer.ini'
 
 
     '''
@@ -432,8 +433,8 @@ class MainApp(MDApp):
     def mapsource_selection_callback(self, text_item):
         self.root.ids.selected_mapsource.text = text_item
         self.mapsource_selection_menu.dismiss()
-        self.config.set('preferences', 'map_tile_server', text_item)
-        self.config.write()
+        Config.set('preferences', 'map_tile_server', text_item)
+        Config.write()
         self.select_map_source()
     def select_map_source(self):
         tileSource = self.root.ids.selected_mapsource.text
@@ -453,8 +454,8 @@ class MainApp(MDApp):
     Change Flight Path Line Width (Preferences).
     '''
     def flight_path_width_selection(self, slider, coords):
-        self.config.set('preferences', 'flight_path_width', int(slider.value))
-        self.config.write()
+        Config.set('preferences', 'flight_path_width', int(slider.value))
+        Config.write()
         self.stop_flight(True)
         self.remove_layers()
         self.generate_map_layers()
@@ -562,8 +563,8 @@ class MainApp(MDApp):
         colorIdx = int(slider.value)
         slider.track_active_color = self.assetColors[colorIdx]
         slider.track_inactive_color = self.assetColors[colorIdx]
-        self.config.set('preferences', 'flight_path_color', colorIdx)
-        self.config.write()
+        Config.set('preferences', 'flight_path_color', colorIdx)
+        Config.write()
         self.stop_flight(True)
         self.remove_layers()
         self.generate_map_layers()
@@ -577,8 +578,8 @@ class MainApp(MDApp):
         colorIdx = int(slider.value)
         slider.track_active_color = self.assetColors[colorIdx]
         slider.track_inactive_color = self.assetColors[colorIdx]
-        self.config.set('preferences', 'marker_drone_color', colorIdx)
-        self.config.write()
+        Config.set('preferences', 'marker_drone_color', colorIdx)
+        Config.write()
         self.stop_flight(True)
         self.remove_markers()
         self.set_marker_drone_color()
@@ -595,8 +596,8 @@ class MainApp(MDApp):
         colorIdx = int(slider.value)
         slider.track_active_color = self.assetColors[colorIdx]
         slider.track_inactive_color = self.assetColors[colorIdx]
-        self.config.set('preferences', 'marker_ctrl_color', colorIdx)
-        self.config.write()
+        Config.set('preferences', 'marker_ctrl_color', colorIdx)
+        Config.write()
         self.stop_flight(True)
         self.remove_markers()
         self.set_marker_ctrl_color()
@@ -613,8 +614,8 @@ class MainApp(MDApp):
         colorIdx = int(slider.value)
         slider.track_active_color = self.assetColors[colorIdx]
         slider.track_inactive_color = self.assetColors[colorIdx]
-        self.config.set('preferences', 'marker_home_color', colorIdx)
-        self.config.write()
+        Config.set('preferences', 'marker_home_color', colorIdx)
+        Config.write()
         self.stop_flight(True)
         self.remove_markers()
         self.set_marker_home_color()
@@ -712,8 +713,8 @@ class MainApp(MDApp):
     def uom_selection_callback(self, text_item):
         self.root.ids.selected_uom.text = text_item
         self.uom_selection_menu.dismiss()
-        self.config.set('preferences', 'unit_of_measure', text_item)
-        self.config.write()
+        Config.set('preferences', 'unit_of_measure', text_item)
+        Config.write()
         self.stop_flight(True)
         self.show_info_message(message="Re-open the log file for the changes to take effect.")
 
@@ -730,8 +731,8 @@ class MainApp(MDApp):
     def refresh_rate_selection_callback(self, text_item):
         self.root.ids.selected_refresh_rate.text = text_item
         self.refresh_rate_selection_menu.dismiss()
-        self.config.set('preferences', 'refresh_rate', text_item)
-        self.config.write()
+        Config.set('preferences', 'refresh_rate', text_item)
+        Config.write()
         self.stop_flight(True)
 
 
@@ -739,8 +740,8 @@ class MainApp(MDApp):
     Change Display of Home Marker (Preferences).
     '''
     def home_marker_selection(self, item):
-        self.config.set('preferences', 'show_marker_home', item.active)
-        self.config.write()
+        Config.set('preferences', 'show_marker_home', item.active)
+        Config.write()
         self.stop_flight(True)
         self.remove_markers()
         self.add_markers()
@@ -750,8 +751,8 @@ class MainApp(MDApp):
     Change Display of Controller Marker (Preferences).
     '''
     def ctrl_marker_selection(self, item):
-        self.config.set('preferences', 'show_marker_ctrl', item.active)
-        self.config.write()
+        Config.set('preferences', 'show_marker_ctrl', item.active)
+        Config.write()
         self.stop_flight(True)
         self.remove_markers()
         self.add_markers()
@@ -761,8 +762,8 @@ class MainApp(MDApp):
     Enabled or disable rounding of values (Preferences).
     '''
     def rounding_selection(self, item):
-        self.config.set('preferences', 'rounded_readings', item.active)
-        self.config.write()
+        Config.set('preferences', 'rounded_readings', item.active)
+        Config.write()
         self.stop_flight(True)
         self.show_info_message(message="Re-open the log file for the changes to take effect.")
 
@@ -1035,25 +1036,17 @@ class MainApp(MDApp):
             self.chosenFile = None
             self.chooser_open = False # To track Android File Manager (Chooser)
             self.chooser = Chooser(self.chooser_callback)
-        Window.bind(on_keyboard=self.events)
-        cfgloc = self.get_application_config()
-        print(f"cfg loc: {cfgloc}")
-        self.flightPaths = None
-        self.pathCoords = None
-        self.flightOptions = None
-        self.isPlaying = False
-        self.currentRowIdx = None
-        self.ctrlmarker = None
-        self.homemarker = None
-        self.dronemarker = None
-        self.flightStats = None
-
-
-    '''
-    Generate a config file with default settings.
-    '''
-    def build_config(self, config):
-        config.setdefaults('preferences', {
+            appPath = os.path.dirname(self.get_application_config())
+            self.configPath = os.path.join(appPath, self.configFilename)
+            self.cacheDir = os.path.join(appPath, "cache")
+        else:
+            userPath = user_data_dir("Flight Log Viewer", "FlightLogViewer")
+            Path(userPath).mkdir(parents=True, exist_ok=True)
+            self.configPath = os.path.join(userPath, self.configFilename)
+            self.cacheDir = os.path.join(userPath, "cache")
+            Path(self.cacheDir).mkdir(parents=True, exist_ok=True)
+        Config.read(self.configPath)
+        Config.setdefaults('preferences', {
             'unit_of_measure': "metric",
             'rounded_readings': True,
             'flight_path_width': 0,
@@ -1067,21 +1060,31 @@ class MainApp(MDApp):
             'show_marker_ctrl': False,
             'map_tile_server': SelectableTileServer.OPENSTREETMAP.value
         })
+        Window.bind(on_keyboard=self.events)
+        self.flightPaths = None
+        self.pathCoords = None
+        self.flightOptions = None
+        self.isPlaying = False
+        self.currentRowIdx = None
+        self.ctrlmarker = None
+        self.homemarker = None
+        self.dronemarker = None
+        self.flightStats = None
 
 
     def build(self):
         print(self.root.ids.map.cache_dir)
-        self.root.ids.selected_uom.text = self.config.get('preferences', 'unit_of_measure')
-        self.root.ids.selected_home_marker.active = self.config.getboolean('preferences', 'show_marker_home')
-        self.root.ids.selected_ctrl_marker.active = self.config.getboolean('preferences', 'show_marker_ctrl')
-        self.root.ids.selected_flight_path_width.value = self.config.get('preferences', 'flight_path_width')
-        self.root.ids.selected_flight_path_color.value = self.config.getint('preferences', 'flight_path_color')
-        self.root.ids.selected_marker_drone_color.value = self.config.getint('preferences', 'marker_drone_color')
-        self.root.ids.selected_marker_ctrl_color.value = self.config.getint('preferences', 'marker_ctrl_color')
-        self.root.ids.selected_marker_home_color.value = self.config.getint('preferences', 'marker_home_color')
-        self.root.ids.selected_rounding.active = self.config.getboolean('preferences', 'rounded_readings')
-        self.root.ids.selected_mapsource.text = self.config.get('preferences', 'map_tile_server')
-        self.root.ids.selected_refresh_rate.text = self.config.get('preferences', 'refresh_rate')
+        self.root.ids.selected_uom.text = Config.get('preferences', 'unit_of_measure')
+        self.root.ids.selected_home_marker.active = Config.getboolean('preferences', 'show_marker_home')
+        self.root.ids.selected_ctrl_marker.active = Config.getboolean('preferences', 'show_marker_ctrl')
+        self.root.ids.selected_flight_path_width.value = Config.get('preferences', 'flight_path_width')
+        self.root.ids.selected_flight_path_color.value = Config.getint('preferences', 'flight_path_color')
+        self.root.ids.selected_marker_drone_color.value = Config.getint('preferences', 'marker_drone_color')
+        self.root.ids.selected_marker_ctrl_color.value = Config.getint('preferences', 'marker_ctrl_color')
+        self.root.ids.selected_marker_home_color.value = Config.getint('preferences', 'marker_home_color')
+        self.root.ids.selected_rounding.active = Config.getboolean('preferences', 'rounded_readings')
+        self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
+        self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
 
 
     def on_start(self):

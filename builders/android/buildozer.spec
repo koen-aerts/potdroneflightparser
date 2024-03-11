@@ -37,20 +37,11 @@ version = 2.0.0
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-#requirements = python3,kivy==2.3.0,kivymd==2.0.1.dev0,mapview==1.0.6
-#requirements = python3,kivy==2.3.0,kivymd==2.0.0,mapview==1.0.6
-requirements = python3==3.11.8,hostpython3==3.11.8,kivy,https://github.com/kivymd/KivyMD/archive/master.zip,androidstorage4kivy,mapview,pillow,materialyoucolor,exceptiongroup,asyncgui,asynckivy,platformdirs
-#requirements = python3==3.11.8,kivy==2.3.0,https://github.com/kivymd/KivyMD/archive/master.zip,mapview,pillow,https://github.com/T-Dynamos/materialyoucolor-python/archive/develop.zip,exceptiongroup,asyncgui,asynckivy,platformdirs
-#requirements = python3,kivy==2.3.0,kivymd==master,mapview==1.0.6
-#requirements = python3,kivy==2.3.0,kivymd==2.0.1.dev0,mapview==1.0.6
-#requirements = python3,kivy==2.3.0,kivymd==/home/builder/source/KivyMD-master.zip,mapview==1.0.6
-#requirements = python3,kivy==2.3.0,kivymd=="https://github.com/kivymd/KivyMD/archive/master.zip",mapview==1.0.6
+requirements = python3==3.11.8,hostpython3==3.11.8,kivy,https://github.com/kivymd/KivyMD/archive/master.zip,androidstorage4kivy,mapview,pillow,materialyoucolor,exceptiongroup,asyncgui,asynckivy
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
 # requirements.source.kivy = ../../kivy
-#requirements.source.kivymd = ../../kivymd
-#requirements.source.kivymd = https://github.com/kivymd/KivyMD/archive/master.zip
 
 # (str) Presplash of the application
 #presplash.filename = %(source.dir)s/data/presplash.png
@@ -319,10 +310,10 @@ android.allow_backup = True
 # android.no-byte-compile-python = False
 
 # (str) The format used to package the app for release mode (aab or apk or aar).
-# android.release_artifact = aab
+android.release_artifact = apk
 
 # (str) The format used to package the app for debug mode (apk or aar).
-# android.debug_artifact = apk
+android.debug_artifact = apk
 
 #
 # Python for android (p4a) specific
