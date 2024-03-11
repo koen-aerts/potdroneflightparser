@@ -11,9 +11,7 @@ import threading
 import locale
 
 from enum import Enum
-from decimal import Decimal
 
-from multiprocessing.connection import wait
 from kivy.core.window import Window
 #Window.fullscreen = False
 #Window.maximize()
@@ -29,6 +27,7 @@ from kivy.metrics import dp
 from kivy_garden.mapview import MapSource, MapMarker
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
+from kivy_garden.mapview.constants import CACHE_DIR
 
 if platform == 'android':
     from android.permissions import request_permissions, Permission
@@ -1036,7 +1035,7 @@ class MainApp(MDApp):
             self.chooser = Chooser(self.chooser_callback)
             appPath = os.path.dirname(self.get_application_config())
             self.configPath = os.path.join(appPath, self.configFilename)
-            self.cacheDir = os.path.join(appPath, "cache")
+            self.cacheDir = CACHE_DIR
         else:
             userPath = user_data_dir("Flight Log Viewer", "FlightLogViewer")
             Path(userPath).mkdir(parents=True, exist_ok=True)
