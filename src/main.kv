@@ -4,29 +4,24 @@
     type: "small"
 
 <ValLabel@MDLabel>
-    #halign: "left"
-    #valign: "top"
-    #width: dp(60)
     role: "small"
 
 <StatLabel@MDLabel>
     halign: "right"
     valign: "top"
-    #padding: [0, dp(2)]
     max_lines: 1
     size_hint: (None, 1)
     height: dp(10)
-    width: dp(80)
+    width: dp(85)
     role: "small"
 
 <StatValue@MDLabel>
     halign: "right"
     valign: "top"
-    #padding_x: dp(2)
     max_lines: 1
     size_hint: (None, 1)
     height: dp(10)
-    width: dp(70)
+    width: dp(65)
     role: "small"
 
 <StatDivider@MDDivider>
@@ -37,17 +32,12 @@
 <PrefLabel@MDLabel>
     halign: "right"
     valign: "bottom"
-    #radius: [dp(4),dp(4)]
-    #padding_x: dp(2)
-    #pos_hint: {'right': 1.0, 'top': 1}
     max_lines: 1
-    #pos_hint: {"y": 0}
     size_hint: (None, None)
     height: dp(40)
     width: dp(210)
     text_size: self.size
     padding: dp(4)
-    #right: 1
 
 <PrefSelect@MDDropDownItem>
     halign: "left"
@@ -57,7 +47,6 @@
 <PrefCheck@MDCheckbox>
     halign: "left"
     valign: "bottom"
-    #pos_hint: {'x': 0, 'top': 1.0}
     text_size: self.size
     height: dp(40)
     padding: [0, dp(4)]
@@ -71,7 +60,6 @@
     track_inactive_width: dp(10)
 
 <PrefSliderHandle@MDSliderHandle>
-    #radius: [0,0,0,0]
     size: [dp(14), dp(14)]
     state_layer_color: "#008800"
 
@@ -119,10 +107,13 @@ MDGridLayout:
                         size_hint: (None, 1)
                         MDGridLayout:
                             cols: 2
-                            size_hint: (1, 1)
+                            size_hint: (1, None)
                             pos_hint: {"y": 0, "right": 1}
                             md_bg_color: self.theme_cls.backgroundColor
                             row_default_height: dp(14)
+                            #row_force_default: True
+                            #padding: [ 0, 0, 0, 600 ]
+                            height: (dp(14) * 15) + dp(2)
                             #adaptive_height: True
                             StatLabel:
                                 text: "Max Dist:"
@@ -135,7 +126,7 @@ MDGridLayout:
                                 id: value_maxalt
                                 text: ""
                             StatLabel:
-                                text: "Max Speed:"
+                                text: "Max H. Speed:"
                             StatValue:
                                 id: value_maxspeed
                                 text: ""
@@ -145,7 +136,19 @@ MDGridLayout:
                                 id: value_duration
                                 text: ""
                             StatDivider:
+                                #size_hint: (1, .1)
+                                size_hint_x: 0.01
+                                pos_hint: {"center_x": 0.5, "center_y": 0.5}
+                                #height: dp(1)
+                                divider_width: dp(0.5)
+                                padding: [ 20, 20, 20, 20 ]
                             StatDivider:
+                                #size_hint: (1, .1)
+                                size_hint_x: 0.01
+                                pos_hint: {"center_x": 0.5, "center_y": 0.5}
+                                #height: dp(1)
+                                divider_width: dp(0.5)
+                                padding: [ 20, 20, 20, 20 ]
                             StatLabel:
                                 text: "Time:"
                             StatValue:
@@ -198,23 +201,23 @@ MDGridLayout:
                             pos_hint: {"center_x": .5, "y": 0.01}
                             rows: 1
                             adaptive_size: True
-                            MDIconButton:
-                                style: "filled"
-                                icon: "skip-previous"
-                            MDIconButton:
-                                style: "filled"
-                                icon: "rewind"
+                            #MDIconButton:
+                            #    style: "filled"
+                            #    icon: "skip-previous"
+                            #MDIconButton:
+                            #    style: "filled"
+                            #    icon: "rewind"
                             MDIconButton:
                                 id: playbutton
                                 style: "filled"
                                 icon: "play"
                                 on_release: app.play_flight()
-                            MDIconButton:
-                                style: "filled"
-                                icon: "fast-forward"
-                            MDIconButton:
-                                style: "filled"
-                                icon: "skip-next"
+                            #MDIconButton:
+                            #    style: "filled"
+                            #    icon: "fast-forward"
+                            #MDIconButton:
+                            #    style: "filled"
+                            #    icon: "skip-next"
                             MDIconButton:
                                 style: "filled"
                                 icon: "crosshairs-gps"

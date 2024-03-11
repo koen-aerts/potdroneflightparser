@@ -357,7 +357,7 @@ class MainApp(MDApp):
                         fpvRemoteConnected = "1" if fpvFlags & 4 == 4 else "0"
                         #fpvHighDbm = "1" if fpvFlags & 32 == 32 else "0"
 
-                    flightDesc = f'Flight {pathNum}'
+                    flightDesc = f'{pathNum}'
                     if (isNewPath and len(pathCoord) > 0):
                         self.flightOptions.append(flightDesc)
                         self.flightStarts[flightDesc] = tableLen
@@ -715,7 +715,7 @@ class MainApp(MDApp):
     '''
     def refresh_rate_selection(self, item):
         menu_items = []
-        for refreshRate in ['0.25s', '0.50s', '0.75s', '1.00s', '1.25s', '1.50s']:
+        for refreshRate in ['0.50s', '1.00s', '1.50s', '2.00s']:
             menu_items.append({"text": refreshRate, "on_release": lambda x=refreshRate: self.refresh_rate_selection_callback(x)})
         self.refresh_rate_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
         self.refresh_rate_selection_menu.open()
@@ -989,7 +989,7 @@ class MainApp(MDApp):
                 self.chosenFile = ss.copy_from_shared(uri) # copy to private storage
                 break # Only open the first file from the selection.
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"File Chooser Error: {e}")
         self.chooser_open = False
 
 
@@ -1069,7 +1069,6 @@ class MainApp(MDApp):
 
 
     def on_start(self):
-        print("start")
         self.root.ids.selected_path.text = '--'
         self.reset()
         return super().on_start()
@@ -1084,8 +1083,4 @@ class MainApp(MDApp):
 
 
 if __name__ == "__main__":
-    #print(Config.get('graphics', 'fullscreen'))
-    #print(Config.get('graphics', 'window_state'))
-    #Config.set('graphics', 'fullscreen', 0)
-    #Config.set('graphics', 'window_state', 'maximized')
     MainApp().run()
