@@ -24,7 +24,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarText
 from kivymd.uix.label import MDLabel
 from kivy.metrics import dp
-from kivy_garden.mapview import MapSource, MapMarker
+from kivy_garden.mapview import MapSource, MapMarker, MapLayer, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
 from kivy_garden.mapview.constants import CACHE_DIR
@@ -95,9 +95,6 @@ class MainApp(MDApp):
     Parse Atom based logs.
     '''
     def parse_atom_logs(self, droneModel, selectedFile):
-        print("parse_atom_logs begin")
-        setctrl = True
-
         binLog = os.path.join(tempfile.gettempdir(), "flightdata")
         shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
 
@@ -214,16 +211,16 @@ class MainApp(MDApp):
                     alt2 = round(self.dist_val(-struct.unpack('f', fcRecord[343+offset2:347+offset2])[0]), 2) # Relative height from controller vs distance to ground??
                     if (alt2 > maxAlt):
                         maxAlt = alt2
-                    speed1lat = self.dist_val(struct.unpack('f', fcRecord[247+offset2:251+offset2])[0])
-                    speed1lon = self.dist_val(struct.unpack('f', fcRecord[251+offset2:255+offset2])[0])
-                    speed2lat = self.dist_val(struct.unpack('f', fcRecord[327+offset2:331+offset2])[0])
-                    speed2lon = self.dist_val(struct.unpack('f', fcRecord[331+offset2:335+offset2])[0])
+                    speed1lat = self.speed_val(struct.unpack('f', fcRecord[247+offset2:251+offset2])[0])
+                    speed1lon = self.speed_val(struct.unpack('f', fcRecord[251+offset2:255+offset2])[0])
+                    speed2lat = self.speed_val(struct.unpack('f', fcRecord[327+offset2:331+offset2])[0])
+                    speed2lon = self.speed_val(struct.unpack('f', fcRecord[331+offset2:335+offset2])[0])
                     speed1 = round(math.sqrt(math.pow(speed1lat, 2) + math.pow(speed1lon, 2)), 2) # Pythagoras to calculate real speed.
                     speed2 = round(math.sqrt(math.pow(speed2lat, 2) + math.pow(speed2lon, 2)), 2) # Pythagoras to calculate real speed.
                     if (speed2 > maxSpeed):
                         maxSpeed = speed2
-                    speed1vert = self.dist_val(-struct.unpack('f', fcRecord[255+offset2:259+offset2])[0])
-                    speed2vert = self.dist_val(-struct.unpack('f', fcRecord[347+offset2:351+offset2])[0])
+                    speed1vert = self.speed_val(-struct.unpack('f', fcRecord[255+offset2:259+offset2])[0])
+                    speed2vert = self.speed_val(-struct.unpack('f', fcRecord[347+offset2:351+offset2])[0])
 
                     # Some checks to handle cases with bad or incomplete GPS data.
                     hasDroneCoords = dronelat != 0.0 and dronelon != 0.0
@@ -369,8 +366,6 @@ class MainApp(MDApp):
                         self.flightEnds[flightDesc] = tableLen
                     self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, droneMotorStatus.value, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, gpsStatus, inUse, motor1Stat, motor2Stat, motor3Stat, motor4Stat])
                     tableLen = tableLen + 1
-                    if (setctrl and hasValidCoords and alt2 > 0): # Record home location from the moment the drone ascends.
-                        setctrl = False
 
             flightFile.close()
 
@@ -415,7 +410,6 @@ class MainApp(MDApp):
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.flightStats[i][0])} {self.dist_unit()}"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.flightStats[i][1])} {self.dist_unit()}"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.flightStats[i][2])} {self.speed_unit()}"))
-        print("parse_atom_logs end")
 
 
     '''
@@ -453,10 +447,10 @@ class MainApp(MDApp):
     def flight_path_width_selection(self, slider, coords):
         Config.set('preferences', 'flight_path_width', int(slider.value))
         Config.write()
-        self.stop_flight(True)
-        self.remove_layers()
+        self.clear_map()
         self.generate_map_layers()
-        self.select_flight()
+        self.init_map_layers()
+        self.set_markers()
 
 
     '''
@@ -489,51 +483,71 @@ class MainApp(MDApp):
 
 
     '''
-    Clear all the flight paths from the map.
+    Clear out the Map. Remove all markers, flight paths and layers.
     '''
-    def remove_layers(self):
+    def clear_map(self):
+        self.stop_flight(True)
+        if self.flightPaths:
+            for flightPath in self.flightPaths:
+                for maplayer in flightPath:
+                    try:
+                        self.root.ids.map.remove_layer(maplayer)
+                    except:
+                        ... # Do nothing
+        if self.layer_home:
+            self.root.ids.map.remove_marker(self.homemarker)
+            self.root.ids.map.remove_layer(self.layer_home)
+            self.layer_home = None
+            self.homemarker = None
+        if self.layer_ctrl:
+            self.root.ids.map.remove_marker(self.ctrlmarker)
+            self.root.ids.map.remove_layer(self.layer_ctrl)
+            self.layer_ctrl = None
+            self.ctrlmarker = None
+        if self.layer_drone:
+            self.root.ids.map.remove_marker(self.dronemarker)
+            self.root.ids.map.remove_layer(self.layer_drone)
+            self.layer_drone = None
+            self.dronemarker = None
+
+
+    '''
+    Build layers on the Map with markers and flight paths.
+    '''
+    def init_map_layers(self):
         if not self.flightPaths:
             return
-        for flightPath in self.flightPaths:
+        self.stop_flight(True)
+        # Home Marker
+        self.layer_home = MarkerMapLayer()
+        self.layer_home.opacity = 1 if self.root.ids.selected_home_marker.active else 0
+        self.homemarker = MapMarker(source=f"assets/Home-{str(int(self.root.ids.selected_marker_home_color.value)+1)}.png", anchor_y=0.5)
+        self.root.ids.map.add_layer(self.layer_home)
+        self.root.ids.map.add_marker(self.homemarker, self.layer_home)
+        # Controller Marker
+        self.layer_ctrl = MarkerMapLayer()
+        self.layer_ctrl.opacity = 1 if self.root.ids.selected_ctrl_marker.active else 0
+        self.ctrlmarker = MapMarker(source=f"assets/Controller-{str(int(self.root.ids.selected_marker_ctrl_color.value)+1)}.png", anchor_y=0.5)
+        self.root.ids.map.add_layer(self.layer_ctrl)
+        self.root.ids.map.add_marker(self.ctrlmarker, self.layer_ctrl)
+        # Flight Paths
+        flightNum = 0 if (self.root.ids.selected_path.text == '--') else int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
+        if (flightNum == 0):
+            # Show all flight paths in the log file.
+            for flightPath in self.flightPaths:
+                for maplayer in flightPath:
+                    self.root.ids.map.add_layer(maplayer)
+        else:
+            # Show selected flight path.
+            flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
+            flightPath = self.flightPaths[flightNum-1]
             for maplayer in flightPath:
-                try:
-                    self.root.ids.map.remove_layer(maplayer)
-                except:
-                    ... # Do nothing
-
-
-    '''
-    Remove the map markers.
-    '''
-    def remove_markers(self):
-        if self.ctrlmarker:
-            try:
-                self.root.ids.map.remove_marker(self.ctrlmarker)
-            except:
-                ... # Do nothing
-        if self.homemarker:
-            try:
-                self.root.ids.map.remove_marker(self.homemarker)
-            except:
-                ... # Do nothing
-        if self.dronemarker:
-            try:
-                self.root.ids.map.remove_marker(self.dronemarker)
-            except:
-                ... # Do nothing
-
-
-    '''
-    Add the map markers.
-    '''
-    def add_markers(self):
-        if self.root:
-            if self.root.ids.selected_ctrl_marker.active and self.ctrlmarker:
-                self.root.ids.map.add_marker(self.ctrlmarker)
-            if self.root.ids.selected_home_marker.active and self.homemarker:
-                self.root.ids.map.add_marker(self.homemarker)
-            if self.dronemarker:
-                self.root.ids.map.add_marker(self.dronemarker)
+                self.root.ids.map.add_layer(maplayer)
+        # Drone Marker. This layer is always visible.
+        self.layer_drone = MarkerMapLayer()
+        self.dronemarker = MapMarker(source=f"assets/Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}.png", anchor_y=0.5)
+        self.root.ids.map.add_layer(self.layer_drone)
+        self.root.ids.map.add_marker(self.dronemarker, self.layer_drone)
 
 
     '''
@@ -562,10 +576,10 @@ class MainApp(MDApp):
         slider.track_inactive_color = self.assetColors[colorIdx]
         Config.set('preferences', 'flight_path_color', colorIdx)
         Config.write()
-        self.stop_flight(True)
-        self.remove_layers()
+        self.clear_map()
         self.generate_map_layers()
-        self.select_flight()
+        self.init_map_layers()
+        self.set_markers()
 
 
     '''
@@ -578,12 +592,9 @@ class MainApp(MDApp):
         Config.set('preferences', 'marker_drone_color', colorIdx)
         Config.write()
         self.stop_flight(True)
-        self.remove_markers()
-        self.set_marker_drone_color()
-        self.add_markers()
-        self.set_markers()
-    def set_marker_drone_color(self):
-        self.dronemarker = MapMarker(source=f"assets/Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}.png", anchor_y=0.5)
+        if self.dronemarker:
+            self.dronemarker.source=f"assets/Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}.png"
+            self.set_markers()
 
 
     '''
@@ -596,12 +607,9 @@ class MainApp(MDApp):
         Config.set('preferences', 'marker_ctrl_color', colorIdx)
         Config.write()
         self.stop_flight(True)
-        self.remove_markers()
-        self.set_marker_ctrl_color()
-        self.add_markers()
-        self.set_markers()
-    def set_marker_ctrl_color(self):
-        self.ctrlmarker = MapMarker(source=f"assets/Controller-{str(int(self.root.ids.selected_marker_ctrl_color.value)+1)}.png", anchor_y=0.5)
+        if self.ctrlmarker:
+            self.ctrlmarker.source=f"assets/Controller-{str(int(self.root.ids.selected_marker_ctrl_color.value)+1)}.png"
+            self.set_markers()
 
 
     '''
@@ -614,12 +622,9 @@ class MainApp(MDApp):
         Config.set('preferences', 'marker_home_color', colorIdx)
         Config.write()
         self.stop_flight(True)
-        self.remove_markers()
-        self.set_marker_home_color()
-        self.add_markers()
-        self.set_markers()
-    def set_marker_home_color(self):
-        self.homemarker = MapMarker(source=f"assets/Home-{str(int(self.root.ids.selected_marker_home_color.value)+1)}.png", anchor_y=0.5)
+        if self.homemarker:
+            self.homemarker.source=f"assets/Home-{str(int(self.root.ids.selected_marker_home_color.value)+1)}.png"
+            self.set_markers()
 
 
     '''
@@ -639,24 +644,13 @@ class MainApp(MDApp):
         self.flight_selection_menu.dismiss()
         self.select_flight()
     def select_flight(self):
-        self.stop_flight(True)
-        self.remove_markers()
-        self.remove_layers()
+        self.clear_map()
+        self.init_map_layers()
         flightNum = 0 if (self.root.ids.selected_path.text == '--') else int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
-        if (flightNum == 0):
-            # TODO - map does not always refresh right away...
-            for flightPath in self.flightPaths:
-                for maplayer in flightPath:
-                    self.root.ids.map.add_layer(maplayer)
-        else:
-            flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
-            flightPath = self.flightPaths[flightNum-1]
-            for maplayer in flightPath:
-                self.root.ids.map.add_layer(maplayer)
+        if (flightNum != 0):
             self.currentStartIdx = self.flightStarts[self.root.ids.selected_path.text]
             self.currentEndIdx = self.flightEnds[self.root.ids.selected_path.text]
             self.currentRowIdx = self.currentStartIdx
-            self.add_markers()
             self.set_markers()
         if self.flightStats and len(self.flightStats) > 0:
             self.centerlat = (self.flightStats[flightNum][4] + self.flightStats[flightNum][6]) / 2
@@ -740,8 +734,7 @@ class MainApp(MDApp):
         Config.set('preferences', 'show_marker_home', item.active)
         Config.write()
         self.stop_flight(True)
-        self.remove_markers()
-        self.add_markers()
+        self.layer_home.opacity = 1 if self.root.ids.selected_home_marker.active else 0
 
 
     '''
@@ -751,8 +744,7 @@ class MainApp(MDApp):
         Config.set('preferences', 'show_marker_ctrl', item.active)
         Config.write()
         self.stop_flight(True)
-        self.remove_markers()
-        self.add_markers()
+        self.layer_ctrl.opacity = 1 if self.root.ids.selected_ctrl_marker.active else 0
 
 
     '''
@@ -785,7 +777,6 @@ class MainApp(MDApp):
     def fmt_num(self, num):
         if (num is None):
             return ''
-        #return f"{num:.0f}" if self.root.ids.selected_rounding.active else f"{num:.2f}"
         return locale.format_string("%.0f", num, True) if self.root.ids.selected_rounding.active else locale.format_string("%.2f", num, True)
 
 
@@ -812,8 +803,7 @@ class MainApp(MDApp):
         if self.root:
             self.root.ids.selected_path.text = '--'
             self.zoom = self.defaultMapZoom
-            self.remove_markers()
-            self.remove_layers()
+            self.clear_map()
             self.root.ids.value_maxdist.text = ""
             self.root.ids.value_maxalt.text = ""
             self.root.ids.value_maxspeed.text = ""
@@ -831,8 +821,6 @@ class MainApp(MDApp):
             self.root.ids.value2_elapsed.text = ""
             self.root.ids.flight_stats_grid.clear_widgets()
         self.flightOptions = []
-        #self.root.ids.selected_path.text = '--'
-        #self.title(f"Flight Data Viewer - {self.version}")
         self.title = self.appTitle
         self.logdata = []
         self.flightPaths = None
@@ -892,32 +880,30 @@ class MainApp(MDApp):
             self.root.ids.value1_elapsed.text = str(elapsed)
             self.root.ids.value2_elapsed.text = str(elapsed)
         # Controller Marker.
-        if self.root.ids.selected_ctrl_marker.active:
-            try:
-                ctrllat = float(record[self.columns.index('ctrllat')])
-                ctrllon = float(record[self.columns.index('ctrllon')])
-                self.ctrlmarker.lat = ctrllat
-                self.ctrlmarker.lon = ctrllon
-            except:
-                ... # Do nothing
+        try:
+            ctrllat = float(record[self.columns.index('ctrllat')])
+            ctrllon = float(record[self.columns.index('ctrllon')])
+            self.ctrlmarker.lat = ctrllat
+            self.ctrlmarker.lon = ctrllon
+        except:
+            ... # Do nothing
         # Drone Home (RTH) Marker.
-        if self.root.ids.selected_home_marker.active:
-            try:
-                homelat = float(record[self.columns.index('homelat')])
-                homelon = float(record[self.columns.index('homelon')])
-                self.homemarker.lat = homelat
-                self.homemarker.lon = homelon
-            except:
-                ... # Do nothing
+        try:
+            homelat = float(record[self.columns.index('homelat')])
+            homelon = float(record[self.columns.index('homelon')])
+            self.homemarker.lat = homelat
+            self.homemarker.lon = homelon
+        except:
+            ... # Do nothing
         # Drone marker.
         try:
             dronelat = float(record[self.columns.index('dronelat')])
             dronelon = float(record[self.columns.index('dronelon')])
             self.dronemarker.lat = dronelat
             self.dronemarker.lon = dronelon
-            self.root.ids.map.trigger_update(False)
         except:
             ... # Do nothing
+        self.root.ids.map.trigger_update(False)
 
 
     '''
@@ -993,11 +979,6 @@ class MainApp(MDApp):
                 self.parse_file(myFiles[0])
 
 
-    def file_selection_callback(self, file_list):
-        print(f"files: {file_list}")
-        self.android_files_selected = file_list if file_list is not None else []
-
-
     '''
     File Chooser, called when a file has been selected on the Android device.
     '''
@@ -1063,8 +1044,11 @@ class MainApp(MDApp):
         self.flightOptions = None
         self.isPlaying = False
         self.currentRowIdx = None
+        self.layer_ctrl = None
         self.ctrlmarker = None
+        self.layer_home = None
         self.homemarker = None
+        self.layer_drone = None
         self.dronemarker = None
         self.flightStats = None
 
@@ -1087,10 +1071,6 @@ class MainApp(MDApp):
     def on_start(self):
         print("start")
         self.root.ids.selected_path.text = '--'
-        self.set_marker_drone_color()
-        self.set_marker_ctrl_color()
-        self.set_marker_home_color()
-        self.select_map_source()
         self.reset()
         return super().on_start()
 
