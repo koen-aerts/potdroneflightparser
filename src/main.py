@@ -13,8 +13,7 @@ import locale
 from enum import Enum
 
 from kivy.core.window import Window
-#Window.fullscreen = False
-#Window.maximize()
+Window.allow_screensaver = False
 
 from kivy.utils import platform
 from kivy.config import Config
@@ -24,7 +23,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarText
 from kivymd.uix.label import MDLabel
 from kivy.metrics import dp
-from kivy_garden.mapview import MapSource, MapMarker, MapLayer, MarkerMapLayer
+from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
 from kivy_garden.mapview.constants import CACHE_DIR
@@ -33,6 +32,7 @@ if platform == 'android':
     from android.permissions import request_permissions, Permission
     from androidstorage4kivy import SharedStorage, Chooser
 else:
+    Window.maximize()
     from plyer import filechooser
     from platformdirs import user_data_dir
 
@@ -101,10 +101,8 @@ class MainApp(MDApp):
         with ZipFile(selectedFile, 'r') as unzip:
             unzip.extractall(path=binLog)
 
-        #self.stop()
         self.reset()
         self.displayMode = "ATOM"
-        #self.setTableView(None)
         self.zipFilename = selectedFile
 
         # First read the FPV file. The presence of this file is optional. The format of this
@@ -405,7 +403,7 @@ class MainApp(MDApp):
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Altitude", bold=True))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Speed", bold=True))
         for i in range(0, len(self.flightStats)):
-            self.root.ids.flight_stats_grid.add_widget(MDLabel(text=(f"Flight {i}" if i > 0 else "Overall")))
+            self.root.ids.flight_stats_grid.add_widget(MDLabel(text=(f"Flight #{i}" if i > 0 else "Overall")))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=str(self.flightStats[i][3])))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.flightStats[i][0])} {self.dist_unit()}"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.flightStats[i][1])} {self.dist_unit()}"))
@@ -956,6 +954,7 @@ class MainApp(MDApp):
     Open a file dialog.
     '''
     def open_file_dialog(self):
+        self.stop_flight(True)
         if platform == 'android':
             # Open Android Shared Storage. This opens in a separate thread so we wait here
             # until that dialog has closed. Otherwise the map drawing will be triggered from
