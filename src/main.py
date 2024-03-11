@@ -10,8 +10,6 @@ import re
 import threading
 import locale
 
-import kivymd.icon_definitions # Conditional import; making it explicit here to satisfy pyinstaller.
-
 from enum import Enum
 from decimal import Decimal
 
