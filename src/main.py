@@ -652,11 +652,10 @@ class MainApp(MDApp):
         self.root.ids.value1_vspeed.text = f"{record[23]} {self.speed_unit()}"
         self.root.ids.value2_vspeed.text = f"VS: {record[23]} {self.speed_unit()}"
         self.root.ids.value2_sats.text = f"Sats: {record[24]}"
-        if self.playStartTs:
-            elapsed = record[5]
-            elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
-            self.root.ids.value1_elapsed.text = str(elapsed)
-            self.root.ids.value2_elapsed.text = str(elapsed)
+        elapsed = record[5]
+        elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
+        self.root.ids.value1_elapsed.text = str(elapsed)
+        self.root.ids.value2_elapsed.text = str(elapsed)
         # Controller Marker.
         try:
             ctrllat = float(record[self.columns.index('ctrllat')])
@@ -985,14 +984,14 @@ class MainApp(MDApp):
     Return specified speed in the proper Unit (metric vs imperial).
     '''
     def speed_val(self, num):
-        return num * 2.236936 if self.root.ids.selected_uom.text == 'imperial' else num
+        return num * 2.236936 if self.root.ids.selected_uom.text == 'imperial' else num * 3.6
 
 
     '''
     Return selected speed unit of measure.
     '''
     def speed_unit(self):
-        return "mph" if self.root.ids.selected_uom.text == 'imperial' else "m/s"
+        return "mph" if self.root.ids.selected_uom.text == 'imperial' else "kph"
 
 
     '''

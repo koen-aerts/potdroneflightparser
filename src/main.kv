@@ -14,6 +14,7 @@
     height: dp(10)
     width: dp(85)
     role: "small"
+    bold: True
 
 <StatValue@MDLabel>
     halign: "right"
@@ -23,11 +24,7 @@
     height: dp(10)
     width: dp(65)
     role: "small"
-
-<StatDivider@MDDivider>
-    size_hint: (1, None)
-    divider_width: dp(0.75)
-    padding: 0
+    bold: True
 
 <PrefLabel@MDLabel>
     halign: "right"
@@ -46,10 +43,8 @@
 
 <PrefCheck@MDCheckbox>
     halign: "left"
-    valign: "bottom"
+    valign: "top"
     text_size: self.size
-    height: dp(40)
-    padding: [0, dp(4)]
 
 <PrefSlider@MDSlider>
     halign: "left"
@@ -108,47 +103,13 @@ MDGridLayout:
                         MDGridLayout:
                             cols: 2
                             size_hint: (1, None)
-                            pos_hint: {"y": 0, "right": 1}
+                            pos_hint: {"top": 1, "right": 1}
                             md_bg_color: self.theme_cls.backgroundColor
                             row_default_height: dp(14)
                             #row_force_default: True
                             #padding: [ 0, 0, 0, 600 ]
-                            height: (dp(14) * 15) + dp(2)
+                            #height: (dp(14) * 15) + dp(2)
                             #adaptive_height: True
-                            StatLabel:
-                                text: "Max Dist:"
-                            StatValue:
-                                id: value_maxdist
-                                text: ""
-                            StatLabel:
-                                text: "Max Alt:"
-                            StatValue:
-                                id: value_maxalt
-                                text: ""
-                            StatLabel:
-                                text: "Max H. Speed:"
-                            StatValue:
-                                id: value_maxspeed
-                                text: ""
-                            StatLabel:
-                                text: "Duration:"
-                            StatValue:
-                                id: value_duration
-                                text: ""
-                            StatDivider:
-                                #size_hint: (1, .1)
-                                size_hint_x: 0.01
-                                pos_hint: {"center_x": 0.5, "center_y": 0.5}
-                                #height: dp(1)
-                                divider_width: dp(0.5)
-                                padding: [ 20, 20, 20, 20 ]
-                            StatDivider:
-                                #size_hint: (1, .1)
-                                size_hint_x: 0.01
-                                pos_hint: {"center_x": 0.5, "center_y": 0.5}
-                                #height: dp(1)
-                                divider_width: dp(0.5)
-                                padding: [ 20, 20, 20, 20 ]
                             StatLabel:
                                 text: "Time:"
                             StatValue:
@@ -174,11 +135,42 @@ MDGridLayout:
                             StatValue:
                                 id: value1_vspeed
                                 text: ""
-                            StatDivider:
-                            StatDivider:
+                            MDDivider:
+                            MDDivider:
+                            StatLabel:
+                                text: ""
+                            StatValue:
+                                text: ""
+                            StatLabel:
+                                text: "Max Dist:"
+                            StatValue:
+                                id: value_maxdist
+                                text: ""
+                            StatLabel:
+                                text: "Max Alt:"
+                            StatValue:
+                                id: value_maxalt
+                                text: ""
+                            StatLabel:
+                                text: "Max H. Speed:"
+                            StatValue:
+                                id: value_maxspeed
+                                text: ""
+                            StatLabel:
+                                text: "Duration:"
+                            StatValue:
+                                id: value_duration
+                                text: ""
+                            MDDivider:
+                            MDDivider:
+                            StatLabel:
+                                text: ""
+                            StatValue:
+                                text: ""
                             StatLabel:
                                 text: "Flight #:"
-                                bold: True
+                                valign: "top"
+                                padding: [0, 0, 0, dp(7)]
                             MDDropDownItem:
                                 on_release: app.open_flight_selection(*args)
                                 MDDropDownItemText:
@@ -332,6 +324,7 @@ MDGridLayout:
                         on_release: app.home_marker_selection(*args)
                         id: selected_home_marker
                         active: True
+                        height: dp(34)
                     PrefLabel:
                         text: "Playback Refresh Rate:"
                     PrefSelect:
@@ -347,6 +340,7 @@ MDGridLayout:
                         on_release: app.ctrl_marker_selection(*args)
                         id: selected_ctrl_marker
                         active: True
+                        height: dp(34)
                     PrefLabel:
                         text: "Map Tile Server:"
                     PrefSelect:
@@ -362,6 +356,7 @@ MDGridLayout:
                         on_release: app.rounding_selection(*args)
                         id: selected_rounding
                         active: True
+                        height: dp(34)
                     PrefLabel:
                         text: "Flight Path Line Width:"
                     PrefSlider:
