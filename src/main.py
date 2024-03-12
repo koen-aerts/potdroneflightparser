@@ -15,6 +15,8 @@ from enum import Enum
 from kivy.core.window import Window
 Window.allow_screensaver = False
 
+from platformdirs import user_config_dir, user_cache_dir
+
 from kivy.utils import platform
 from kivy.config import Config
 from kivymd.app import MDApp
@@ -34,7 +36,6 @@ if platform == 'android':
 else:
     Window.maximize()
     from plyer import filechooser
-    from platformdirs import user_data_dir
 
 from pathlib import Path, PurePath
 from zipfile import ZipFile
@@ -1062,21 +1063,26 @@ class MainApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         locale.setlocale(locale.LC_ALL, '')
+        userConfigPath = user_config_dir("FlightLogViewer", "FlightLogViewer")
+        print(f"userConfigPath: {userConfigPath}")
+        if not os.path.exists(userConfigPath):
+            Path(userConfigPath).mkdir(parents=True, exist_ok=True)
+        userCachePath = user_cache_dir("FlightLogViewer", "FlightLogViewer")
+        print(f"userCachePath: {userCachePath}")
+        if not os.path.exists(userCachePath):
+            Path(userCachePath).mkdir(parents=True, exist_ok=True)
+        self.configFile = os.path.join(userConfigPath, self.configFilename)
+        os.chdir(userCachePath)
         if platform == 'android':
             request_permissions([Permission.INTERNET, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE])
             self.chosenFile = None
             self.chooser_open = False # To track Android File Manager (Chooser)
             self.chooser = Chooser(self.chooser_callback)
-            appPath = os.path.dirname(self.get_application_config())
-            self.configPath = os.path.join(appPath, self.configFilename)
-            self.cacheDir = CACHE_DIR
-        else:
-            userPath = user_data_dir("Flight Log Viewer", "FlightLogViewer")
-            Path(userPath).mkdir(parents=True, exist_ok=True)
-            self.configPath = os.path.join(userPath, self.configFilename)
-            self.cacheDir = os.path.join(userPath, "cache")
-            Path(self.cacheDir).mkdir(parents=True, exist_ok=True)
-        Config.read(self.configPath)
+            #appPath = os.path.dirname(self.get_application_config())
+        #else:
+            # Config path
+            # Cache path
+        Config.read(self.configFile)
         Config.setdefaults('preferences', {
             'unit_of_measure': "metric",
             'rounded_readings': True,
@@ -1109,7 +1115,6 @@ class MainApp(MDApp):
 
     def build(self):
         self.icon = 'assets/app-icon256.png'
-        print(self.root.ids.map.cache_dir)
         self.root.ids.selected_uom.text = Config.get('preferences', 'unit_of_measure')
         self.root.ids.selected_home_marker.active = Config.getboolean('preferences', 'show_marker_home')
         self.root.ids.selected_ctrl_marker.active = Config.getboolean('preferences', 'show_marker_ctrl')
