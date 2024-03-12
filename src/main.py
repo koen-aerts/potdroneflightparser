@@ -1108,6 +1108,7 @@ class MainApp(MDApp):
 
 
     def build(self):
+        self.icon = 'assets/app-icon256.png'
         print(self.root.ids.map.cache_dir)
         self.root.ids.selected_uom.text = Config.get('preferences', 'unit_of_measure')
         self.root.ids.selected_home_marker.active = Config.getboolean('preferences', 'show_marker_home')
