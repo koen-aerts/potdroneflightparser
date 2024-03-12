@@ -411,6 +411,67 @@ class MainApp(MDApp):
 
 
     '''
+    Open the selected Flight Data Zip file.
+    '''
+    def parse_file(self, selectedFile):
+        zipFile = Path(selectedFile)
+        if (not zipFile.is_file()):
+            self.show_error_message(message=f'Not a valid file specified: {selectedFile}')
+            return
+        droneModel = re.sub(r"[0-9]*-(.*)-Drone.*", r"\1", PurePath(selectedFile).name) # Pull drone model from zip filename.
+        droneModel = re.sub(r"[^\w]", r" ", droneModel) # Remove non-alphanumeric characters from the model name.
+        lcDM = droneModel.lower()
+        if ('p1a' in lcDM):
+            self.parse_dreamer_logs(droneModel, selectedFile)
+        else:
+            if (not 'atom' in lcDM):
+                self.show_warning_message(message=f'This drone model may not be supported in this software: {droneModel}')
+            self.parse_atom_logs(droneModel, selectedFile)
+
+
+    '''
+    Open a file dialog.
+    '''
+    def open_file_dialog(self):
+        self.stop_flight(True)
+        if platform == 'android':
+            # Open Android Shared Storage. This opens in a separate thread so we wait here
+            # until that dialog has closed. Otherwise the map drawing will be triggered from
+            # a thread other than the main Kivy one and it will complain about that.
+            # Note that "plyer" also supports Android File Manager but it seems to have some
+            # issues, so we're using androidstorage4kivy instead.
+            self.chosenFile = None
+            self.chooser.choose_content("application/zip")
+            self.chooser_open = True
+            while (self.chooser_open):
+                time.sleep(0.2)
+            if self.chosenFile is not None:
+                self.parse_file(self.chosenFile)
+        else:
+            oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
+            myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
+            if myFiles and len(myFiles) > 0 and os.path.isfile(myFiles[0]):
+                self.parse_file(myFiles[0])
+
+
+    '''
+    File Chooser, called when a file has been selected on the Android device.
+    '''
+    def chooser_callback(self, uri_list):
+        try:
+            ss = SharedStorage()
+            for uri in uri_list:
+                self.chosenFile = ss.copy_from_shared(uri) # copy to private storage
+                break # Only open the first file from the selection.
+        except Exception as e:
+            print(f"File Chooser Error: {e}")
+        self.chooser_open = False
+
+
+    '''
     Map Source dropdown functions.
     '''
     def open_mapsource_selection(self, item):
@@ -437,18 +498,6 @@ class MainApp(MDApp):
         else:
             mapSource = MapSource(cache_key="osm") # OpenStreetMap (default)
         self.root.ids.map.map_source = mapSource
-
-
-    '''
-    Change Flight Path Line Width (Preferences).
-    '''
-    def flight_path_width_selection(self, slider, coords):
-        Config.set('preferences', 'flight_path_width', int(slider.value))
-        Config.write()
-        self.clear_map()
-        self.generate_map_layers()
-        self.init_map_layers()
-        self.set_markers()
 
 
     '''
@@ -566,6 +615,186 @@ class MainApp(MDApp):
 
 
     '''
+    Center the map at the last known center point.
+    '''
+    def center_map(self):
+        if self.flightOptions and len(self.flightOptions) > 0:
+            self.zoom_to_fit()
+        else:
+            self.root.ids.map.center_on(self.centerlat, self.centerlon)
+
+
+    '''
+    Zoom in/out when the zoom buttons on the map are selected. Only for desktop view.
+    '''
+    def map_zoom(self, zoomin):
+        if zoomin:
+            if self.root.ids.map.zoom < self.root.ids.map.map_source.max_zoom:
+                self.root.ids.map.zoom = self.root.ids.map.zoom + 1
+        else:
+            if self.root.ids.map.zoom > self.root.ids.map.map_source.min_zoom:
+                self.root.ids.map.zoom = self.root.ids.map.zoom - 1
+
+
+    '''
+    Update ctrl/home/drone markers on the map as well as other labels with flight information.
+    '''
+    def set_markers(self):
+        if not self.currentRowIdx:
+            return
+        record = self.logdata[self.currentRowIdx]
+        self.root.ids.value1_alt.text = f"{record[15]} {self.dist_unit()}"
+        self.root.ids.value2_alt.text = f"Alt: {record[15]} {self.dist_unit()}"
+        self.root.ids.value1_dist.text = f"{record[13]} {self.dist_unit()}"
+        self.root.ids.value2_dist.text = f"Dist: {record[13]} {self.dist_unit()}"
+        self.root.ids.value1_hspeed.text = f"{record[19]} {self.speed_unit()}"
+        self.root.ids.value2_hspeed.text = f"HS: {record[19]} {self.speed_unit()}"
+        self.root.ids.value1_vspeed.text = f"{record[23]} {self.speed_unit()}"
+        self.root.ids.value2_vspeed.text = f"VS: {record[23]} {self.speed_unit()}"
+        self.root.ids.value2_sats.text = f"Sats: {record[24]}"
+        if self.playStartTs:
+            elapsed = record[5]
+            elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
+            self.root.ids.value1_elapsed.text = str(elapsed)
+            self.root.ids.value2_elapsed.text = str(elapsed)
+        # Controller Marker.
+        try:
+            ctrllat = float(record[self.columns.index('ctrllat')])
+            ctrllon = float(record[self.columns.index('ctrllon')])
+            self.ctrlmarker.lat = ctrllat
+            self.ctrlmarker.lon = ctrllon
+        except:
+            ... # Do nothing
+        # Drone Home (RTH) Marker.
+        try:
+            homelat = float(record[self.columns.index('homelat')])
+            homelon = float(record[self.columns.index('homelon')])
+            self.homemarker.lat = homelat
+            self.homemarker.lon = homelon
+        except:
+            ... # Do nothing
+        # Drone marker.
+        try:
+            dronelat = float(record[self.columns.index('dronelat')])
+            dronelon = float(record[self.columns.index('dronelon')])
+            self.dronemarker.lat = dronelat
+            self.dronemarker.lon = dronelon
+        except:
+            ... # Do nothing
+        self.root.ids.map.trigger_update(False)
+
+
+    '''
+    Update ctrl/home/drone markers on the map with the next set of coordinates in the table list.
+    '''
+    def set_frame(self):        
+        refreshRate = float(re.sub("[^0-9\.]", "", self.root.ids.selected_refresh_rate.text))
+        while (not self.stopRequested) and (self.currentRowIdx < self.currentEndIdx):
+            self.set_markers()
+            time.sleep(refreshRate)
+            runningTs = datetime.datetime.now() - self.playStartTs
+            while self.currentRowIdx <= self.currentEndIdx and self.logdata[self.currentRowIdx][self.columns.index('time')] < runningTs:
+                self.currentRowIdx = self.currentRowIdx + 1
+        self.isPlaying = False
+        self.stopRequested = False
+
+
+    '''
+    Jump to beginning of current flight, or the end of the previous one.
+    '''
+    def jump_prev_flight(self):
+        if len(self.logdata) == 0:
+            self.show_warning_message(message="No data to play back.")
+            return
+        if (self.root.ids.selected_path.text == '--'):
+            self.show_info_message(message="No flight selected.")
+            return
+        self.stop_flight(True)
+        if self.currentRowIdx > self.currentStartIdx:
+            self.currentRowIdx = self.currentStartIdx
+            self.set_markers()
+            return
+        flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
+        if flightNum > 1:
+            self.root.ids.selected_path.text = str(flightNum - 1)
+            self.select_flight(True)
+            self.set_markers()
+        else:
+            self.show_info_message(message="No previous flight.")
+
+
+    '''
+    Jump to end of current flight, or the beginning of the next one.
+    '''
+    def jump_next_flight(self):
+        if len(self.logdata) == 0:
+            self.show_warning_message(message="No data to play back.")
+            return
+        if (self.root.ids.selected_path.text == '--'):
+            self.show_info_message(message="No flight selected.")
+            return
+        self.stop_flight(True)
+        if self.currentRowIdx < self.currentEndIdx:
+            self.currentRowIdx = self.currentEndIdx
+            self.set_markers()
+            return
+        flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
+        if flightNum < len(self.flightOptions):
+            self.root.ids.selected_path.text = str(flightNum + 1)
+            self.select_flight()
+            self.set_markers()
+        else:
+            self.show_info_message(message="No next flight.")
+
+
+    '''
+    Start or resume playback of the selected flight. If flight is finished, restart from beginning.
+    '''
+    def play_flight(self):
+        self.stopRequested = False
+        if (self.isPlaying):
+            self.stop_flight(True)
+            return
+        if len(self.logdata) == 0:
+            self.show_warning_message(message="No data to play back.")
+            return
+        if (self.root.ids.selected_path.text == '--'):
+            self.show_info_message(message="Select a flight to play back.")
+            return
+        if self.currentRowIdx == self.currentEndIdx:
+            self.currentRowIdx = self.currentStartIdx
+        self.playStartTs = datetime.datetime.now() - self.logdata[self.currentRowIdx][self.columns.index('time')]
+        self.isPlaying = True
+        self.root.ids.playbutton.icon = "pause"
+        threading.Thread(target=self.set_frame, args=()).start()
+
+
+    '''
+    Stop flight playback.
+    '''
+    def stop_flight(self, wait=False):
+        if not self.isPlaying:
+            return
+        self.stopRequested = True
+        if wait:
+            while (self.isPlaying):
+                time.sleep(0.25)
+        self.root.ids.playbutton.icon = "play"
+
+
+    '''
+    Change Flight Path Line Width (Preferences).
+    '''
+    def flight_path_width_selection(self, slider, coords):
+        Config.set('preferences', 'flight_path_width', int(slider.value))
+        Config.write()
+        self.clear_map()
+        self.generate_map_layers()
+        self.init_map_layers()
+        self.set_markers()
+
+
+    '''
     Flight Path Colours functions.
     '''
     def flight_path_color_selection(self, slider, coords):
@@ -641,14 +870,17 @@ class MainApp(MDApp):
         self.root.ids.selected_path.text = text_item
         self.flight_selection_menu.dismiss()
         self.select_flight()
-    def select_flight(self):
+    def select_flight(self, skip_to_end=False):
         self.clear_map()
         self.init_map_layers()
         flightNum = 0 if (self.root.ids.selected_path.text == '--') else int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
         if (flightNum != 0):
             self.currentStartIdx = self.flightStarts[self.root.ids.selected_path.text]
             self.currentEndIdx = self.flightEnds[self.root.ids.selected_path.text]
-            self.currentRowIdx = self.currentStartIdx
+            if skip_to_end:
+                self.currentRowIdx = self.currentEndIdx
+            else:
+                self.currentRowIdx = self.currentStartIdx
             self.set_markers()
         if self.flightStats and len(self.flightStats) > 0:
             self.centerlat = (self.flightStats[flightNum][4] + self.flightStats[flightNum][6]) / 2
@@ -659,35 +891,6 @@ class MainApp(MDApp):
             self.root.ids.value_maxalt.text = f"{self.fmt_num(self.flightStats[flightNum][1])} {self.dist_unit()}"
             self.root.ids.value_maxspeed.text = f"{self.fmt_num(self.flightStats[flightNum][2])} {self.speed_unit()}"
             self.root.ids.value_duration.text = str(self.flightStats[flightNum][3])
-
-
-    '''
-    Center the map at the last known center point.
-    '''
-    def center_map(self):
-        if self.flightOptions and len(self.flightOptions) > 0:
-            self.zoom_to_fit()
-        else:
-            self.root.ids.map.center_on(self.centerlat, self.centerlon)
-
-
-    '''
-    Open the selected Flight Data Zip file.
-    '''
-    def parse_file(self, selectedFile):
-        zipFile = Path(selectedFile)
-        if (not zipFile.is_file()):
-            self.show_error_message(message=f'Not a valid file specified: {selectedFile}')
-            return
-        droneModel = re.sub(r"[0-9]*-(.*)-Drone.*", r"\1", PurePath(selectedFile).name) # Pull drone model from zip filename.
-        droneModel = re.sub(r"[^\w]", r" ", droneModel) # Remove non-alphanumeric characters from the model name.
-        lcDM = droneModel.lower()
-        if ('p1a' in lcDM):
-            self.parse_dreamer_logs(droneModel, selectedFile)
-        else:
-            if (not 'atom' in lcDM):
-                self.show_warning_message(message=f'This drone model may not be supported in this software: {droneModel}')
-            self.parse_atom_logs(droneModel, selectedFile)
 
 
     '''
@@ -845,154 +1048,6 @@ class MainApp(MDApp):
 
 
     '''
-    Zoom in/out when the zoom buttons on the map are selected. Only for desktop view.
-    '''
-    def map_zoom(self, zoomin):
-        if zoomin:
-            if self.root.ids.map.zoom < self.root.ids.map.map_source.max_zoom:
-                self.root.ids.map.zoom = self.root.ids.map.zoom + 1
-        else:
-            if self.root.ids.map.zoom > self.root.ids.map.map_source.min_zoom:
-                self.root.ids.map.zoom = self.root.ids.map.zoom - 1
-
-
-    '''
-    Update ctrl/home/drone markers on the map as well as other labels with flight information.
-    '''
-    def set_markers(self):
-        if not self.currentRowIdx:
-            return
-        record = self.logdata[self.currentRowIdx]
-        self.root.ids.value1_alt.text = f"{record[15]} {self.dist_unit()}"
-        self.root.ids.value2_alt.text = f"Alt: {record[15]} {self.dist_unit()}"
-        self.root.ids.value1_dist.text = f"{record[13]} {self.dist_unit()}"
-        self.root.ids.value2_dist.text = f"Dist: {record[13]} {self.dist_unit()}"
-        self.root.ids.value1_hspeed.text = f"{record[19]} {self.speed_unit()}"
-        self.root.ids.value2_hspeed.text = f"HS: {record[19]} {self.speed_unit()}"
-        self.root.ids.value1_vspeed.text = f"{record[23]} {self.speed_unit()}"
-        self.root.ids.value2_vspeed.text = f"VS: {record[23]} {self.speed_unit()}"
-        self.root.ids.value2_sats.text = f"Sats: {record[24]}"
-        if self.playStartTs:
-            elapsed = datetime.datetime.now() - self.playStartTs
-            elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
-            self.root.ids.value1_elapsed.text = str(elapsed)
-            self.root.ids.value2_elapsed.text = str(elapsed)
-        # Controller Marker.
-        try:
-            ctrllat = float(record[self.columns.index('ctrllat')])
-            ctrllon = float(record[self.columns.index('ctrllon')])
-            self.ctrlmarker.lat = ctrllat
-            self.ctrlmarker.lon = ctrllon
-        except:
-            ... # Do nothing
-        # Drone Home (RTH) Marker.
-        try:
-            homelat = float(record[self.columns.index('homelat')])
-            homelon = float(record[self.columns.index('homelon')])
-            self.homemarker.lat = homelat
-            self.homemarker.lon = homelon
-        except:
-            ... # Do nothing
-        # Drone marker.
-        try:
-            dronelat = float(record[self.columns.index('dronelat')])
-            dronelon = float(record[self.columns.index('dronelon')])
-            self.dronemarker.lat = dronelat
-            self.dronemarker.lon = dronelon
-        except:
-            ... # Do nothing
-        self.root.ids.map.trigger_update(False)
-
-
-    '''
-    Update ctrl/home/drone markers on the map with the next set of coordinates in the table list.
-    '''
-    def set_frame(self):        
-        refreshRate = float(re.sub("[^0-9\.]", "", self.root.ids.selected_refresh_rate.text))
-        while self.isPlaying and self.currentRowIdx < self.currentEndIdx:
-            self.set_markers()
-            time.sleep(refreshRate)
-            runningTs = datetime.datetime.now() - self.playStartTs
-            while self.currentRowIdx <= self.currentEndIdx and self.logdata[self.currentRowIdx][self.columns.index('time')] < runningTs:
-                self.currentRowIdx = self.currentRowIdx + 1
-        self.isPlaying = False
-
-
-    '''
-    Start or resume playback of the selected flight. If flight is finished, restart from beginning.
-    '''
-    def play_flight(self):
-        if (self.isPlaying):
-            self.stop_flight(True)
-            return
-        if len(self.logdata) == 0:
-            self.show_warning_message(message="No data to play back.")
-            return
-        if (self.root.ids.selected_path.text == '--'):
-            self.show_info_message(message="Select a flight to play back.")
-            return
-        if self.currentRowIdx == self.currentEndIdx:
-            self.currentRowIdx = self.currentStartIdx
-        self.playStartTs = datetime.datetime.now() - self.logdata[self.currentRowIdx][self.columns.index('time')]
-        self.isPlaying = True
-        self.root.ids.playbutton.icon = "pause"
-        threading.Thread(target=self.set_frame, args=()).start()
-
-
-    '''
-    Stop flight playback.
-    '''
-    def stop_flight(self, wait):
-        self.isPlaying = False
-        if wait:
-            while (self.isPlaying):
-                time.sleep(0.5)
-        self.root.ids.playbutton.icon = "play"
-
-
-    '''
-    Open a file dialog.
-    '''
-    def open_file_dialog(self):
-        self.stop_flight(True)
-        if platform == 'android':
-            # Open Android Shared Storage. This opens in a separate thread so we wait here
-            # until that dialog has closed. Otherwise the map drawing will be triggered from
-            # a thread other than the main Kivy one and it will complain about that.
-            # Note that "plyer" also supports Android File Manager but it seems to have some
-            # issues, so we're using androidstorage4kivy instead.
-            self.chosenFile = None
-            self.chooser.choose_content("application/zip")
-            self.chooser_open = True
-            while (self.chooser_open):
-                time.sleep(0.2)
-            if self.chosenFile is not None:
-                self.parse_file(self.chosenFile)
-        else:
-            oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
-            myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
-            newwd = os.getcwd()
-            if oldwd != newwd:
-                os.chdir(oldwd) # Change it back!
-            if myFiles and len(myFiles) > 0 and os.path.isfile(myFiles[0]):
-                self.parse_file(myFiles[0])
-
-
-    '''
-    File Chooser, called when a file has been selected on the Android device.
-    '''
-    def chooser_callback(self, uri_list):
-        try:
-            ss = SharedStorage()
-            for uri in uri_list:
-                self.chosenFile = ss.copy_from_shared(uri) # copy to private storage
-                break # Only open the first file from the selection.
-        except Exception as e:
-            print(f"File Chooser Error: {e}")
-        self.chooser_open = False
-
-
-    '''
     Capture keyboard input.
     '''
     def events(self, instance, keyboard, keycode, text, modifiers):
@@ -1050,6 +1105,7 @@ class MainApp(MDApp):
         self.layer_drone = None
         self.dronemarker = None
         self.flightStats = None
+        self.stopRequested = False
 
 
     def build(self):

@@ -201,9 +201,10 @@ MDGridLayout:
                             pos_hint: {"center_x": .5, "y": 0.01}
                             rows: 1
                             adaptive_size: True
-                            #MDIconButton:
-                            #    style: "filled"
-                            #    icon: "skip-previous"
+                            MDIconButton:
+                                style: "filled"
+                                icon: "skip-previous"
+                                on_release: app.jump_prev_flight()
                             #MDIconButton:
                             #    style: "filled"
                             #    icon: "rewind"
@@ -215,9 +216,10 @@ MDGridLayout:
                             #MDIconButton:
                             #    style: "filled"
                             #    icon: "fast-forward"
-                            #MDIconButton:
-                            #    style: "filled"
-                            #    icon: "skip-next"
+                            MDIconButton:
+                                style: "filled"
+                                icon: "skip-next"
+                                on_release: app.jump_next_flight()
                             MDIconButton:
                                 style: "filled"
                                 icon: "crosshairs-gps"
