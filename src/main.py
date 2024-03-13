@@ -15,7 +15,7 @@ from enum import Enum
 from kivy.core.window import Window
 Window.allow_screensaver = False
 
-from platformdirs import user_config_dir, user_cache_dir
+from platformdirs import user_config_dir
 
 from kivy.utils import platform
 from kivy.config import Config
@@ -28,7 +28,6 @@ from kivy.metrics import dp
 from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
-from kivy_garden.mapview.constants import CACHE_DIR
 
 if platform == 'android':
     from android.permissions import request_permissions, Permission
@@ -935,7 +934,8 @@ class MainApp(MDApp):
         Config.set('preferences', 'show_marker_home', item.active)
         Config.write()
         self.stop_flight(True)
-        self.layer_home.opacity = 1 if self.root.ids.selected_home_marker.active else 0
+        if self.layer_home:
+            self.layer_home.opacity = 1 if self.root.ids.selected_home_marker.active else 0
 
 
     '''
@@ -945,7 +945,8 @@ class MainApp(MDApp):
         Config.set('preferences', 'show_marker_ctrl', item.active)
         Config.write()
         self.stop_flight(True)
-        self.layer_ctrl.opacity = 1 if self.root.ids.selected_ctrl_marker.active else 0
+        if self.layer_ctrl:
+            self.layer_ctrl.opacity = 1 if self.root.ids.selected_ctrl_marker.active else 0
 
 
     '''
@@ -1063,26 +1064,17 @@ class MainApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         locale.setlocale(locale.LC_ALL, '')
-        userConfigPath = user_config_dir("FlightLogViewer", "FlightLogViewer")
-        print(f"userConfigPath: {userConfigPath}")
-        if not os.path.exists(userConfigPath):
-            Path(userConfigPath).mkdir(parents=True, exist_ok=True)
-        userCachePath = user_cache_dir("FlightLogViewer", "FlightLogViewer")
-        print(f"userCachePath: {userCachePath}")
-        if not os.path.exists(userCachePath):
-            Path(userCachePath).mkdir(parents=True, exist_ok=True)
-        self.configFile = os.path.join(userConfigPath, self.configFilename)
-        os.chdir(userCachePath)
+        configDir = user_config_dir("FlightLogViewer", "FlightLogViewer")
+        if not os.path.exists(configDir):
+            Path(configDir).mkdir(parents=True, exist_ok=True)
+        self.configFile = os.path.join(configDir, self.configFilename)
         if platform == 'android':
             request_permissions([Permission.INTERNET, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE])
             self.chosenFile = None
             self.chooser_open = False # To track Android File Manager (Chooser)
             self.chooser = Chooser(self.chooser_callback)
-            #appPath = os.path.dirname(self.get_application_config())
-        #else:
-            # Config path
-            # Cache path
         Config.read(self.configFile)
+        Config.set('kivy', 'window_icon', 'assets/app-icon256.png')
         Config.setdefaults('preferences', {
             'unit_of_measure': "metric",
             'rounded_readings': True,
@@ -1132,6 +1124,11 @@ class MainApp(MDApp):
         self.root.ids.selected_path.text = '--'
         self.reset()
         return super().on_start()
+
+
+    def on_pause(self):
+        self.stop_flight(True)
+        return True
 
 
     '''

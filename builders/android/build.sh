@@ -11,6 +11,11 @@ ${LOC}/../remove_build_artifacts.sh
 # Prep build environment.
 cp ${LOC}/buildozer.spec ${SRC}
 
+# Install mapview and patch, if not done already.
+if [ ! -d "${SRC}/kivy_garden" ]; then
+  ../install_mapview.sh
+fi
+
 # Build builder image if there isn't one.
 ic=$(docker images | grep -c fdv-apk-builder)
 if [ ${ic} -eq 0 ]; then
