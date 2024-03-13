@@ -32,7 +32,7 @@
     max_lines: 1
     size_hint: (None, None)
     height: dp(40)
-    width: dp(210)
+    width: dp(170)
     text_size: self.size
     padding: dp(4)
 
@@ -318,14 +318,14 @@ MDGridLayout:
                             id: selected_uom
                             text: ""
                     PrefLabel:
-                        text: "Display Home (RTH) Marker:"
+                        text: "Home Marker:"
                     PrefCheck:
                         on_release: app.home_marker_selection(*args)
                         id: selected_home_marker
                         active: True
                         height: dp(34)
                     PrefLabel:
-                        text: "Playback Refresh Rate:"
+                        text: "Playback Rate:"
                     PrefSelect:
                         on_release: app.refresh_rate_selection(*args)
                         MDDropDownItemText:
@@ -334,7 +334,7 @@ MDGridLayout:
                             id: selected_refresh_rate
                             text: ""
                     PrefLabel:
-                        text: "Display Controller Marker:"
+                        text: "Controller Marker:"
                     PrefCheck:
                         on_release: app.ctrl_marker_selection(*args)
                         id: selected_ctrl_marker
@@ -357,7 +357,7 @@ MDGridLayout:
                         active: True
                         height: dp(34)
                     PrefLabel:
-                        text: "Flight Path Line Width:"
+                        text: "Flight Line Width:"
                     PrefSlider:
                         id: selected_flight_path_width
                         on_value_pos: app.flight_path_width_selection(*args)
@@ -376,7 +376,7 @@ MDGridLayout:
                     PrefLabel:
                         text: ""
                     PrefLabel:
-                        text: "Flight Path Colour:"
+                        text: "Flight Colour:"
                     PrefSlider:
                         id: selected_flight_path_color
                         on_value_pos: app.flight_path_color_selection(*args)
@@ -392,7 +392,7 @@ MDGridLayout:
                         #value_track_color: [1,15,77,34]
                         PrefSliderHandle:
                     PrefLabel:
-                        text: "Controller Marker Colour:"
+                        text: "Controller Colour:"
                     PrefSlider:
                         id: selected_marker_ctrl_color
                         on_value_pos: app.marker_ctrl_color_selection(*args)
@@ -407,7 +407,7 @@ MDGridLayout:
                         width: dp(160)
                         PrefSliderHandle:
                     PrefLabel:
-                        text: "Drone Marker Colour:"
+                        text: "Drone Colour:"
                     PrefSlider:
                         id: selected_marker_drone_color
                         on_value_pos: app.marker_drone_color_selection(*args)
@@ -422,7 +422,7 @@ MDGridLayout:
                         width: dp(160)
                         PrefSliderHandle:
                     PrefLabel:
-                        text: "Home Marker Colour:"
+                        text: "Home Colour:"
                     PrefSlider:
                         id: selected_marker_home_color
                         on_value_pos: app.marker_home_color_selection(*args)
