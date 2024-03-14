@@ -639,7 +639,7 @@ class MainApp(MDApp):
     '''
     Update ctrl/home/drone markers on the map as well as other labels with flight information.
     '''
-    def set_markers(self):
+    def set_markers(self, updateSlider=True):
         if not self.currentRowIdx:
             return
         record = self.logdata[self.currentRowIdx]
@@ -656,6 +656,14 @@ class MainApp(MDApp):
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
         self.root.ids.value1_elapsed.text = str(elapsed)
         self.root.ids.value2_elapsed.text = str(elapsed)
+        if updateSlider:
+            if self.root.ids.value_duration.text != "":
+                durstr = self.root.ids.value_duration.text.split(":")
+                durval = datetime.timedelta(hours=int(durstr[0]), minutes=int(durstr[1]), seconds=int(durstr[2]))
+                if durval != 0: # Prevent division by zero
+                    self.root.ids.flight_progress.value = elapsed / durval * 100
+                else:
+                    self.root.ids.flight_progress.value = 0
         # Controller Marker.
         try:
             ctrllat = float(record[self.columns.index('ctrllat')])
@@ -686,7 +694,7 @@ class MainApp(MDApp):
     '''
     Update ctrl/home/drone markers on the map with the next set of coordinates in the table list.
     '''
-    def set_frame(self):        
+    def set_frame(self):
         refreshRate = float(re.sub("[^0-9\.]", "", self.root.ids.selected_refresh_rate.text))
         while (not self.stopRequested) and (self.currentRowIdx < self.currentEndIdx):
             self.set_markers()
@@ -696,6 +704,35 @@ class MainApp(MDApp):
                 self.currentRowIdx = self.currentRowIdx + 1
         self.isPlaying = False
         self.stopRequested = False
+
+
+    def select_flight_progress(self, slider, coords):
+        if (slider.is_updating):
+            return
+        if len(self.logdata) == 0:
+            return # Do nothing
+        if (self.root.ids.selected_path.text == '--'):
+            return # Do nothing
+        # Determine approximate selected duration based on slider position
+        durstr = self.root.ids.value_duration.text.split(":")
+        durval = datetime.timedelta(hours=int(durstr[0]), minutes=int(durstr[1]), seconds=int(durstr[2]))
+        newdur = durval / 100 * slider.value
+        minDiff = None
+        nearestIdx = -1
+        for idx in range(self.currentStartIdx, self.currentEndIdx+1):
+            dur = self.logdata[idx][self.columns.index('time')]
+            diff = abs(dur-newdur)
+            if not minDiff:
+                minDiff = diff
+                nearestIdx = idx
+            elif diff < minDiff:
+                minDiff = diff
+                nearestIdx = idx
+            elif diff > minDiff:
+                break
+        if nearestIdx >= 0:
+            self.currentRowIdx = nearestIdx
+            self.set_markers(False)
 
 
     '''
@@ -711,13 +748,19 @@ class MainApp(MDApp):
         self.stop_flight(True)
         if self.currentRowIdx > self.currentStartIdx:
             self.currentRowIdx = self.currentStartIdx
-            self.set_markers()
+            self.root.ids.flight_progress.is_updating = True
+            self.set_markers(False)
+            self.root.ids.flight_progress.value = 0
+            self.root.ids.flight_progress.is_updating = False
             return
         flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
         if flightNum > 1:
             self.root.ids.selected_path.text = str(flightNum - 1)
+            self.root.ids.flight_progress.is_updating = True
             self.select_flight(True)
-            self.set_markers()
+            self.set_markers(False)
+            self.root.ids.flight_progress.value = 100
+            self.root.ids.flight_progress.is_updating = False
         else:
             self.show_info_message(message="No previous flight.")
 
@@ -735,13 +778,19 @@ class MainApp(MDApp):
         self.stop_flight(True)
         if self.currentRowIdx < self.currentEndIdx:
             self.currentRowIdx = self.currentEndIdx
-            self.set_markers()
+            self.root.ids.flight_progress.is_updating = True
+            self.set_markers(False)
+            self.root.ids.flight_progress.value = 100
+            self.root.ids.flight_progress.is_updating = False
             return
         flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
         if flightNum < len(self.flightOptions):
             self.root.ids.selected_path.text = str(flightNum + 1)
+            self.root.ids.flight_progress.is_updating = True
             self.select_flight()
-            self.set_markers()
+            self.set_markers(False)
+            self.root.ids.flight_progress.value = 0
+            self.root.ids.flight_progress.is_updating = False
         else:
             self.show_info_message(message="No next flight.")
 
@@ -763,6 +812,7 @@ class MainApp(MDApp):
         if self.currentRowIdx == self.currentEndIdx:
             self.currentRowIdx = self.currentStartIdx
         self.playStartTs = datetime.datetime.now() - self.logdata[self.currentRowIdx][self.columns.index('time')]
+        self.root.ids.flight_progress.is_updating = True
         self.isPlaying = True
         self.root.ids.playbutton.icon = "pause"
         threading.Thread(target=self.set_frame, args=()).start()
@@ -778,6 +828,7 @@ class MainApp(MDApp):
         if wait:
             while (self.isPlaying):
                 time.sleep(0.25)
+        self.root.ids.flight_progress.is_updating = False
         self.root.ids.playbutton.icon = "play"
 
 
@@ -1021,6 +1072,7 @@ class MainApp(MDApp):
             self.root.ids.value2_sats.text = ""
             self.root.ids.value1_elapsed.text = ""
             self.root.ids.value2_elapsed.text = ""
+            self.root.ids.flight_progress.value = 0
             self.root.ids.flight_stats_grid.clear_widgets()
         self.flightOptions = []
         self.title = self.appTitle

@@ -196,7 +196,8 @@ MDGridLayout:
                             lon: -0.1275
                         MDGridLayout:
                             size_hint: (None, None)
-                            pos_hint: {"center_x": .5, "y": 0.01}
+                            pos_hint: {"center_x": .5}
+                            y: dp(10)
                             rows: 1
                             adaptive_size: True
                             MapButton:
@@ -216,6 +217,14 @@ MDGridLayout:
                                 icon: "crosshairs-gps"
                                 on_release: app.center_map()
                                 size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                        MDSlider:
+                            id: flight_progress
+                            size_hint: (.8, None)
+                            pos_hint: {"center_x": .5}
+                            y: dp(55) if theapp.is_desktop else dp(45)
+                            is_updating: False
+                            on_value_pos: app.select_flight_progress(*args)
+                            MDSliderHandle:
                         MDGridLayout:
                             id: mapnav
                             pos_hint: {"x": 0.01, "top": 0.99} if theapp.is_desktop else {"x": 1, "top": 0}
