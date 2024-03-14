@@ -3,6 +3,9 @@
 <TopNavBar@MDTopAppBar>
     type: "small"
 
+<MapButton@MDIconButton>
+    style: "filled"
+
 <ValLabel@MDLabel>
     role: "small"
 
@@ -22,7 +25,7 @@
     max_lines: 1
     size_hint: (None, 1)
     height: dp(10)
-    width: dp(65)
+    width: dp(60)
     role: "small"
     bold: True
 
@@ -111,6 +114,10 @@ MDGridLayout:
                             #height: (dp(14) * 15) + dp(2)
                             #adaptive_height: True
                             StatLabel:
+                                text: ""
+                            StatValue:
+                                text: ""
+                            StatLabel:
                                 text: "Time:"
                             StatValue:
                                 id: value1_elapsed
@@ -152,7 +159,7 @@ MDGridLayout:
                                 id: value_maxalt
                                 text: ""
                             StatLabel:
-                                text: "Max H. Speed:"
+                                text: "Max Speed:"
                             StatValue:
                                 id: value_maxspeed
                                 text: ""
@@ -192,40 +199,32 @@ MDGridLayout:
                             pos_hint: {"center_x": .5, "y": 0.01}
                             rows: 1
                             adaptive_size: True
-                            MDIconButton:
-                                style: "filled"
+                            MapButton:
                                 icon: "skip-previous"
                                 on_release: app.jump_prev_flight()
-                            #MDIconButton:
-                            #    style: "filled"
-                            #    icon: "rewind"
-                            MDIconButton:
+                                size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                            MapButton:
                                 id: playbutton
-                                style: "filled"
                                 icon: "play"
                                 on_release: app.play_flight()
-                            #MDIconButton:
-                            #    style: "filled"
-                            #    icon: "fast-forward"
-                            MDIconButton:
-                                style: "filled"
+                                size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                            MapButton:
                                 icon: "skip-next"
                                 on_release: app.jump_next_flight()
-                            MDIconButton:
-                                style: "filled"
+                                size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                            MapButton:
                                 icon: "crosshairs-gps"
                                 on_release: app.center_map()
+                                size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
                         MDGridLayout:
                             id: mapnav
                             pos_hint: {"x": 0.01, "top": 0.99} if theapp.is_desktop else {"x": 1, "top": 0}
                             rows: 2
                             adaptive_size: True
-                            MDIconButton:
-                                style: "filled"
+                            MapButton:
                                 icon: "plus"
                                 on_release: app.map_zoom(True)
-                            MDIconButton:
-                                style: "filled"
+                            MapButton:
                                 icon: "minus"
                                 on_release: app.map_zoom(False)
                         MDGridLayout:
@@ -357,7 +356,7 @@ MDGridLayout:
                         active: True
                         height: dp(34)
                     PrefLabel:
-                        text: "Flight Line Width:"
+                        text: "Flight Path Width:"
                     PrefSlider:
                         id: selected_flight_path_width
                         on_value_pos: app.flight_path_width_selection(*args)
@@ -376,7 +375,7 @@ MDGridLayout:
                     PrefLabel:
                         text: ""
                     PrefLabel:
-                        text: "Flight Colour:"
+                        text: "Flight Path Colour:"
                     PrefSlider:
                         id: selected_flight_path_color
                         on_value_pos: app.flight_path_color_selection(*args)
