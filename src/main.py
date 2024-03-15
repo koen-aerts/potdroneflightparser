@@ -79,7 +79,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.0.0"
+    appVersion = "v2.0.0-alpha"
     appName = "Flight Log Viewer"
     appTitle = f"{appName} - {appVersion}"
     defaultMapZoom = 3
@@ -696,18 +696,26 @@ class MainApp(MDApp):
     '''
     def set_frame(self):
         refreshRate = float(re.sub("[^0-9\.]", "", self.root.ids.selected_refresh_rate.text))
+        totalTimeElapsed = self.logdata[self.currentRowIdx][self.columns.index('time')]
+        prevTs = None
+        timeElapsed = None
         while (not self.stopRequested) and (self.currentRowIdx < self.currentEndIdx):
             self.set_markers()
             time.sleep(refreshRate)
-            runningTs = datetime.datetime.now() - self.playStartTs
-            while self.currentRowIdx <= self.currentEndIdx and self.logdata[self.currentRowIdx][self.columns.index('time')] < runningTs:
+            now = datetime.datetime.now()
+            timeElapsed = now - prevTs if prevTs else datetime.timedelta()
+            if self.playback_speed > 1:
+                timeElapsed = timeElapsed * self.playback_speed
+            totalTimeElapsed = totalTimeElapsed + timeElapsed
+            prevTs = now
+            while self.currentRowIdx <= self.currentEndIdx and self.logdata[self.currentRowIdx][self.columns.index('time')] < totalTimeElapsed:
                 self.currentRowIdx = self.currentRowIdx + 1
         self.isPlaying = False
         self.stopRequested = False
 
 
     def select_flight_progress(self, slider, coords):
-        if (slider.is_updating):
+        if (slider.is_updating): # Check if slider value is being updated from outside the slider (i.e. playback)
             return
         if len(self.logdata) == 0:
             return # Do nothing
@@ -733,6 +741,18 @@ class MainApp(MDApp):
         if nearestIdx >= 0:
             self.currentRowIdx = nearestIdx
             self.set_markers(False)
+
+
+    def change_playback_speed(self):
+        if self.playback_speed == 1:
+            self.playback_speed = 2
+        elif self.playback_speed == 2:
+            self.playback_speed = 4
+        elif self.playback_speed == 4:
+            self.playback_speed = 8
+        else:
+            self.playback_speed = 1
+        self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box"
 
 
     '''
@@ -811,7 +831,6 @@ class MainApp(MDApp):
             return
         if self.currentRowIdx == self.currentEndIdx:
             self.currentRowIdx = self.currentStartIdx
-        self.playStartTs = datetime.datetime.now() - self.logdata[self.currentRowIdx][self.columns.index('time')]
         self.root.ids.flight_progress.is_updating = True
         self.isPlaying = True
         self.root.ids.playbutton.icon = "pause"
@@ -1053,6 +1072,7 @@ class MainApp(MDApp):
     def reset(self):
         self.centerlat = 51.50722
         self.centerlon = -0.1275
+        self.playback_speed = 1
         if self.root:
             self.root.ids.selected_path.text = '--'
             self.zoom = self.defaultMapZoom
@@ -1074,6 +1094,7 @@ class MainApp(MDApp):
             self.root.ids.value2_elapsed.text = ""
             self.root.ids.flight_progress.value = 0
             self.root.ids.flight_stats_grid.clear_widgets()
+            self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box"
         self.flightOptions = []
         self.title = self.appTitle
         self.logdata = []
@@ -1155,6 +1176,7 @@ class MainApp(MDApp):
         self.dronemarker = None
         self.flightStats = None
         self.stopRequested = False
+        self.playback_speed = 1
 
 
     def build(self):
