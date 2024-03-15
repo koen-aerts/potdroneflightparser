@@ -3,69 +3,48 @@ Flight Log Viewer that can read from Potensic flight-log files.
 
 Models confirmed working are the Atom and Atom SE (both first and second generations).
 
-Incomplete and experimental support for P1A (Dreamer).
-
 ![Example Screenshot](<resources/screenshot1.png> "Example Screenshot")
 
 This project is based on reverse engineering of the Potensic flight bin files (mainly based on a first generation Atom SE as well as log files shared by contributors for other Potensic models), and by trial and error. Not all available metrics are currently pulled from this proprietary file format as not everything has been identified yet.
 
-# How to run
-## Pre-Built
+# 1. How to run
+## 1.1. Pre-Built
 On Windows, MacOS (x64/ARM), or Android devices, you can download and run one of the executables from the [Releases](<../../releases> "Releases") section.
 
-On MacOS, you may see warnings or errors that will prevent you from running the app. This is a standard defense mechanism to prevent users from accidentally running arbitrary content that comes from the Internet. Depending on your version, the message could say something along the lines of the app is broken or dangerous, and it will prevent you from executing it and instead give you a cancel or delete option.
+### 1.1.1 Windows
+Download the zip file and unpack it. Run the .exe installer like you would any other app. You may see Windows Defender or your virus scanner warn you about running content from the Internet and try to scare you away from proceeding with the install. If you carefully read the messages, you should be able to get past this and run the installer. Sometimes the options on proceeding with the running of the .exe are hidden behind other links or buttons in the alert windows and may not seem intuitive.
 
-![MacOS Application Warning](<resources/broken_app_message.png> "MacOS Application Warning")
+To uninstall, run the uninstaller that comes with the app. In many cases, it should be located here: C:\Program Files (x86)\Flight Log Viewer\uninstaller.exe
 
-To solve this, you can remove the Extended Attributes from the file. You will have to open a Terminal and use the xattr command to remove the attributes. Example:
+You can also delete the app's configuration and cache, which is usally located at: C:\Users\[your_user_name]\AppData\Local\FlightLogViewer
 
-```sh
-% cd ~/Downloads
-% unzip ./extractFlightData_macos_x86_v1.4.2.zip
-% xattr -r -d "com.apple.quarantine" extractFlightData.app
-% sudo mv extractFlightData.app /Applications
-```
+### 1.1.2 MacOS
+Download the zip file and unpack it. Run the .dmg package and slide the App's icon into the Application folder. After that you should unmount/eject the .dmg volume in Finder. You may see MacOS warn you about running content from the Internet but you should be able to accept this and run the app.
 
-On Windows, your may see a similar warning about dangerous content from the Internet, or Microsoft Defender can raise a false positive about the binary being infected. The binaries are not signed (because I am not willing to pay Microsoft for this) and contain Python binaries, which also tend to throw off Defender. It should give you the option to ignore and continue.
+To uninstall, delete FlightLogViewer from your Applications.
 
-![Windows Defender Warning](<resources/wd1.png> "Windows Defender Warning")
+You can also delete the app's configuration and cache, which is usally located at: /Users/[your_user_name]/Library/Application Support/FlightLogViewer and /Users/[your_user_name]/Library/Caches/FlightLogViewer.
 
-![Windows Defender Run Anyway](<resources/wd2.png> "Windows Defender Run Anyway")
+### 1.2.3 Android
+Download the .apk file to your device and open it. Depending on your Android version and settings, you will see several warnings about running content from the Internet. You may need to allow the app from which you are launching the apk (web browser or file browser) to launch the apk, and in addition, you will have to read the warnings that will try to stop you from installing the app. There will be options along the way to accept the risk and proceed with the install, albeit those options may not appear until you click on certain links or buttons in the alert popup. You may miss it the first time, so simply try again. It is anything but intuitive, however, there are not too many options to select from.
 
-Likewise, any other virus scanner could flag a false positive on any binary you download from the Internet. You should be able to tell your scanner to ignore the warning. If you are unsure, you may be able to upload the contents of the "Flight Data Viewer" directory under "C:\Program Files (x86)" to your virus scanner website and ask for it to be whitelisted. They will analyse the app and whitelist it if deemed safe.
+Uninstalling the app is the same as you would for any other app.
 
-## From Source
-If you don't have MacOS, Windows or an Android device, you can run the application directly on almost any other platform that supports Python.
+## 1.2. From Source
+You can run the app directly from source. Use Python 3.11 or greater.
 
 First, you need to [install Python](<https://www.python.org/downloads/> "Download Python") on your platform. Version 3.11 or greater is recommended.
 
-The basic steps for running the app are something along the following:
+Then install the dependencies:
 ```sh
-pip3 install platformdirs
-pip3 install tkintermapview
-python3 extractFlightData.py
+pip3 install platformdirs==4.2.0
+pip3 install kivy==2.3.0
+pip3 install https://github.com/kivymd/KivyMD/archive/master.zip#sha256=1f4afa03664d6af76dba6ba24d70bd2e6b2692a6c394a0ba672a9f0fdce1ccc6
+pip3 install mapview==1.0.6
 ```
-
-You can also run this software on Android devices that can run [Pydroid 3](<https://play.google.com/store/apps/details?id=ru.iiec.pydroid3> "Google Play - Pydroid 3 - IDE for Python 3"). Make sure to use the pip function in Pydroid to install the dependency shown in the above commands before you can run this software. Refer to the [PDF with screenshots](<resources/android_install.pdf> "Android Installation Steps") for more details.
-
-![Android Screenshot](<resources/screenshot2.jpg> "Android Screenshot")
-
-# How to build binaries (optional)
-## MacOS
+Once you have those, you can run the app as follows:
 ```sh
-pip3 install platformdirs
-pip3 install pyinstaller
-pyinstaller extractFlightData.py --noconsole --onefile -i ./resources/app-icon256.png
-sed -i -- "s/0\.0\.0/1.4.2/" dist/extractFlightData.app/Contents/Info.plist
-```
-
-## Windows
-```sh
-pip3 install platformdirs
-pip3 install pyinstaller
-pip3 install pyinstaller-versionfile
-create-version-file ./resources/app-version.yml --outfile file_version_info.txt
-pyinstaller extractFlightData.py --noconsole --onefile -i ./resources/app-icon256.png --version-file file_version_info.txt
+python3 main.py
 ```
 
 ![selfie from a Potensic Atom SE](<src/assets/app-icon256.png> "Atom SE selfie")
