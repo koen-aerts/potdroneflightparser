@@ -9,13 +9,14 @@ import time
 import re
 import threading
 import locale
+import sqlite3
 
 from enum import Enum
 
 from kivy.core.window import Window
 Window.allow_screensaver = False
 
-from platformdirs import user_config_dir
+from platformdirs import user_config_dir, user_data_dir
 
 from kivy.utils import platform
 from kivy.config import Config
@@ -24,6 +25,7 @@ from kivymd.uix.screen import MDScreen
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarText
 from kivymd.uix.label import MDLabel
+from kivymd.uix.button import MDButton, MDButtonText, MDIconButton
 from kivy.metrics import dp
 from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
@@ -36,7 +38,7 @@ else:
     Window.maximize()
     from plyer import filechooser
 
-from pathlib import Path, PurePath
+from pathlib import Path
 from zipfile import ZipFile
 
 
@@ -79,13 +81,13 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.0.0-alpha"
+    appVersion = "v2.1.0-alpha"
     appName = "Flight Log Viewer"
+    appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
     defaultMapZoom = 3
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
-    displayMode = "ATOM"
     columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = 'FlightLogViewer.ini'
@@ -94,16 +96,9 @@ class MainApp(MDApp):
     '''
     Parse Atom based logs.
     '''
-    def parse_atom_logs(self, droneModel, selectedFile):
-        binLog = os.path.join(tempfile.gettempdir(), "flightdata")
-        shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
-
-        with ZipFile(selectedFile, 'r') as unzip:
-            unzip.extractall(path=binLog)
-
-        self.reset()
-        self.displayMode = "ATOM"
-        self.zipFilename = selectedFile
+    def parse_atom_logs(self, importRef):
+        fpvFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype = 'FPV' ORDER BY filename", (importRef,))
+        binFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype IN ('BIN','FC') ORDER BY filename", (importRef,))
 
         # First read the FPV file. The presence of this file is optional. The format of this
         # file differs slightly based on the mobile platform it was created on: Android vs iOS.
@@ -111,9 +106,10 @@ class MainApp(MDApp):
         #   - 20230819190421-AtomSE-iosSystem-iPhone13Pro-FPV.bin
         #   - 20230826161313-Atom SE-Android-(samsung)-FPV.bin
         fpvStat = {}
-        files = sorted(glob.glob(os.path.join(binLog, '**/*-FPV.bin'), recursive=True))
-        for file in files:
-            with open(file, mode='rb') as fpvFile:
+        for fileRef in fpvFiles:
+            file = fileRef[0]
+            print(f"file: {file} - self.logfileDir: {self.logfileDir}")
+            with open(os.path.join(self.logfileDir, file), mode='rb') as fpvFile:
                 while True:
                     fpvRecord = fpvFile.readline().decode("utf-8")
                     if not fpvRecord:
@@ -130,23 +126,21 @@ class MainApp(MDApp):
             fpvFile.close()
 
         # Read the Flight Status files. These files are required to be present.
-        files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True) + glob.glob(os.path.join(binLog, '**/*-FC.fc'), recursive=True))
-        if (len(files) == 0):
-            self.show_error_message(message=f'Log file is empty: {selectedFile}')
-            return
+        #files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True) + glob.glob(os.path.join(binLog, '**/*-FC.fc'), recursive=True))
+        #if (len(files) == 0):
+        #    self.show_error_message(message=f'Log file is empty: {selectedFile}')
+        #    return
 
         timestampMarkers = []
 
         # First grab timestamps from the filenames. Those are used to calculate the real timestamps with the elapsed time from each record.
-        for file in files:
-            timestampMarkers.append(datetime.datetime.strptime(re.sub("-.*", "", Path(file).stem), '%Y%m%d%H%M%S'))
+        for fileRef in binFiles:
+            file = fileRef[0]
+            timestampMarkers.append(datetime.datetime.strptime(re.sub("-.*", "", file), '%Y%m%d%H%M%S'))
 
         filenameTs = timestampMarkers[0]
         prevReadingTs = timestampMarkers[0]
         firstTs = None
-        maxDist = 0
-        maxAlt = 0
-        maxSpeed = 0
         self.pathCoords = []
         self.flightStarts = {}
         self.flightEnds = {}
@@ -156,13 +150,14 @@ class MainApp(MDApp):
         isFlying = False
         recordCount = 0
         tableLen = 0
-        for file in files:
+        for fileRef in binFiles:
+            file = fileRef[0]
             offset1 = 0
             offset2 = 0
             if file.endswith(".fc"):
                 offset1 = -6
                 offset2 = -10
-            with open(file, mode='rb') as flightFile:
+            with open(os.path.join(self.logfileDir, file), mode='rb') as flightFile:
                 while True:
                     fcRecord = flightFile.read(512)
                     if (len(fcRecord) < 512):
@@ -186,7 +181,8 @@ class MainApp(MDApp):
                     dist2lon = self.dist_val(struct.unpack('f', fcRecord[323+offset2:327+offset2])[0])
                     dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
                     dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
-                    dist3 = self.dist_val(struct.unpack('f', fcRecord[431+offset2:435+offset2])[0]) # Distance from home point, as reported by the drone.
+                    dist3metric = struct.unpack('f', fcRecord[431+offset2:435+offset2])[0]# Distance from home point, as reported by the drone.
+                    dist3 = self.dist_val(dist3metric) 
                     gps = struct.unpack('f', fcRecord[279+offset2:283+offset2])[0] # GPS (-1 = no GPS, 0 = GPS ready, 2 and up = GPS in use)
                     gpsStatus = 'Yes' if gps >= 0 else 'No'
                     #sdff = (special - 2) * 4 * 60 * 1000
@@ -203,22 +199,22 @@ class MainApp(MDApp):
                     droneInUse = struct.unpack('<B', fcRecord[295+offset2:296+offset2])[0] # Drone is detected "in action" (0 = flying or in use, 1 = not in use).
                     inUse = 'Yes' if droneInUse == 0 else 'No'
 
-                    if (dist3 > maxDist):
-                        maxDist = dist3
                     alt1 = round(self.dist_val(-struct.unpack('f', fcRecord[243+offset2:247+offset2])[0]), 2) # Relative height from controller vs distance to ground??
-                    alt2 = round(self.dist_val(-struct.unpack('f', fcRecord[343+offset2:347+offset2])[0]), 2) # Relative height from controller vs distance to ground??
-                    if (alt2 > maxAlt):
-                        maxAlt = alt2
+                    alt2metric = -struct.unpack('f', fcRecord[343+offset2:347+offset2])[0] # Relative height from controller vs distance to ground??
+                    alt2 = round(self.dist_val(alt2metric), 2)
                     speed1lat = self.speed_val(struct.unpack('f', fcRecord[247+offset2:251+offset2])[0])
                     speed1lon = self.speed_val(struct.unpack('f', fcRecord[251+offset2:255+offset2])[0])
-                    speed2lat = self.speed_val(struct.unpack('f', fcRecord[327+offset2:331+offset2])[0])
-                    speed2lon = self.speed_val(struct.unpack('f', fcRecord[331+offset2:335+offset2])[0])
+                    speed2latmetric = struct.unpack('f', fcRecord[327+offset2:331+offset2])[0]
+                    speed2lat = self.speed_val(speed2latmetric)
+                    speed2lonmetric = struct.unpack('f', fcRecord[331+offset2:335+offset2])[0]
+                    speed2lon = self.speed_val(speed2lonmetric)
                     speed1 = round(math.sqrt(math.pow(speed1lat, 2) + math.pow(speed1lon, 2)), 2) # Pythagoras to calculate real speed.
+                    speed2metric = round(math.sqrt(math.pow(speed2latmetric, 2) + math.pow(speed2lonmetric, 2)), 2)
                     speed2 = round(math.sqrt(math.pow(speed2lat, 2) + math.pow(speed2lon, 2)), 2) # Pythagoras to calculate real speed.
-                    if (speed2 > maxSpeed):
-                        maxSpeed = speed2
                     speed1vert = self.speed_val(-struct.unpack('f', fcRecord[255+offset2:259+offset2])[0])
-                    speed2vert = self.speed_val(-struct.unpack('f', fcRecord[347+offset2:351+offset2])[0])
+                    speed2vertmetric = -struct.unpack('f', fcRecord[347+offset2:351+offset2])[0] # Vertical speed
+                    speed2vertmetricabs = abs(speed2vertmetric)
+                    speed2vert = self.speed_val(speed2vertmetric)
 
                     # Some checks to handle cases with bad or incomplete GPS data.
                     hasDroneCoords = dronelat != 0.0 and dronelon != 0.0
@@ -278,14 +274,14 @@ class MainApp(MDApp):
                     # Build paths for each flight and keep metric summaries of each path (flight), as well as for the entire log file.
                     pathNum = 0
                     if pathNum == len(self.flightStats):
-                        self.flightStats.append([dist3, alt2, speed2, None, dronelat, dronelon, dronelat, dronelon])
+                        self.flightStats.append([dist3metric, alt2metric, speed2metric, None, dronelat, dronelon, dronelat, dronelon, speed2vertmetricabs])
                     else:
-                        if dist3 > self.flightStats[pathNum][0]: # Overall Max distance
-                            self.flightStats[pathNum][0] = dist3
-                        if alt2 > self.flightStats[pathNum][1]: # Overall Max altitude
-                            self.flightStats[pathNum][1] = alt2
-                        if speed2 > self.flightStats[pathNum][2]: # Overall Max speed
-                            self.flightStats[pathNum][2] = speed2
+                        if dist3metric > self.flightStats[pathNum][0]: # Overall Max distance
+                            self.flightStats[pathNum][0] = dist3metric
+                        if alt2metric > self.flightStats[pathNum][1]: # Overall Max altitude
+                            self.flightStats[pathNum][1] = alt2metric
+                        if speed2metric > self.flightStats[pathNum][2]: # Overall Max speed
+                            self.flightStats[pathNum][2] = speed2metric
                         if dronelat < self.flightStats[pathNum][4]: # Overall Min latitude
                             self.flightStats[pathNum][4] = dronelat
                         if dronelon < self.flightStats[pathNum][5]: # Overall Min longitude
@@ -294,6 +290,8 @@ class MainApp(MDApp):
                             self.flightStats[pathNum][6] = dronelat
                         if dronelon > self.flightStats[pathNum][7]: # Overall Max longitude
                             self.flightStats[pathNum][7] = dronelon
+                        if speed2vertmetricabs > self.flightStats[pathNum][8]: # Vertical Max speed (could be up or down)
+                            self.flightStats[pathNum][8] = speed2vertmetricabs
                     if (hasValidCoords):
                         if (statusChanged): # start new flight path if current one ends or new one begins.
                             if (len(pathCoord) > 0):
@@ -314,14 +312,14 @@ class MainApp(MDApp):
                                     lastSegment.append(lastCoord)
                                 lastSegment.append([dronelon, dronelat])
                             if pathNum == len(self.flightStats):
-                                self.flightStats.append([dist3, alt2, speed2, elapsedTs, dronelat, dronelon, dronelat, dronelon])
+                                self.flightStats.append([dist3metric, alt2metric, speed2metric, elapsedTs, dronelat, dronelon, dronelat, dronelon, speed2vertmetricabs])
                             else:
-                                if dist3 > self.flightStats[pathNum][0]: # Flight Max distance
-                                    self.flightStats[pathNum][0] = dist3
-                                if alt2 > self.flightStats[pathNum][1]: # Flight Max altitude
-                                    self.flightStats[pathNum][1] = alt2
-                                if speed2 > self.flightStats[pathNum][2]: # Flight Max speed
-                                    self.flightStats[pathNum][2] = speed2
+                                if dist3metric > self.flightStats[pathNum][0]: # Flight Max distance
+                                    self.flightStats[pathNum][0] = dist3metric
+                                if alt2metric > self.flightStats[pathNum][1]: # Flight Max altitude
+                                    self.flightStats[pathNum][1] = alt2metric
+                                if speed2metric > self.flightStats[pathNum][2]: # Flight Horizontal Max speed
+                                    self.flightStats[pathNum][2] = speed2metric
                                 self.flightStats[pathNum][3] = elapsedTsRounded # Flight duration
                                 if dronelat < self.flightStats[pathNum][4]: # Flight Min latitude
                                     self.flightStats[pathNum][4] = dronelat
@@ -331,6 +329,8 @@ class MainApp(MDApp):
                                     self.flightStats[pathNum][6] = dronelat
                                 if dronelon > self.flightStats[pathNum][7]: # Flight Max longitude
                                     self.flightStats[pathNum][7] = dronelon
+                                if speed2vertmetricabs > self.flightStats[pathNum][8]: # Vertical Max speed (could be up or down)
+                                    self.flightStats[pathNum][8] = speed2vertmetricabs
 
                     # Get corresponding record from the controller. There may not be one, or any at all. Match up to 5 seconds ago.
                     fpvRssi = ""
@@ -367,67 +367,125 @@ class MainApp(MDApp):
 
             flightFile.close()
 
-        shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
-
-        self.title = f"{self.appTitle} - {PurePath(selectedFile).name}"
+        #self.title = f"{self.appTitle} - {PurePath(selectedFile).name}"
         if (len(pathCoord) > 0):
             self.pathCoords.append(pathCoord)
         self.generate_map_layers()
         if len(self.flightOptions) > 0:
             self.root.ids.selected_path.text = self.flightOptions[0]
         self.select_flight()
+        dbRows = self.execute_db("""
+            SELECT flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed
+            FROM flight_stats WHERE importref = ?
+            """, (importRef,)
+        )
+        hasData = dbRows is not None and len(dbRows) > 0
         for i in range(1, len(self.flightStats)):
+            print(self.flightStats[i][3].total_seconds())
+            if not hasData:
+                # These stats are used in the log file list to show metrics for each file.
+                self.execute_db("""
+                    INSERT INTO flight_stats(importref, flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed)
+                    VALUES(?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (importRef, i, self.flightStats[i][3].total_seconds(), self.flightStats[i][0], self.flightStats[i][1], self.flightStats[i][2], self.flightStats[i][8])
+                )
             if self.flightStats[0][3] == None:
-                self.flightStats[0][2] = self.flightStats[i][2]
-                self.flightStats[0][3] = self.flightStats[i][3]
-                self.flightStats[0][4] = self.flightStats[i][4]
-                self.flightStats[0][5] = self.flightStats[i][5]
-                self.flightStats[0][6] = self.flightStats[i][6]
-                self.flightStats[0][7] = self.flightStats[i][7]
+                self.flightStats[0][2] = self.flightStats[i][2] # Flight Horizontal Max speed
+                self.flightStats[0][3] = self.flightStats[i][3] # Flight duration
+                self.flightStats[0][4] = self.flightStats[i][4] # Flight Min latitude
+                self.flightStats[0][5] = self.flightStats[i][5] # Flight Min longitude
+                self.flightStats[0][6] = self.flightStats[i][6] # Flight Max latitude
+                self.flightStats[0][7] = self.flightStats[i][7] # Flight Max longitude
+                self.flightStats[0][8] = self.flightStats[i][8] # Vertical Max speed (could be up or down)
             else:
                 self.flightStats[0][3] = self.flightStats[0][3] + self.flightStats[i][3]
-                if self.flightStats[i][2] > self.flightStats[0][2]:
+                if self.flightStats[i][2] > self.flightStats[0][2]: # Flight Horizontal Max speed
                     self.flightStats[0][2] = self.flightStats[i][2]
-                if self.flightStats[i][4] < self.flightStats[0][4]:
+                if self.flightStats[i][4] < self.flightStats[0][4]: # Flight Min latitude
                     self.flightStats[0][4] = self.flightStats[i][4]
-                if self.flightStats[i][5] < self.flightStats[0][5]:
+                if self.flightStats[i][5] < self.flightStats[0][5]: # Flight Min longitude
                     self.flightStats[0][5] = self.flightStats[i][5]
-                if self.flightStats[i][6] > self.flightStats[0][6]:
+                if self.flightStats[i][6] > self.flightStats[0][6]: # Flight Max latitude
                     self.flightStats[0][6] = self.flightStats[i][6]
-                if self.flightStats[i][7] > self.flightStats[0][7]:
+                if self.flightStats[i][7] > self.flightStats[0][7]: # Flight Max longitude
                     self.flightStats[0][7] = self.flightStats[i][7]
+                if self.flightStats[i][8] > self.flightStats[0][8]: # Vertical Max speed (could be up or down)
+                    self.flightStats[0][8] = self.flightStats[i][8]
 
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Flight", bold=True))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Duration", bold=True))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Distance", bold=True))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Altitude", bold=True))
-        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Speed", bold=True))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max H Speed", bold=True))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max V Speed", bold=True))
         for i in range(0, len(self.flightStats)):
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=(f"Flight #{i}" if i > 0 else "Overall")))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=str(self.flightStats[i][3])))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.flightStats[i][0])} {self.dist_unit()}"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.flightStats[i][1])} {self.dist_unit()}"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.flightStats[i][2])} {self.speed_unit()}"))
+            self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.flightStats[i][8])} {self.speed_unit()}"))
 
 
     '''
-    Open the selected Flight Data Zip file.
+    Import the selected Flight Data Zip file.
     '''
-    def parse_file(self, selectedFile):
-        zipFile = Path(selectedFile)
-        if (not zipFile.is_file()):
+    def import_file(self, selectedFile):
+        if (not os.path.isfile(selectedFile)):
             self.show_error_message(message=f'Not a valid file specified: {selectedFile}')
             return
-        droneModel = re.sub(r"[0-9]*-(.*)-Drone.*", r"\1", PurePath(selectedFile).name) # Pull drone model from zip filename.
+        zipBaseName = os.path.basename(selectedFile)
+        droneModel = re.sub(r"[0-9]*-(.*)-Drone.*", r"\1", zipBaseName) # Pull drone model from zip filename.
         droneModel = re.sub(r"[^\w]", r" ", droneModel) # Remove non-alphanumeric characters from the model name.
         lcDM = droneModel.lower()
-        if ('p1a' in lcDM):
-            self.parse_dreamer_logs(droneModel, selectedFile)
-        else:
-            if (not 'atom' in lcDM):
-                self.show_warning_message(message=f'This drone model may not be supported in this software: {droneModel}')
-            self.parse_atom_logs(droneModel, selectedFile)
+        if 'p1a' in lcDM or 'atom' in lcDM:
+            print(f"droneModel: {droneModel}")
+            already_imported = self.execute_db("SELECT importedon FROM imports WHERE importref = ?", (zipBaseName,))
+            print(f"already_imported: {already_imported}")
+            if already_imported is None or len(already_imported) == 0:
+                # Extract the bin files and copy to the app data directory, then update the DB references.
+                binLog = os.path.join(tempfile.gettempdir(), "flightdata")
+                shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
+                with ZipFile(selectedFile, 'r') as unzip:
+                    unzip.extractall(path=binLog)
+                logDate = re.sub(r"-.*", r"", zipBaseName) # Extract date section from zip filename.
+                self.execute_db("INSERT OR IGNORE INTO models(modelref) VALUES(?)", (droneModel,))
+                self.execute_db(
+                    "INSERT OR IGNORE INTO imports(importref, modelref, dateref, importedon) VALUES(?,?,?,?)",
+                    (zipBaseName, droneModel, logDate, datetime.datetime.now().isoformat())
+                )
+                for binFile in glob.glob(os.path.join(binLog, '**/*'), recursive=True):
+                    print(f"file: {binFile}")
+                    binBaseName = os.path.basename(binFile)
+                    binType = "FPV" if binBaseName.endswith("-FPV.bin") else (
+                        "BIN" if binBaseName.endswith("-FC.bin") else (
+                        "FC" if binBaseName.endswith("-FC.fc") else None))
+                    if binType is not None:
+                        shutil.copyfile(binFile, os.path.join(self.logfileDir, binBaseName))
+                        self.execute_db(
+                            "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
+                            (binBaseName, zipBaseName, binType)
+                        )
+                shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
+                self.show_info_message(message=f'Log file import completed.')
+                # koen
+                if ('p1a' in lcDM):
+                    self.parse_dreamer_logs(zipBaseName) # TODO - port over from app version 1.4.2
+                else:
+                    if (not 'atom' in lcDM):
+                        self.show_warning_message(message=f'This drone model may not be supported in this software: {droneModel}')
+                    self.parse_atom_logs(zipBaseName)
+                self.root.ids.screen_manager.current = "Screen_Map"
+                self.root.ids.selected_model.text = droneModel
+                self.list_log_files()
+            else:
+                self.show_warning_message(message=f'This file is already imported on: {already_imported[0][0]}')
+                return
 
+
+    #def show_alert_dialog(self):
+        # https://kivymd.readthedocs.io/en/latest/components/dialog/index.html
 
     '''
     Open a file dialog.
@@ -446,7 +504,7 @@ class MainApp(MDApp):
             while (self.chooser_open):
                 time.sleep(0.2)
             if self.chosenFile is not None:
-                self.parse_file(self.chosenFile)
+                self.import_file(self.chosenFile)
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
@@ -454,7 +512,7 @@ class MainApp(MDApp):
             if oldwd != newwd:
                 os.chdir(oldwd) # Change it back!
             if myFiles and len(myFiles) > 0 and os.path.isfile(myFiles[0]):
-                self.parse_file(myFiles[0])
+                self.import_file(myFiles[0])
 
 
     '''
@@ -637,21 +695,51 @@ class MainApp(MDApp):
 
 
     '''
+    Called when map screen is opened.
+    '''
+    def entered_screen_map(self):
+        self.app_view = "map"
+        self.center_map() # Zoom and center as it does not function until the map is visible.
+
+
+    '''
+    Called when flight summary screen is opened.
+    '''
+    def entered_screen_summary(self):
+        self.app_view = "sum"
+
+
+    '''
+    Called when log file screen is opened.
+    '''
+    def entered_screen_log(self):
+        self.app_view = "log"
+
+
+    '''
+    Called when map screen is closed.
+    '''
+    def close_map_screen(self):
+        self.reset()
+        self.root.ids.screen_manager.current = "Screen_Log_Files"
+
+
+    '''
     Update ctrl/home/drone markers on the map as well as other labels with flight information.
     '''
     def set_markers(self, updateSlider=True):
         if not self.currentRowIdx:
             return
         record = self.logdata[self.currentRowIdx]
-        self.root.ids.value1_alt.text = f"{record[15]} {self.dist_unit()}"
-        self.root.ids.value2_alt.text = f"Alt: {record[15]} {self.dist_unit()}"
-        self.root.ids.value1_dist.text = f"{record[13]} {self.dist_unit()}"
-        self.root.ids.value2_dist.text = f"Dist: {record[13]} {self.dist_unit()}"
-        self.root.ids.value1_hspeed.text = f"{record[19]} {self.speed_unit()}"
-        self.root.ids.value2_hspeed.text = f"HS: {record[19]} {self.speed_unit()}"
-        self.root.ids.value1_vspeed.text = f"{record[23]} {self.speed_unit()}"
-        self.root.ids.value2_vspeed.text = f"VS: {record[23]} {self.speed_unit()}"
-        self.root.ids.value2_sats.text = f"Sats: {record[24]}"
+        self.root.ids.value1_alt.text = f"{record[self.columns.index('altitude2')]} {self.dist_unit()}"
+        self.root.ids.value2_alt.text = f"Alt: {record[self.columns.index('altitude2')]} {self.dist_unit()}"
+        self.root.ids.value1_dist.text = f"{record[self.columns.index('distance3')]} {self.dist_unit()}"
+        self.root.ids.value2_dist.text = f"Dist: {record[self.columns.index('distance3')]} {self.dist_unit()}"
+        self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
+        self.root.ids.value2_hspeed.text = f"HS: {record[self.columns.index('speed2')]} {self.speed_unit()}"
+        self.root.ids.value1_vspeed.text = f"{record[self.columns.index('speed2vert')]} {self.speed_unit()}"
+        self.root.ids.value2_vspeed.text = f"VS: {record[self.columns.index('speed2vert')]} {self.speed_unit()}"
+        self.root.ids.value2_sats.text = f"Sats: {record[self.columns.index('satellites')]}"
         elapsed = record[5]
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
         self.root.ids.value1_elapsed.text = str(elapsed)
@@ -958,7 +1046,8 @@ class MainApp(MDApp):
             # Show flight stats.
             self.root.ids.value_maxdist.text = f"{self.fmt_num(self.flightStats[flightNum][0])} {self.dist_unit()}"
             self.root.ids.value_maxalt.text = f"{self.fmt_num(self.flightStats[flightNum][1])} {self.dist_unit()}"
-            self.root.ids.value_maxspeed.text = f"{self.fmt_num(self.flightStats[flightNum][2])} {self.speed_unit()}"
+            self.root.ids.value_maxhspeed.text = f"{self.fmt_num(self.flightStats[flightNum][2])} {self.speed_unit()}"
+            self.root.ids.value_maxvspeed.text = f"{self.fmt_num(self.flightStats[flightNum][8])} {self.speed_unit()}"
             self.root.ids.value_duration.text = str(self.flightStats[flightNum][3])
 
 
@@ -1067,6 +1156,139 @@ class MainApp(MDApp):
 
 
     '''
+    Dropdown selection with different drone models determined from the imported log files.
+    Model names are slightly inconsistent based on the version of the Potensic app they were generated in.
+    '''
+    def model_selection(self, item):
+        models = self.execute_db("SELECT modelref FROM models ORDER BY modelref")
+        menu_items = []
+        for modelRef in models:
+            menu_items.append({"text": modelRef[0], "on_release": lambda x=modelRef[0]: self.model_selection_callback(x)})
+        self.model_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.model_selection_menu.open()
+    def model_selection_callback(self, text_item):
+        self.root.ids.selected_model.text = text_item
+        self.model_selection_menu.dismiss()
+        Config.set('preferences', 'selected_model', text_item)
+        Config.write()
+        self.stop_flight(True)
+        self.list_log_files()
+
+
+    def list_log_files(self):
+        imports = self.execute_db("""
+            SELECT i.importref, i.dateref, count(s.flight_number), sum(duration), max(max_distance), max(max_altitude), max(max_h_speed), max(max_v_speed)
+            FROM imports i
+            LEFT OUTER JOIN flight_stats s ON s.importref = i.importref
+            WHERE modelref = ?
+            GROUP BY i.importref, i.dateref
+            ORDER BY i.dateref DESC
+            """, (self.root.ids.selected_model.text,)
+        )
+        self.root.ids.log_files.clear_widgets()
+        self.root.ids.log_files.add_widget(MDLabel(text="Log File", bold=True, max_lines=1, halign="left", valign="center"))
+        self.root.ids.log_files.add_widget(MDLabel(text="# flights", bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.log_files.add_widget(MDLabel(text="Total Length", bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max Dist", bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max Alt", bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max H Speed", bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max V Speed", bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.log_files.add_widget(MDLabel(text="", bold=True))
+        for importRef in imports:
+            button = MDButton(MDButtonText(text=f"{importRef[0]}"), on_release=self.select_log, style="text", size_hint=(None, None), width=dp(40))
+            button.value = importRef[0]
+            self.root.ids.log_files.add_widget(button)
+            countVal = "" if importRef[3] is None else f"{importRef[2]}" # Check an aggregated field for None
+            self.root.ids.log_files.add_widget(MDLabel(text=countVal, max_lines=1, halign="right", valign="center"))
+            durVal = "" if importRef[3] is None else f"{importRef[3]}" # TODO - format this
+            self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="center"))
+            distVal = "" if importRef[4] is None else f"{self.fmt_num(self.dist_val(importRef[4]))} {self.dist_unit()}"
+            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="center"))
+            distVal = "" if importRef[5] is None else f"{self.fmt_num(self.dist_val(importRef[5]))} {self.dist_unit()}"
+            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="center"))
+            speedVal = "" if importRef[6] is None else f"{self.fmt_num(self.speed_val(importRef[6]))} {self.speed_unit()}"
+            self.root.ids.log_files.add_widget(MDLabel(text=speedVal, max_lines=1, halign="right", valign="center"))
+            speedVal = "" if importRef[7] is None else f"{self.fmt_num(self.speed_val(importRef[7]))} {self.speed_unit()}"
+            self.root.ids.log_files.add_widget(MDLabel(text=speedVal, max_lines=1, halign="right", valign="center"))
+            self.root.ids.log_files.add_widget(MDIconButton(style="standard", icon="delete"))
+
+
+    '''
+    Called when a log file has been selected. It will be opened, parsed and displayed on the map screen.
+    '''
+    def select_log(self, buttonObj):
+        lcDM = self.root.ids.selected_model.text.lower()
+        if ('p1a' in lcDM):
+            self.parse_dreamer_logs(buttonObj.value)
+        else:
+            self.parse_atom_logs(buttonObj.value)
+        self.root.ids.screen_manager.current = "Screen_Map"
+
+
+    '''
+    Called when map screen is closed.
+    '''
+    def close_pref_screen(self):
+        if self.app_view == "map":
+            self.root.ids.screen_manager.current = "Screen_Map"
+        elif self.app_view == "sum":
+            self.root.ids.screen_manager.current = "Screen_Day_Summary"
+        elif self.app_view == "log":
+            self.root.ids.screen_manager.current = "Screen_Log_Files"
+
+
+    def execute_db(self, expression, params=None):
+        con = sqlite3.connect(self.dbFile)
+        cur = con.cursor()
+        if (params):
+            cur.execute(expression, params)
+        else:
+            cur.execute(expression)
+        results = cur.fetchall()
+        con.commit()
+        con.close()
+        return results
+
+
+    def init_db(self):
+        self.execute_db("""
+            CREATE TABLE IF NOT EXISTS models(
+                modelref TEXT PRIMARY KEY
+            )
+        """)
+        self.execute_db("""
+            CREATE TABLE IF NOT EXISTS imports(
+                importref TEXT PRIMARY KEY,
+                modelref TEXT NOT NULL,
+                dateref TEXT NOT NULL,
+                importedon TEXT NOT NULL,
+                FOREIGN KEY (modelref) REFERENCES models(modelref) ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        """)
+        self.execute_db("""
+            CREATE TABLE IF NOT EXISTS log_files(
+                filename TEXT PRIMARY KEY,
+                importref TEXT NOT NULL,
+                bintype TEXT NOT NULL,
+                FOREIGN KEY (importref) REFERENCES imports(importref) ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        """)
+        self.execute_db("""
+            CREATE TABLE IF NOT EXISTS flight_stats(
+                importref TEXT NOT NULL,
+                flight_number INTEGER NOT NULL,
+                duration INTEGER NOT NULL,
+                max_distance REAL NOT NULL,
+                max_altitude REAL NOT NULL,
+                max_h_speed REAL NOT NULL,
+                max_v_speed REAL NOT NULL,
+                FOREIGN KEY (importref) REFERENCES imports(importref) ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        """)
+        self.execute_db("CREATE INDEX IF NOT EXISTS flight_stats_index ON flight_stats(importref)")
+
+
+    '''
     Reset the application as it were before opening a file.
     '''
     def reset(self):
@@ -1079,7 +1301,8 @@ class MainApp(MDApp):
             self.clear_map()
             self.root.ids.value_maxdist.text = ""
             self.root.ids.value_maxalt.text = ""
-            self.root.ids.value_maxspeed.text = ""
+            self.root.ids.value_maxhspeed.text = ""
+            self.root.ids.value_maxvspeed.text = ""
             self.root.ids.value_duration.text = ""
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
@@ -1107,6 +1330,7 @@ class MainApp(MDApp):
         self.playStartTs = None
         self.currentRowIdx = None
         if self.root:
+            self.root.ids.screen_manager.current = "Screen_Log_Files"
             self.center_map()
 
 
@@ -1137,10 +1361,16 @@ class MainApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         locale.setlocale(locale.LC_ALL, '')
-        configDir = user_config_dir("FlightLogViewer", "FlightLogViewer")
+        dataDir = user_data_dir(self.appPathName, self.appPathName)
+        self.logfileDir = os.path.join(dataDir, "logfiles") # Place where log bin files go.
+        if not os.path.exists(self.logfileDir):
+            Path(self.logfileDir).mkdir(parents=True, exist_ok=True)
+        self.dbFile = os.path.join(dataDir, "FlightLogData.db") # sqlite DB file.
+        self.init_db()
+        configDir = user_config_dir(self.appPathName, self.appPathName) # Place where app ini config file goes.
         if not os.path.exists(configDir):
             Path(configDir).mkdir(parents=True, exist_ok=True)
-        self.configFile = os.path.join(configDir, self.configFilename)
+        self.configFile = os.path.join(configDir, self.configFilename) # ini config file.
         if platform == 'android':
             request_permissions([Permission.INTERNET, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE])
             self.chosenFile = None
@@ -1160,7 +1390,8 @@ class MainApp(MDApp):
             'show_flight_path': True,
             'show_marker_home': True,
             'show_marker_ctrl': False,
-            'map_tile_server': SelectableTileServer.OPENSTREETMAP.value
+            'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
+            'selected_model': ''
         })
         Window.bind(on_keyboard=self.events)
         self.flightPaths = None
@@ -1192,11 +1423,15 @@ class MainApp(MDApp):
         self.root.ids.selected_rounding.active = Config.getboolean('preferences', 'rounded_readings')
         self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
         self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
+        self.root.ids.selected_model.text = Config.get('preferences', 'selected_model')
 
 
     def on_start(self):
         self.root.ids.selected_path.text = '--'
         self.reset()
+        self.select_map_source()
+        self.list_log_files()
+        self.app_view = "log"
         return super().on_start()
 
 
