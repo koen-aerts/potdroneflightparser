@@ -111,7 +111,7 @@ MDGridLayout:
                             role: "medium" if theapp.is_desktop else "small"
                 MDScrollView:
                     MDGridLayout:
-                        cols: 8
+                        cols: 9
                         id: log_files
                         md_bg_color: self.theme_cls.backgroundColor
                         row_default_height: dp(30)
@@ -335,11 +335,19 @@ MDGridLayout:
                                 icon: "skip-previous"
                                 on_release: app.jump_prev_flight()
                                 size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                            MDLabel:
+                                size_hint: (None, None)
+                                width: dp(20) if theapp.is_desktop else dp(10)
+                                text: ""
                             MapButton:
                                 id: playbutton
                                 icon: "play"
                                 on_release: app.play_flight()
                                 size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                            MDLabel:
+                                size_hint: (None, None)
+                                width: dp(20) if theapp.is_desktop else dp(10)
+                                text: ""
                             MapButton:
                                 icon: "skip-next"
                                 on_release: app.jump_next_flight()
@@ -365,7 +373,7 @@ MDGridLayout:
                                 size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
                         MDSlider:
                             id: flight_progress
-                            size_hint: (.8, None)
+                            size_hint: (.9, None)
                             pos_hint: {"center_x": .5}
                             y: dp(55) if theapp.is_desktop else dp(45)
                             is_updating: False
