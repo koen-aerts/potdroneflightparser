@@ -69,7 +69,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.1.0-alpha"
+    appVersion = "v2.1.0"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -354,15 +354,9 @@ class MainApp(MDApp):
 
             flightFile.close()
 
-        #self.title = f"{self.appTitle} - {PurePath(selectedFile).name}"
         if (len(pathCoord) > 0):
             self.pathCoords.append(pathCoord)
         self.generate_map_layers()
-        # koen77
-        #self.set_default_flight()
-        #if len(self.flightOptions) > 0:
-        #    self.root.ids.selected_path.text = self.flightOptions[0]
-        #self.select_flight()
         dbRows = self.execute_db("""
             SELECT flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed
             FROM flight_stats WHERE importref = ?
@@ -401,7 +395,14 @@ class MainApp(MDApp):
                 if self.flightStats[i][8] > self.flightStats[0][8]: # Vertical Max speed (could be up or down)
                     self.flightStats[0][8] = self.flightStats[i][8]
 
+        self.show_flight_date(importRef)
         self.show_flight_stats()
+
+
+    @mainthread
+    def show_flight_date(self, importRef):
+        logDate = re.sub(r"-.*", r"", importRef) # Extract date section from log (zip) filename.
+        self.root.ids.value_date.text = datetime.date.fromisoformat(logDate).strftime("%x")
 
 
     @mainthread
@@ -412,7 +413,8 @@ class MainApp(MDApp):
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Altitude", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max H Speed", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max V Speed", bold=True, max_lines=1, halign="right", valign="center", padding=[0,0,dp(10),0]))
-        for i in range(0, len(self.flightStats)):
+        rowcount = len(self.flightStats)
+        for i in range(0 if rowcount > 1 else 1, rowcount):
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=(f"Flight #{i}" if i > 0 else "Overall"), max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=str(self.flightStats[i][3]), max_lines=1, halign="right", valign="center"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.dist_val(self.flightStats[i][0]))} {self.dist_unit()}", max_lines=1, halign="right", valign="center"))
@@ -424,7 +426,7 @@ class MainApp(MDApp):
     '''
     Import the selected Flight Data Zip file.
     '''
-    def import_file(self, selectedFile):
+    def initiate_import_file(self, selectedFile):
         if (not os.path.isfile(selectedFile)):
             self.show_error_message(message=f'Not a valid file specified: {selectedFile}')
             return
@@ -432,51 +434,60 @@ class MainApp(MDApp):
         droneModel = re.sub(r"[0-9]*-(.*)-Drone.*", r"\1", zipBaseName) # Pull drone model from zip filename.
         droneModel = re.sub(r"[^\w]", r" ", droneModel) # Remove non-alphanumeric characters from the model name.
         lcDM = droneModel.lower()
-        isNewZip = True
         if 'p1a' in lcDM or 'atom' in lcDM:
             already_imported = self.execute_db("SELECT importedon FROM imports WHERE importref = ?", (zipBaseName,))
             if already_imported is None or len(already_imported) == 0:
-                # Extract the bin files and copy to the app data directory, then update the DB references.
-                binLog = os.path.join(tempfile.gettempdir(), "flightdata")
-                shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
-                with ZipFile(selectedFile, 'r') as unzip:
-                    unzip.extractall(path=binLog)
-                for binFile in glob.glob(os.path.join(binLog, '**/*'), recursive=True):
-                    binBaseName = os.path.basename(binFile)
-                    binType = "FPV" if binBaseName.endswith("-FPV.bin") else (
-                        "BIN" if binBaseName.endswith("-FC.bin") else (
-                        "FC" if binBaseName.endswith("-FC.fc") else None))
-                    if binType is not None:
-                        if isNewZip:
-                            logDate = re.sub(r"-.*", r"", zipBaseName) # Extract date section from zip filename.
-                            self.execute_db("INSERT OR IGNORE INTO models(modelref) VALUES(?)", (droneModel,))
-                            self.execute_db(
-                                "INSERT OR IGNORE INTO imports(importref, modelref, dateref, importedon) VALUES(?,?,?,?)",
-                                (zipBaseName, droneModel, logDate, datetime.datetime.now().isoformat())
-                            )
-                            isNewZip = False
-                        shutil.copyfile(binFile, os.path.join(self.logfileDir, binBaseName))
-                        self.execute_db(
-                            "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
-                            (binBaseName, zipBaseName, binType)
-                        )
-                shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
-                if isNewZip:
-                    self.show_warning_message(message=f'Nothing to import.')
-                else:
-                    self.show_info_message(message=f'Log file import completed.')
-                    if ('p1a' in lcDM):
-                        self.parse_dreamer_logs(zipBaseName) # TODO - port over from app version 1.4.2
-                    else:
-                        if (not 'atom' in lcDM):
-                            self.show_warning_message(message=f'This drone model may not be supported in this software: {droneModel}')
-                        self.parse_atom_logs(zipBaseName)
-                    self.root.ids.screen_manager.current = "Screen_Map"
-                    self.root.ids.selected_model.text = droneModel
-                    self.list_log_files()
+                self.dialog_wait.open()
+                threading.Thread(target=self.import_file, args=(droneModel, zipBaseName, selectedFile)).start()
             else:
                 self.show_warning_message(message=f'This file is already imported on: {already_imported[0][0]}')
                 return
+
+
+    def import_file(self, droneModel, zipBaseName, selectedFile):
+        isNewZip = True
+        lcDM = droneModel.lower()
+        # Extract the bin files and copy to the app data directory, then update the DB references.
+        binLog = os.path.join(tempfile.gettempdir(), "flightdata")
+        shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
+        with ZipFile(selectedFile, 'r') as unzip:
+            unzip.extractall(path=binLog)
+        for binFile in glob.glob(os.path.join(binLog, '**/*'), recursive=True):
+            binBaseName = os.path.basename(binFile)
+            binType = "FPV" if binBaseName.endswith("-FPV.bin") else (
+                "BIN" if binBaseName.endswith("-FC.bin") else (
+                "FC" if binBaseName.endswith("-FC.fc") else None))
+            if binType is not None:
+                if isNewZip:
+                    logDate = re.sub(r"-.*", r"", zipBaseName) # Extract date section from zip filename.
+                    self.execute_db("INSERT OR IGNORE INTO models(modelref) VALUES(?)", (droneModel,))
+                    self.execute_db(
+                        "INSERT OR IGNORE INTO imports(importref, modelref, dateref, importedon) VALUES(?,?,?,?)",
+                        (zipBaseName, droneModel, logDate, datetime.datetime.now().isoformat())
+                    )
+                    isNewZip = False
+                shutil.copyfile(binFile, os.path.join(self.logfileDir, binBaseName))
+                self.execute_db(
+                    "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
+                    (binBaseName, zipBaseName, binType)
+                )
+        shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
+        if isNewZip:
+            self.show_warning_message(message=f'Nothing to import.')
+        else:
+            self.show_info_message(message=f'Log file import completed.')
+            if ('p1a' in lcDM):
+                self.parse_dreamer_logs(zipBaseName) # TODO - port over from app version 1.4.2
+            else:
+                if (not 'atom' in lcDM):
+                    self.show_warning_message(message=f'This drone model may not be supported in this software: {droneModel}')
+                self.parse_atom_logs(zipBaseName)
+            self.set_default_flight()
+            self.select_flight()
+            self.open_view("Screen_Map")
+            self.select_drone_model(droneModel)
+            self.list_log_files()
+        self.dialog_wait.dismiss()
 
 
     '''
@@ -496,7 +507,7 @@ class MainApp(MDApp):
             while (self.chooser_open):
                 time.sleep(0.2)
             if self.chosenFile is not None:
-                self.import_file(self.chosenFile)
+                self.initiate_import_file(self.chosenFile)
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
@@ -504,7 +515,7 @@ class MainApp(MDApp):
             if oldwd != newwd:
                 os.chdir(oldwd) # Change it back!
             if myFiles and len(myFiles) > 0 and os.path.isfile(myFiles[0]):
-                self.import_file(myFiles[0])
+                self.initiate_import_file(myFiles[0])
 
 
     '''
@@ -688,8 +699,8 @@ class MainApp(MDApp):
 
 
     @mainthread
-    def open_map_view(self):
-        self.root.ids.screen_manager.current = "Screen_Map"
+    def open_view(self, view_name):
+        self.root.ids.screen_manager.current = view_name
 
 
     '''
@@ -697,7 +708,9 @@ class MainApp(MDApp):
     '''
     def entered_screen_map(self):
         self.app_view = "map"
-        self.center_map() # Zoom and center as it does not function until the map is visible.
+        if self.require_initial_center:
+            self.center_map() # Zoom and center as it does not function until the map is visible.
+            self.require_initial_center = False
 
 
     '''
@@ -1175,7 +1188,7 @@ class MainApp(MDApp):
         self.model_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
         self.model_selection_menu.open()
     def model_selection_callback(self, text_item):
-        self.root.ids.selected_model.text = text_item
+        self.select_drone_model(text_item)
         self.model_selection_menu.dismiss()
         Config.set('preferences', 'selected_model', text_item)
         Config.write()
@@ -1183,6 +1196,12 @@ class MainApp(MDApp):
         self.list_log_files()
 
 
+    @mainthread
+    def select_drone_model(self, model_name):
+        self.root.ids.selected_model.text = model_name
+
+
+    @mainthread
     def list_log_files(self):
         imports = self.execute_db("""
             SELECT i.importref, i.dateref, count(s.flight_number), sum(duration), max(duration), max(max_distance), max(max_altitude), max(max_h_speed), max(max_v_speed)
@@ -1194,37 +1213,37 @@ class MainApp(MDApp):
             """, (self.root.ids.selected_model.text,)
         )
         role = "medium" if self.is_desktop else "small"
+        iconsize = [dp(40), dp(40)] if self.is_desktop else [dp(30), dp(30)]
         self.root.ids.log_files.clear_widgets()
-        self.root.ids.log_files.add_widget(MDLabel(text="Date", bold=True, max_lines=1, halign="left", valign="center", role=role, padding=[dp(24),0,0,0]))
-        self.root.ids.log_files.add_widget(MDLabel(text="# flights", bold=True, max_lines=1, halign="right", valign="center", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Total Length", bold=True, max_lines=1, halign="right", valign="center", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max Length", bold=True, max_lines=1, halign="right", valign="center", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max Dist", bold=True, max_lines=1, halign="right", valign="center", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max Alt", bold=True, max_lines=1, halign="right", valign="center", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max H Speed", bold=True, max_lines=1, halign="right", valign="center", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max V Speed", bold=True, max_lines=1, halign="right", valign="center", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Date", bold=True, max_lines=1, halign="left", valign="top", role=role, padding=[dp(24),0,0,0]))
+        self.root.ids.log_files.add_widget(MDLabel(text="# flights", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Total Length", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max Length", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max Dist", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max Alt", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max H Sp", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max V Sp", bold=True, max_lines=1, halign="right", valign="top", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="", bold=True))
         for importRef in imports:
-            #dt = datetime.date(int(importRef[1][0:4]), int(importRef[1][4:6]), int(importRef[1][6:8]))
             dt = datetime.date.fromisoformat(importRef[1]).strftime("%x")
-            button1 = MDButton(MDButtonText(text=f"{dt}"), on_release=self.initiate_log_file, style="text", size_hint=(None, None), width=dp(20))
+            button1 = MDButton(MDButtonText(text=f"{dt}"), on_release=self.initiate_log_file, style="text", size_hint=(None, None))
             button1.value = importRef[0]
             self.root.ids.log_files.add_widget(button1)
             countVal = "" if importRef[3] is None else f"{importRef[2]}" # Check an aggregated field for None
-            self.root.ids.log_files.add_widget(MDLabel(text=countVal, max_lines=1, halign="right", valign="center", role=role))
+            self.root.ids.log_files.add_widget(MDLabel(text=countVal, max_lines=1, halign="right", valign="top", role=role))
             durVal = "" if importRef[3] is None else f"{datetime.timedelta(seconds=importRef[3])}"
-            self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="center", role=role))
+            self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="top", role=role))
             durVal = "" if importRef[3] is None else f"{datetime.timedelta(seconds=importRef[4])}"
-            self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="center", role=role))
+            self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="top", role=role))
             distVal = "" if importRef[4] is None else f"{self.fmt_num(self.dist_val(importRef[5]))} {self.dist_unit()}"
-            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="center", role=role))
+            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="top", role=role))
             distVal = "" if importRef[5] is None else f"{self.fmt_num(self.dist_val(importRef[6]))} {self.dist_unit()}"
-            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="center", role=role))
+            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="top", role=role))
             speedVal = "" if importRef[6] is None else f"{self.fmt_num(self.speed_val(importRef[7]))} {self.speed_unit()}"
             self.root.ids.log_files.add_widget(MDLabel(text=speedVal, max_lines=1, halign="right", valign="center", role=role))
             speedVal = "" if importRef[7] is None else f"{self.fmt_num(self.speed_val(importRef[8]))} {self.speed_unit()}"
             self.root.ids.log_files.add_widget(MDLabel(text=speedVal, max_lines=1, halign="right", valign="center", role=role))
-            button2 = MDIconButton(style="standard", icon="delete", on_release=self.open_delete_log_dialog)
+            button2 = MDIconButton(style="standard", icon="delete", on_release=self.open_delete_log_dialog, size=iconsize)
             button2.value = importRef[0]
             self.root.ids.log_files.add_widget(button2)
 
@@ -1245,7 +1264,7 @@ class MainApp(MDApp):
             self.parse_atom_logs(importRef)
         self.set_default_flight()
         self.select_flight()
-        self.open_map_view()
+        self.open_view("Screen_Map")
         self.dialog_wait.dismiss()
 
 
@@ -1294,13 +1313,16 @@ class MainApp(MDApp):
     '''
     def close_pref_screen(self):
         if self.app_view == "map":
-            self.root.ids.screen_manager.current = "Screen_Map"
+            self.open_view("Screen_Map")
         elif self.app_view == "sum":
-            self.root.ids.screen_manager.current = "Screen_Day_Summary"
+            self.open_view("Screen_Day_Summary")
         elif self.app_view == "log":
-            self.root.ids.screen_manager.current = "Screen_Log_Files"
+            self.open_view("Screen_Log_Files")
 
 
+    '''
+    Run a SQL command and return results.
+    '''
     def execute_db(self, expression, params=None):
         con = sqlite3.connect(self.dbFile)
         cur = con.cursor()
@@ -1314,6 +1336,9 @@ class MainApp(MDApp):
         return results
 
 
+    '''
+    Create the DB and schema.
+    '''
     def init_db(self):
         self.execute_db("""
             CREATE TABLE IF NOT EXISTS models(
@@ -1359,10 +1384,12 @@ class MainApp(MDApp):
         self.centerlat = 51.50722
         self.centerlon = -0.1275
         self.playback_speed = 1
+        self.require_initial_center = True
         if self.root:
             self.root.ids.selected_path.text = '--'
             self.zoom = self.defaultMapZoom
             self.clear_map()
+            self.root.ids.value_date.text = ""
             self.root.ids.value_maxdist.text = ""
             self.root.ids.value_maxalt.text = ""
             self.root.ids.value_maxhspeed.text = ""
@@ -1383,7 +1410,6 @@ class MainApp(MDApp):
             self.root.ids.flight_stats_grid.clear_widgets()
             self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box"
         self.flightOptions = []
-        self.title = self.appTitle
         self.logdata = []
         self.flightPaths = None
         self.pathCoords = None
@@ -1401,10 +1427,13 @@ class MainApp(MDApp):
     '''
     Show info/warning/error messages.
     '''
+    @mainthread
     def show_info_message(self, message: str):
         MDSnackbar(MDSnackbarText(text=message), y=dp(24), pos_hint={"center_x": 0.5}, size_hint_x=0.8).open()
+    @mainthread
     def show_warning_message(self, message: str):
         MDSnackbar(MDSnackbarText(text=message), y=dp(24), pos_hint={"center_x": 0.5}, size_hint_x=0.8).open()
+    @mainthread
     def show_error_message(self, message: str):
         MDSnackbar(MDSnackbarText(text=message), y=dp(24), pos_hint={"center_x": 0.5}, size_hint_x=0.8).open()
 
@@ -1426,6 +1455,7 @@ class MainApp(MDApp):
         super().__init__(**kwargs)
         locale.setlocale(locale.LC_ALL, '')
         self.is_desktop = platform in ('linux', 'win', 'macosx')
+        self.title = self.appTitle
         dataDir = user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(dataDir, "logfiles") # Place where log bin files go.
         if not os.path.exists(self.logfileDir):
