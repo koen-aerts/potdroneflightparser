@@ -1,5 +1,3 @@
-#:import platform kivy.utils.platform
-
 <TopNavBar@MDTopAppBar>
     type: "small"
 
@@ -58,7 +56,6 @@
 MDGridLayout:
     cols: 1
     id: theapp
-    is_desktop: True if platform in ('linux', 'win', 'macosx') else False
     show_nav_section: True
     MDScreenManager:
         id: screen_manager
@@ -86,7 +83,7 @@ MDGridLayout:
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"
                 MDGridLayout:
                     rows: 1
-                    row_default_height: dp(18) if theapp.is_desktop else dp(14)
+                    row_default_height: dp(18) if app.is_desktop else dp(14)
                     size_hint: (None, None)
                     width: dp(200)
                     pos_hint: {"top": 1, "right": 1}
@@ -97,18 +94,18 @@ MDGridLayout:
                         max_lines: 1
                         size_hint: (None, 1)
                         padding: [0, 0, dp(5), 0]
-                        height: dp(14) if theapp.is_desktop else dp(10)
-                        width: dp(100) if theapp.is_desktop else dp(85)
-                        role: "large" if theapp.is_desktop else "small"
+                        height: dp(14) if app.is_desktop else dp(10)
+                        width: dp(100) if app.is_desktop else dp(85)
+                        role: "large" if app.is_desktop else "small"
                     MDDropDownItem:
                         id: model_selector
                         on_release: app.model_selection(*args)
                         MDDropDownItemText:
                             font_style: "Title"
                             id: selected_model
-                            padding: [0, 0, 0, dp(9)] if theapp.is_desktop else [0, 0, 0, dp(7)]
+                            padding: [0, 0, 0, dp(9)] if app.is_desktop else [0, 0, 0, dp(7)]
                             text: "--"
-                            role: "medium" if theapp.is_desktop else "small"
+                            role: "medium" if app.is_desktop else "small"
                 MDScrollView:
                     MDGridLayout:
                         cols: 9
@@ -148,7 +145,7 @@ MDGridLayout:
                     md_bg_color: self.theme_cls.backgroundColor
                     MDRelativeLayout:
                         id: navsection
-                        width: (dp(225) if theapp.is_desktop else dp(175)) if theapp.show_nav_section else 0
+                        width: (dp(225) if app.is_desktop else dp(175)) if theapp.show_nav_section else 0
                         opacity: 1 if theapp.show_nav_section else 0
                         size_hint: (None, 1)
                         MDGridLayout:
@@ -156,168 +153,168 @@ MDGridLayout:
                             size_hint: (1, None)
                             pos_hint: {"top": 1, "right": 1}
                             md_bg_color: self.theme_cls.backgroundColor
-                            row_default_height: dp(18) if theapp.is_desktop else dp(14)
+                            row_default_height: dp(18) if app.is_desktop else dp(14)
                             StatLabel:
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "Time:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value1_elapsed
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "Distance:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value1_dist
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "Altitude:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value1_alt
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "H Speed:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value1_hspeed
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "V Speed:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value1_vspeed
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             MDDivider:
                             MDDivider:
                             StatLabel:
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "Max Dist:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value_maxdist
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "Max Alt:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value_maxalt
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "Max H Speed:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value_maxhspeed
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "Max V Speed:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value_maxvspeed
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "Duration:"
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value_duration
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             MDDivider:
                             MDDivider:
                             StatLabel:
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             StatValue:
                                 text: ""
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(90) if theapp.is_desktop else dp(60)
-                                role: "large" if theapp.is_desktop else "small"
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
                             StatLabel:
                                 text: "Flight #:"
                                 valign: "top"
-                                padding: [0, 0, 0, dp(5)] if theapp.is_desktop else [0, 0, 0, dp(7)]
-                                height: dp(14) if theapp.is_desktop else dp(10)
-                                width: dp(105) if theapp.is_desktop else dp(90)
-                                role: "large" if theapp.is_desktop else "small"
+                                padding: [0, 0, 0, dp(5)] if app.is_desktop else [0, 0, 0, dp(7)]
+                                height: dp(14) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
                             MDDropDownItem:
                                 on_release: app.open_flight_selection(*args)
                                 MDDropDownItemText:
                                     font_style: "Title"
                                     id: selected_path
                                     text: "--"
-                                    role: "medium" if theapp.is_desktop else "small"
+                                    role: "medium" if app.is_desktop else "small"
                                     bold: True
                     MDRelativeLayout:
-                        size_hint: (1 - ((dp(225) if theapp.is_desktop else dp(175)) if theapp.show_nav_section else 0), 1)
+                        size_hint: (1 - ((dp(225) if app.is_desktop else dp(175)) if theapp.show_nav_section else 0), 1)
                         MapView:
                             id: map
                             size_hint: (1, 1)
@@ -334,48 +331,48 @@ MDGridLayout:
                             MapButton:
                                 icon: "skip-previous"
                                 on_release: app.jump_prev_flight()
-                                size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
                             MDLabel:
                                 size_hint: (None, None)
-                                width: dp(20) if theapp.is_desktop else dp(10)
+                                width: dp(20) if app.is_desktop else dp(10)
                                 text: ""
                             MapButton:
                                 id: playbutton
                                 icon: "play"
                                 on_release: app.play_flight()
-                                size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
                             MDLabel:
                                 size_hint: (None, None)
-                                width: dp(20) if theapp.is_desktop else dp(10)
+                                width: dp(20) if app.is_desktop else dp(10)
                                 text: ""
                             MapButton:
                                 icon: "skip-next"
                                 on_release: app.jump_next_flight()
-                                size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
                             MDLabel:
                                 size_hint: (None, None)
-                                width: dp(20) if theapp.is_desktop else dp(10)
+                                width: dp(20) if app.is_desktop else dp(10)
                                 text: ""
                             MapButton:
                                 id: speed_indicator
                                 on_release: app.change_playback_speed()
                                 icon: "numeric-0-box"
-                                size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
                                 theme_bg_color: "Custom"
                                 md_bg_color: "green"
                             MDLabel:
                                 size_hint: (None, None)
-                                width: dp(20) if theapp.is_desktop else dp(10)
+                                width: dp(20) if app.is_desktop else dp(10)
                                 text: ""
                             MapButton:
                                 icon: "crosshairs-gps"
                                 on_release: app.center_map()
-                                size: [dp(40), dp(40)] if theapp.is_desktop else [dp(30), dp(30)]
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
                         MDSlider:
                             id: flight_progress
                             size_hint: (.9, None)
                             pos_hint: {"center_x": .5}
-                            y: dp(55) if theapp.is_desktop else dp(45)
+                            y: dp(55) if app.is_desktop else dp(45)
                             is_updating: False
                             on_value_pos: app.select_flight_progress(*args)
                             track_active_color: "#444444"
@@ -383,7 +380,7 @@ MDGridLayout:
                             MDSliderHandle:
                         MDGridLayout:
                             id: mapnav
-                            pos_hint: {"x": 0.01, "top": 0.99} if theapp.is_desktop else {"x": 1, "top": 0}
+                            pos_hint: {"x": 0.01, "top": 0.99} if app.is_desktop else {"x": 1, "top": 0}
                             rows: 2
                             adaptive_size: True
                             MapButton:

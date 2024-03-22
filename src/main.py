@@ -22,13 +22,15 @@ from kivy.utils import platform
 from kivy.config import Config
 from kivymd.app import MDApp
 from kivy.uix.widget import Widget
-from kivymd.uix.dialog import MDDialog, MDDialogHeadlineText, MDDialogButtonContainer
+from kivymd.uix.dialog import MDDialog, MDDialogHeadlineText, MDDialogButtonContainer, MDDialogContentContainer
+from kivymd.uix.progressindicator.progressindicator import MDCircularProgressIndicator
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarText
 from kivymd.uix.label import MDLabel
 from kivymd.uix.button import MDButton, MDButtonText, MDIconButton
 from kivy.metrics import dp
+from kivy.clock import mainthread
 from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
@@ -49,12 +51,6 @@ class MotorStatus(Enum):
   OFF = 'Off'
   IDLE = 'Idle'
   LIFT = 'Flying'
-
-
-class SelectableMetrics(Enum):
-  BASIC = 'Basic'
-  ADVANCED = 'Advanced'
-  DIAGNOSTICS = 'Diagnostics'
 
 
 class SelectableTileServer(Enum):
@@ -362,9 +358,11 @@ class MainApp(MDApp):
         if (len(pathCoord) > 0):
             self.pathCoords.append(pathCoord)
         self.generate_map_layers()
-        if len(self.flightOptions) > 0:
-            self.root.ids.selected_path.text = self.flightOptions[0]
-        self.select_flight()
+        # koen77
+        #self.set_default_flight()
+        #if len(self.flightOptions) > 0:
+        #    self.root.ids.selected_path.text = self.flightOptions[0]
+        #self.select_flight()
         dbRows = self.execute_db("""
             SELECT flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed
             FROM flight_stats WHERE importref = ?
@@ -403,6 +401,11 @@ class MainApp(MDApp):
                 if self.flightStats[i][8] > self.flightStats[0][8]: # Vertical Max speed (could be up or down)
                     self.flightStats[0][8] = self.flightStats[i][8]
 
+        self.show_flight_stats()
+
+
+    @mainthread
+    def show_flight_stats(self):
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Flight", bold=True, max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Duration", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Distance", bold=True, max_lines=1, halign="right", valign="center"))
@@ -550,6 +553,7 @@ class MainApp(MDApp):
     '''
     Called when checkbox for Path view is selected (to show or hide drone path on the map).
     '''
+    @mainthread
     def generate_map_layers(self):
         self.flightPaths = []
         if not self.pathCoords:
@@ -681,6 +685,11 @@ class MainApp(MDApp):
         else:
             if self.root.ids.map.zoom > self.root.ids.map.map_source.min_zoom:
                 self.root.ids.map.zoom = self.root.ids.map.zoom - 1
+
+
+    @mainthread
+    def open_map_view(self):
+        self.root.ids.screen_manager.current = "Screen_Map"
 
 
     '''
@@ -1016,6 +1025,16 @@ class MainApp(MDApp):
         self.root.ids.selected_path.text = text_item
         self.flight_selection_menu.dismiss()
         self.select_flight()
+
+
+    @mainthread
+    def set_default_flight(self):
+        #self.root.ids.selected_path.text = "--"
+        if len(self.flightOptions) > 0:
+            self.root.ids.selected_path.text = self.flightOptions[0]
+
+
+    @mainthread
     def select_flight(self, skip_to_end=False):
         self.clear_map()
         self.init_map_layers()
@@ -1174,34 +1193,37 @@ class MainApp(MDApp):
             ORDER BY i.dateref DESC
             """, (self.root.ids.selected_model.text,)
         )
+        role = "medium" if self.is_desktop else "small"
         self.root.ids.log_files.clear_widgets()
-        self.root.ids.log_files.add_widget(MDLabel(text="Log File", bold=True, max_lines=1, halign="left", valign="center", padding=[dp(24),0,0,0]))
-        self.root.ids.log_files.add_widget(MDLabel(text="# flights", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.log_files.add_widget(MDLabel(text="Total Length", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max Length", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max Dist", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max Alt", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max H Speed", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max V Speed", bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.log_files.add_widget(MDLabel(text="Date", bold=True, max_lines=1, halign="left", valign="center", role=role, padding=[dp(24),0,0,0]))
+        self.root.ids.log_files.add_widget(MDLabel(text="# flights", bold=True, max_lines=1, halign="right", valign="center", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Total Length", bold=True, max_lines=1, halign="right", valign="center", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max Length", bold=True, max_lines=1, halign="right", valign="center", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max Dist", bold=True, max_lines=1, halign="right", valign="center", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max Alt", bold=True, max_lines=1, halign="right", valign="center", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max H Speed", bold=True, max_lines=1, halign="right", valign="center", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Max V Speed", bold=True, max_lines=1, halign="right", valign="center", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="", bold=True))
         for importRef in imports:
-            button1 = MDButton(MDButtonText(text=f"{importRef[0]}"), on_release=self.select_log_file, style="text", size_hint=(None, None), width=dp(40))
+            #dt = datetime.date(int(importRef[1][0:4]), int(importRef[1][4:6]), int(importRef[1][6:8]))
+            dt = datetime.date.fromisoformat(importRef[1]).strftime("%x")
+            button1 = MDButton(MDButtonText(text=f"{dt}"), on_release=self.initiate_log_file, style="text", size_hint=(None, None), width=dp(20))
             button1.value = importRef[0]
             self.root.ids.log_files.add_widget(button1)
             countVal = "" if importRef[3] is None else f"{importRef[2]}" # Check an aggregated field for None
-            self.root.ids.log_files.add_widget(MDLabel(text=countVal, max_lines=1, halign="right", valign="center"))
+            self.root.ids.log_files.add_widget(MDLabel(text=countVal, max_lines=1, halign="right", valign="center", role=role))
             durVal = "" if importRef[3] is None else f"{datetime.timedelta(seconds=importRef[3])}"
-            self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="center"))
+            self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="center", role=role))
             durVal = "" if importRef[3] is None else f"{datetime.timedelta(seconds=importRef[4])}"
-            self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="center"))
+            self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="center", role=role))
             distVal = "" if importRef[4] is None else f"{self.fmt_num(self.dist_val(importRef[5]))} {self.dist_unit()}"
-            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="center"))
+            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="center", role=role))
             distVal = "" if importRef[5] is None else f"{self.fmt_num(self.dist_val(importRef[6]))} {self.dist_unit()}"
-            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="center"))
+            self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="center", role=role))
             speedVal = "" if importRef[6] is None else f"{self.fmt_num(self.speed_val(importRef[7]))} {self.speed_unit()}"
-            self.root.ids.log_files.add_widget(MDLabel(text=speedVal, max_lines=1, halign="right", valign="center"))
+            self.root.ids.log_files.add_widget(MDLabel(text=speedVal, max_lines=1, halign="right", valign="center", role=role))
             speedVal = "" if importRef[7] is None else f"{self.fmt_num(self.speed_val(importRef[8]))} {self.speed_unit()}"
-            self.root.ids.log_files.add_widget(MDLabel(text=speedVal, max_lines=1, halign="right", valign="center"))
+            self.root.ids.log_files.add_widget(MDLabel(text=speedVal, max_lines=1, halign="right", valign="center", role=role))
             button2 = MDIconButton(style="standard", icon="delete", on_release=self.open_delete_log_dialog)
             button2.value = importRef[0]
             self.root.ids.log_files.add_widget(button2)
@@ -1210,13 +1232,21 @@ class MainApp(MDApp):
     '''
     Called when a log file has been selected. It will be opened, parsed and displayed on the map screen.
     '''
-    def select_log_file(self, buttonObj):
+    def initiate_log_file(self, buttonObj):
+        self.dialog_wait.open()
+        threading.Thread(target=self.select_log_file, args=(buttonObj.value,)).start()
+
+
+    def select_log_file(self, importRef):
         lcDM = self.root.ids.selected_model.text.lower()
         if ('p1a' in lcDM):
-            self.parse_dreamer_logs(buttonObj.value)
+            self.parse_dreamer_logs(importRef)
         else:
-            self.parse_atom_logs(buttonObj.value)
-        self.root.ids.screen_manager.current = "Screen_Map"
+            self.parse_atom_logs(importRef)
+        self.set_default_flight()
+        self.select_flight()
+        self.open_map_view()
+        self.dialog_wait.dismiss()
 
 
     def open_delete_log_dialog(self, buttonObj):
@@ -1239,6 +1269,7 @@ class MainApp(MDApp):
 
     def close_delete_log_dialog(self, *args):
         self.dialog_delete.dismiss()
+        self.dialog_delete = None
 
 
     def delete_log_file(self, buttonObj):
@@ -1394,6 +1425,7 @@ class MainApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         locale.setlocale(locale.LC_ALL, '')
+        self.is_desktop = platform in ('linux', 'win', 'macosx')
         dataDir = user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(dataDir, "logfiles") # Place where log bin files go.
         if not os.path.exists(self.logfileDir):
@@ -1441,6 +1473,20 @@ class MainApp(MDApp):
         self.flightStats = None
         self.stopRequested = False
         self.playback_speed = 1
+        self.dialog_wait = MDDialog(
+            MDDialogHeadlineText(
+                text="Parsing Log File..."
+            ),
+            MDDialogContentContainer(
+                MDCircularProgressIndicator(
+                    size_hint = (None, None),
+                    pos_hint = {"center_x": 0.5, "center_y": 0.5},
+                    size = [dp(48), dp(48)]
+                ),
+                orientation="vertical"
+            )
+        )
+        self.dialog_wait.auto_dismiss = False
         # TODO - delete bin files not in DB
         # TODO - delete DB records not in files
         # TODO - https://github.com/kivy-garden/graph
