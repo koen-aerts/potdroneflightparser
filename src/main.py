@@ -356,7 +356,6 @@ class MainApp(MDApp):
 
         if (len(pathCoord) > 0):
             self.pathCoords.append(pathCoord)
-        self.generate_map_layers()
         dbRows = self.execute_db("""
             SELECT flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed
             FROM flight_stats WHERE importref = ?
@@ -395,17 +394,15 @@ class MainApp(MDApp):
                 if self.flightStats[i][8] > self.flightStats[0][8]: # Vertical Max speed (could be up or down)
                     self.flightStats[0][8] = self.flightStats[i][8]
 
-        self.show_flight_date(importRef)
-        self.show_flight_stats()
+        mainthread(self.show_flight_date)(importRef)
+        mainthread(self.show_flight_stats)()
 
 
-    @mainthread
     def show_flight_date(self, importRef):
         logDate = re.sub(r"-.*", r"", importRef) # Extract date section from log (zip) filename.
         self.root.ids.value_date.text = datetime.date.fromisoformat(logDate).strftime("%x")
 
 
-    @mainthread
     def show_flight_stats(self):
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Flight", bold=True, max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Duration", bold=True, max_lines=1, halign="right", valign="center"))
@@ -476,17 +473,19 @@ class MainApp(MDApp):
             self.show_warning_message(message=f'Nothing to import.')
         else:
             self.show_info_message(message=f'Log file import completed.')
+            self.map_rebuild_required = False
+            mainthread(self.open_view)("Screen_Map")
             if ('p1a' in lcDM):
                 self.parse_dreamer_logs(zipBaseName) # TODO - port over from app version 1.4.2
             else:
                 if (not 'atom' in lcDM):
                     self.show_warning_message(message=f'This drone model may not be supported in this software: {droneModel}')
                 self.parse_atom_logs(zipBaseName)
-            self.set_default_flight()
-            self.select_flight()
-            self.open_view("Screen_Map")
-            self.select_drone_model(droneModel)
-            self.list_log_files()
+            mainthread(self.set_default_flight)()
+            mainthread(self.generate_map_layers)()
+            mainthread(self.select_flight)()
+            mainthread(self.select_drone_model)(droneModel)
+            mainthread(self.list_log_files)()
         self.dialog_wait.dismiss()
 
 
@@ -564,7 +563,6 @@ class MainApp(MDApp):
     '''
     Called when checkbox for Path view is selected (to show or hide drone path on the map).
     '''
-    @mainthread
     def generate_map_layers(self):
         self.flightPaths = []
         if not self.pathCoords:
@@ -596,6 +594,11 @@ class MainApp(MDApp):
     '''
     def clear_map(self):
         self.stop_flight(True)
+        if self.layer_drone:
+            self.root.ids.map.remove_marker(self.dronemarker)
+            self.root.ids.map.remove_layer(self.layer_drone)
+            self.layer_drone = None
+            self.dronemarker = None
         if self.flightPaths:
             for flightPath in self.flightPaths:
                 for maplayer in flightPath:
@@ -603,21 +606,16 @@ class MainApp(MDApp):
                         self.root.ids.map.remove_layer(maplayer)
                     except:
                         ... # Do nothing
-        if self.layer_home:
-            self.root.ids.map.remove_marker(self.homemarker)
-            self.root.ids.map.remove_layer(self.layer_home)
-            self.layer_home = None
-            self.homemarker = None
         if self.layer_ctrl:
             self.root.ids.map.remove_marker(self.ctrlmarker)
             self.root.ids.map.remove_layer(self.layer_ctrl)
             self.layer_ctrl = None
             self.ctrlmarker = None
-        if self.layer_drone:
-            self.root.ids.map.remove_marker(self.dronemarker)
-            self.root.ids.map.remove_layer(self.layer_drone)
-            self.layer_drone = None
-            self.dronemarker = None
+        if self.layer_home:
+            self.root.ids.map.remove_marker(self.homemarker)
+            self.root.ids.map.remove_layer(self.layer_home)
+            self.layer_home = None
+            self.homemarker = None
 
 
     '''
@@ -698,7 +696,6 @@ class MainApp(MDApp):
                 self.root.ids.map.zoom = self.root.ids.map.zoom - 1
 
 
-    @mainthread
     def open_view(self, view_name):
         self.root.ids.screen_manager.current = view_name
 
@@ -708,9 +705,21 @@ class MainApp(MDApp):
     '''
     def entered_screen_map(self):
         self.app_view = "map"
-        if self.require_initial_center:
-            self.center_map() # Zoom and center as it does not function until the map is visible.
-            self.require_initial_center = False
+        if self.map_rebuild_required:
+            self.clear_map()
+            self.generate_map_layers()
+            self.init_map_layers()
+            self.set_markers()
+            #self.center_map() # Zoom and center as it does not function until the map is visible.
+            self.map_rebuild_required = False
+
+
+    '''
+    Called when map screen is navigated away from.
+    '''
+    def left_screen_map(self):
+        self.stop_flight()
+        self.map_rebuild_required = False
 
 
     '''
@@ -956,10 +965,7 @@ class MainApp(MDApp):
     def flight_path_width_selection(self, slider, coords):
         Config.set('preferences', 'flight_path_width', int(slider.value))
         Config.write()
-        self.clear_map()
-        self.generate_map_layers()
-        self.init_map_layers()
-        self.set_markers()
+        self.map_rebuild_required = True
 
 
     '''
@@ -971,10 +977,7 @@ class MainApp(MDApp):
         slider.track_inactive_color = self.assetColors[colorIdx]
         Config.set('preferences', 'flight_path_color', colorIdx)
         Config.write()
-        self.clear_map()
-        self.generate_map_layers()
-        self.init_map_layers()
-        self.set_markers()
+        self.map_rebuild_required = True
 
 
     '''
@@ -986,7 +989,6 @@ class MainApp(MDApp):
         slider.track_inactive_color = self.assetColors[colorIdx]
         Config.set('preferences', 'marker_drone_color', colorIdx)
         Config.write()
-        self.stop_flight(True)
         if self.dronemarker:
             self.dronemarker.source=f"assets/Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}.png"
             self.set_markers()
@@ -1001,7 +1003,6 @@ class MainApp(MDApp):
         slider.track_inactive_color = self.assetColors[colorIdx]
         Config.set('preferences', 'marker_ctrl_color', colorIdx)
         Config.write()
-        self.stop_flight(True)
         if self.ctrlmarker:
             self.ctrlmarker.source=f"assets/Controller-{str(int(self.root.ids.selected_marker_ctrl_color.value)+1)}.png"
             self.set_markers()
@@ -1016,7 +1017,6 @@ class MainApp(MDApp):
         slider.track_inactive_color = self.assetColors[colorIdx]
         Config.set('preferences', 'marker_home_color', colorIdx)
         Config.write()
-        self.stop_flight(True)
         if self.homemarker:
             self.homemarker.source=f"assets/Home-{str(int(self.root.ids.selected_marker_home_color.value)+1)}.png"
             self.set_markers()
@@ -1040,19 +1040,30 @@ class MainApp(MDApp):
         self.select_flight()
 
 
-    @mainthread
     def set_default_flight(self):
-        #self.root.ids.selected_path.text = "--"
         if len(self.flightOptions) > 0:
             self.root.ids.selected_path.text = self.flightOptions[0]
+        else:
+            self.root.ids.selected_path.text = "--"
 
 
-    @mainthread
     def select_flight(self, skip_to_end=False):
         self.clear_map()
         self.init_map_layers()
         flightNum = 0 if (self.root.ids.selected_path.text == '--') else int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
-        if (flightNum != 0):
+        if (flightNum == 0):
+            self.root.ids.value1_elapsed.text = ""
+            self.root.ids.value2_elapsed.text = ""
+            self.root.ids.value1_alt.text = ""
+            self.root.ids.value2_alt.text = ""
+            self.root.ids.value1_dist.text = ""
+            self.root.ids.value2_dist.text = ""
+            self.root.ids.value1_hspeed.text = ""
+            self.root.ids.value2_hspeed.text = ""
+            self.root.ids.value1_vspeed.text = ""
+            self.root.ids.value2_vspeed.text = ""
+            self.root.ids.value2_sats.text = ""
+        else:
             self.currentStartIdx = self.flightStarts[self.root.ids.selected_path.text]
             self.currentEndIdx = self.flightEnds[self.root.ids.selected_path.text]
             if skip_to_end:
@@ -1086,7 +1097,6 @@ class MainApp(MDApp):
         self.uom_selection_menu.dismiss()
         Config.set('preferences', 'unit_of_measure', text_item)
         Config.write()
-        self.stop_flight(True)
         self.show_info_message(message="Re-open the log file for the changes to take effect.")
 
 
@@ -1104,7 +1114,6 @@ class MainApp(MDApp):
         self.refresh_rate_selection_menu.dismiss()
         Config.set('preferences', 'refresh_rate', text_item)
         Config.write()
-        self.stop_flight(True)
 
 
     '''
@@ -1113,7 +1122,7 @@ class MainApp(MDApp):
     def home_marker_selection(self, item):
         Config.set('preferences', 'show_marker_home', item.active)
         Config.write()
-        self.stop_flight(True)
+        self.map_rebuild_required = True
         if self.layer_home:
             self.layer_home.opacity = 1 if self.root.ids.selected_home_marker.active else 0
 
@@ -1124,7 +1133,7 @@ class MainApp(MDApp):
     def ctrl_marker_selection(self, item):
         Config.set('preferences', 'show_marker_ctrl', item.active)
         Config.write()
-        self.stop_flight(True)
+        self.map_rebuild_required = True
         if self.layer_ctrl:
             self.layer_ctrl.opacity = 1 if self.root.ids.selected_ctrl_marker.active else 0
 
@@ -1196,12 +1205,10 @@ class MainApp(MDApp):
         self.list_log_files()
 
 
-    @mainthread
     def select_drone_model(self, model_name):
         self.root.ids.selected_model.text = model_name
 
 
-    @mainthread
     def list_log_files(self):
         imports = self.execute_db("""
             SELECT i.importref, i.dateref, count(s.flight_number), sum(duration), max(duration), max(max_distance), max(max_altitude), max(max_h_speed), max(max_v_speed)
@@ -1258,13 +1265,15 @@ class MainApp(MDApp):
 
     def select_log_file(self, importRef):
         lcDM = self.root.ids.selected_model.text.lower()
+        self.map_rebuild_required = False
+        mainthread(self.open_view)("Screen_Map")
         if ('p1a' in lcDM):
             self.parse_dreamer_logs(importRef)
         else:
             self.parse_atom_logs(importRef)
-        self.set_default_flight()
-        self.select_flight()
-        self.open_view("Screen_Map")
+        mainthread(self.set_default_flight)()
+        mainthread(self.generate_map_layers)()
+        mainthread(self.select_flight)()
         self.dialog_wait.dismiss()
 
 
@@ -1384,7 +1393,7 @@ class MainApp(MDApp):
         self.centerlat = 51.50722
         self.centerlon = -0.1275
         self.playback_speed = 1
-        self.require_initial_center = True
+        self.map_rebuild_required = True
         if self.root:
             self.root.ids.selected_path.text = '--'
             self.zoom = self.defaultMapZoom
