@@ -37,7 +37,7 @@ from kivy_garden.mapview.utils import haversine
 
 if platform == 'android':
     from android.permissions import request_permissions, Permission
-    from androidstorage4kivy import SharedStorage, Chooser
+    from androidstorage4kivy import SharedStorage, Chooser, ShareSheet
 else:
     Window.maximize()
     from plyer import filechooser
@@ -85,6 +85,7 @@ class MainApp(MDApp):
     Parse Atom based logs.
     '''
     def parse_atom_logs(self, importRef):
+        self.zipFilename = importRef
         fpvFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype = 'FPV' ORDER BY filename", (importRef,))
         binFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype IN ('BIN','FC') ORDER BY filename", (importRef,))
 
@@ -490,9 +491,9 @@ class MainApp(MDApp):
 
 
     '''
-    Open a file dialog.
+    Open a file import dialog (import zip file).
     '''
-    def open_file_dialog(self):
+    def open_file_import_dialog(self):
         self.stop_flight(True)
         if platform == 'android':
             # Open Android Shared Storage. This opens in a separate thread so we wait here
@@ -518,13 +519,65 @@ class MainApp(MDApp):
 
 
     '''
+    Save the flight data in a CSV file.
+    '''
+    def save_csv_file(self, csvFilename):
+        with open(csvFilename, 'w') as f:
+            head = ''
+            for col in self.columns:
+                if len(head) > 0:
+                    head = head + ','
+                head = head + col
+            f.write(head)
+            for record in self.logdata:
+                hasWritten = False
+                f.write('\n')
+                for col in record:
+                    if (hasWritten):
+                        f.write(',')
+                    f.write('"' + str(col) + '"')
+                    hasWritten = True
+        f.close()
+        self.show_info_message(message=f"Data has been exported to {csvFilename}")
+
+
+    '''
+    Open a file export dialog (export csv file).
+    '''
+    def open_file_export_dialog(self):
+        self.stop_flight(True)
+        csvFilename = re.sub("\.zip$", "", self.zipFilename) + ".csv"
+        if platform == 'android':
+            csvFile = os.path.join(self.shared_storage.get_cache_dir(), csvFilename)
+            try:
+                self.save_csv_file(csvFile)
+                url = self.shared_storage.copy_to_shared(csvFile)
+                ShareSheet().share_file(url)
+            except Exception as e:
+                print(f"Error saving CSV file {csvFile}: {e}")
+                self.show_error_message(message=f'Error while saving file {csvFile}: {e}')
+        else:
+            oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
+            myFiles = filechooser.choose_dir(title="Save CSV log file.")
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
+            if myFiles and len(myFiles) > 0 and os.path.isdir(myFiles[0]):
+                csvFile = os.path.join(myFiles[0], csvFilename)
+                try:
+                    self.save_csv_file(csvFile)
+                except Exception as e:
+                    print(f"Error saving CSV file {csvFile}: {e}")
+                    self.show_error_message(message=f'Error while saving file {csvFile}: {e}')
+
+
+    '''
     File Chooser, called when a file has been selected on the Android device.
     '''
-    def chooser_callback(self, uri_list):
+    def import_chooser_callback(self, uri_list):
         try:
-            ss = SharedStorage()
             for uri in uri_list:
-                self.chosenFile = ss.copy_from_shared(uri) # copy to private storage
+                self.chosenFile = self.shared_storage.copy_from_shared(uri) # copy to private storage
                 break # Only open the first file from the selection.
         except Exception as e:
             print(f"File Chooser Error: {e}")
@@ -1052,6 +1105,9 @@ class MainApp(MDApp):
         self.init_map_layers()
         flightNum = 0 if (self.root.ids.selected_path.text == '--') else int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
         if (flightNum == 0):
+            self.root.ids.flight_progress.is_updating = True
+            self.root.ids.flight_progress.value = 0
+            self.root.ids.flight_progress.is_updating = False
             self.root.ids.value1_elapsed.text = ""
             self.root.ids.value2_elapsed.text = ""
             self.root.ids.value1_alt.text = ""
@@ -1477,9 +1533,10 @@ class MainApp(MDApp):
         self.configFile = os.path.join(configDir, self.configFilename) # ini config file.
         if platform == 'android':
             request_permissions([Permission.INTERNET, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE])
+            self.shared_storage = SharedStorage()
             self.chosenFile = None
             self.chooser_open = False # To track Android File Manager (Chooser)
-            self.chooser = Chooser(self.chooser_callback)
+            self.chooser = Chooser(self.import_chooser_callback)
         Config.read(self.configFile)
         Config.set('kivy', 'window_icon', 'assets/app-icon256.png')
         Config.setdefaults('preferences', {

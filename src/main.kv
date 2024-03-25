@@ -71,7 +71,7 @@ MDGridLayout:
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "import"
-                            on_release: app.open_file_dialog()
+                            on_release: app.open_file_import_dialog()
                         MDActionTopAppBarButton:
                             icon: "content-save-move"
                     MDTopAppBarTitle:
@@ -87,35 +87,35 @@ MDGridLayout:
                     size_hint: (None, None)
                     width: dp(200)
                     pos_hint: {"top": 1, "right": 1}
+                    adaptive_height: True
                     MDLabel:
                         text: "Model:"
                         halign: "right"
                         valign: "top"
                         max_lines: 1
                         size_hint: (None, 1)
-                        padding: [0, 0, dp(5), 0]
-                        height: dp(14) if app.is_desktop else dp(10)
+                        padding: [0, 0, dp(10), dp(4)] if app.is_desktop else [0, 0, dp(10), dp(7)]
+                        height: dp(18) if app.is_desktop else dp(10)
                         width: dp(100) if app.is_desktop else dp(85)
                         role: "large" if app.is_desktop else "small"
+                        bold: True
                     MDDropDownItem:
                         id: model_selector
                         on_release: app.model_selection(*args)
                         MDDropDownItemText:
                             font_style: "Title"
                             id: selected_model
-                            padding: [0, 0, 0, dp(9)] if app.is_desktop else [0, 0, 0, dp(3)]
                             text: "--"
                             role: "medium" if app.is_desktop else "small"
+                            bold: True
                 MDScrollView:
                     MDGridLayout:
                         cols: 9
                         id: log_files
                         padding: [0, dp(14), 0, 0]
                         md_bg_color: self.theme_cls.backgroundColor
-                        #row_default_height: dp(30)
                         row_default_height: dp(22) if app.is_desktop else dp(14)
                         size_hint: (1, None)
-                        #adaptive_height: True
         BaseScreen:
             name: "Screen_Map"
             on_enter: app.entered_screen_map()
@@ -387,6 +387,7 @@ MDGridLayout:
                             pos_hint: {"center_x": .5}
                             y: dp(55) if app.is_desktop else dp(45)
                             is_updating: False
+                            opacity: 0 if selected_path.text == "--" else 1
                             on_value_pos: app.select_flight_progress(*args)
                             track_active_color: "#444444"
                             track_inactive_color: "#aaaaaa"
@@ -441,8 +442,7 @@ MDGridLayout:
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "content-save"
-                        MDActionTopAppBarButton:
-                            icon: "content-save-move"
+                            on_release: app.open_file_export_dialog()
                     MDTopAppBarTitle:
                         text: f"{app.appTitle} - Flights"
                         pos_hint: {"center_x": .5}
