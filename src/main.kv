@@ -70,10 +70,14 @@ MDGridLayout:
                     height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
-                            icon: "import"
+                            icon: "folder-download-outline"
                             on_release: app.open_file_import_dialog()
                         MDActionTopAppBarButton:
-                            icon: "content-save-move"
+                            icon: "database-export-outline"
+                            on_release: app.open_backup_dialog()
+                        MDActionTopAppBarButton:
+                            icon: "database-import-outline"
+                            on_release: app.open_restore_dialog()
                     MDTopAppBarTitle:
                         text: f"{app.appTitle} - Logs"
                         pos_hint: {"center_x": .5}

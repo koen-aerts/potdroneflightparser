@@ -78,7 +78,8 @@ class MainApp(MDApp):
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
     columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
-    configFilename = 'FlightLogViewer.ini'
+    configFilename = "FlightLogViewer.ini"
+    dbFilename = "FlightLogData.db"
 
 
     '''
@@ -412,7 +413,7 @@ class MainApp(MDApp):
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max H Speed", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max V Speed", bold=True, max_lines=1, halign="right", valign="center", padding=[0,0,dp(10),0]))
         rowcount = len(self.flightStats)
-        for i in range(0 if rowcount > 1 else 1, rowcount):
+        for i in range(0 if rowcount > 2 else 1, rowcount):
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=(f"Flight #{i}" if i > 0 else "Overall"), max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=str(self.flightStats[i][3]), max_lines=1, halign="right", valign="center"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.dist_val(self.flightStats[i][0]))} {self.dist_unit()}", max_lines=1, halign="right", valign="center"))
@@ -425,7 +426,7 @@ class MainApp(MDApp):
     Import the selected Flight Data Zip file.
     '''
     def initiate_import_file(self, selectedFile):
-        if (not os.path.isfile(selectedFile)):
+        if not os.path.isfile(selectedFile):
             self.show_error_message(message=f'Not a valid file specified: {selectedFile}')
             return
         zipBaseName = os.path.basename(selectedFile)
@@ -494,7 +495,6 @@ class MainApp(MDApp):
     Open a file import dialog (import zip file).
     '''
     def open_file_import_dialog(self):
-        self.stop_flight(True)
         if platform == 'android':
             # Open Android Shared Storage. This opens in a separate thread so we wait here
             # until that dialog has closed. Otherwise the map drawing will be triggered from
@@ -545,7 +545,6 @@ class MainApp(MDApp):
     Open a file export dialog (export csv file).
     '''
     def open_file_export_dialog(self):
-        self.stop_flight(True)
         csvFilename = re.sub("\.zip$", "", self.zipFilename) + ".csv"
         if platform == 'android':
             csvFile = os.path.join(self.shared_storage.get_cache_dir(), csvFilename)
@@ -763,7 +762,6 @@ class MainApp(MDApp):
             self.generate_map_layers()
             self.init_map_layers()
             self.set_markers()
-            #self.center_map() # Zoom and center as it does not function until the map is visible.
             self.map_rebuild_required = False
 
 
@@ -1373,6 +1371,139 @@ class MainApp(MDApp):
         self.close_delete_log_dialog(None)
 
 
+    def open_backup_dialog(self):
+        self.dialog_backup = MDDialog(
+            MDDialogHeadlineText(
+                text = f"Backup your system data?",
+                halign="left",
+            ),
+            MDDialogButtonContainer(
+                Widget(),
+                MDButton(MDButtonText(text="Cancel"), style="text", on_release=self.close_backup_dialog),
+                MDButton(MDButtonText(text="Backup"), style="text", on_release=self.backup_data),
+                spacing="8dp",
+            ),
+        )
+        self.dialog_backup.open()
+
+
+    def close_backup_dialog(self, *args):
+        self.dialog_backup.dismiss()
+        self.dialog_backup = None
+
+
+    def backup_data(self, buttonObj):
+        self.close_backup_dialog(None)
+        backupName = f"{self.appPathName}_{self.appVersion}_Backup_{datetime.datetime.now().isoformat()}.zip"
+        if platform == 'android':
+            cache_dir = user_cache_dir(self.appPathName, self.appPathName)
+            zipFile = os.path.join(cache_dir, backupName)
+            try:
+                with ZipFile(zipFile, 'w') as zip:
+                    zip.write(self.dbFile, os.path.basename(self.dbFile))
+                    for bin_file in self.get_dir_content(self.logfileDir):
+                        zip.write(bin_file, os.path.basename(bin_file))
+                url = self.shared_storage.copy_to_shared(zipFile)
+                ShareSheet().share_file(url)
+            except Exception as e:
+                print(f"Error saving zip file {zipFile}: {e}")
+                self.show_error_message(message=f'Error while saving file {zipFile}: {e}')
+        else:
+            oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
+            myFiles = filechooser.choose_dir(title="Save backup file.")
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
+            if myFiles and len(myFiles) > 0 and os.path.isdir(myFiles[0]):
+                zipFile = os.path.join(myFiles[0], backupName)
+                try:
+                    with ZipFile(zipFile, 'w') as zip:
+                        zip.write(self.dbFile, os.path.basename(self.dbFile))
+                        zip.write(self.configFile, os.path.basename(self.configFile))
+                        for bin_file in self.get_dir_content(self.logfileDir):
+                            zip.write(bin_file, os.path.basename(bin_file))
+                except Exception as e:
+                    print(f"Error saving zip file {zipFile}: {e}")
+                    self.show_error_message(message=f'Error while saving file {zipFile}: {e}')
+
+
+    def get_dir_content(self, directory):
+        file_paths = [] 
+        for root, directories, files in os.walk(directory):
+            for filename in files:
+                filepath = os.path.join(root, filename)
+                file_paths.append(filepath)
+        return file_paths
+
+
+    def open_restore_dialog(self):
+        self.dialog_restore = MDDialog(
+            MDDialogHeadlineText(
+                text = f"Restore your system data?",
+                halign="left",
+            ),
+            MDDialogButtonContainer(
+                Widget(),
+                MDButton(MDButtonText(text="Cancel"), style="text", on_release=self.close_restore_dialog),
+                MDButton(MDButtonText(text="Restore"), style="text", on_release=self.open_restore_file_dialog),
+                spacing="8dp",
+            ),
+        )
+        self.dialog_restore.open()
+
+
+    def close_restore_dialog(self, *args):
+        self.dialog_restore.dismiss()
+        self.dialog_restore = None
+
+
+    def open_restore_file_dialog(self, buttonObj):
+        self.close_restore_dialog(None)
+        if platform == 'android':
+            # Open Android Shared Storage.
+            self.chosenFile = None
+            self.chooser.choose_content("application/zip")
+            self.chooser_open = True
+            while (self.chooser_open):
+                time.sleep(0.2)
+            if self.chosenFile is not None:
+                self.restore_data(self.chosenFile)
+        else:
+            oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
+            myFiles = filechooser.open_file(title="Select a backup zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
+            if myFiles and len(myFiles) > 0 and os.path.isfile(myFiles[0]):
+                self.restore_data(myFiles[0])
+
+
+    def restore_data(self, selectedFile):
+        if not os.path.isfile(selectedFile):
+            self.show_error_message(message=f'Not a valid backup file specified: {selectedFile}')
+            return
+        resDir = os.path.join(tempfile.gettempdir(), "restoredata")
+        shutil.rmtree(resDir, ignore_errors=True) # Delete old temp files if they were missed before.
+        with ZipFile(selectedFile, 'r') as unzip:
+            unzip.extractall(path=resDir)
+        oldDbFile = os.path.join(resDir, self.dbFilename)
+        oldCfFile = os.path.join(resDir, self.configFilename)
+        if os.path.isfile(oldDbFile) and os.path.isfile(oldCfFile):
+            for binFile in glob.glob(os.path.join(resDir, '**/*'), recursive=True):
+                binBaseName = os.path.basename(binFile)
+                if binBaseName == self.dbFilename:
+                    shutil.copy(binFile, self.dbFile)
+                elif binBaseName == self.configFilename:
+                    shutil.copy(binFile, self.configFile)
+                else:
+                    shutil.copy(binFile, os.path.join(self.logfileDir, binBaseName))
+            self.show_info_message(message=f'Restored from: {selectedFile}.')
+            self.reset()
+        else:
+            self.show_error_message(message=f'Not a valid backup zip file specified: {selectedFile}')
+        shutil.rmtree(resDir, ignore_errors=True) # Delete temp files.
+
+
     '''
     Called when map screen is closed.
     '''
@@ -1521,11 +1652,11 @@ class MainApp(MDApp):
         locale.setlocale(locale.LC_ALL, '')
         self.is_desktop = platform in ('linux', 'win', 'macosx')
         self.title = self.appTitle
-        dataDir = user_data_dir(self.appPathName, self.appPathName)
-        self.logfileDir = os.path.join(dataDir, "logfiles") # Place where log bin files go.
+        self.dataDir = user_data_dir(self.appPathName, self.appPathName)
+        self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
         if not os.path.exists(self.logfileDir):
             Path(self.logfileDir).mkdir(parents=True, exist_ok=True)
-        self.dbFile = os.path.join(dataDir, "FlightLogData.db") # sqlite DB file.
+        self.dbFile = os.path.join(self.dataDir, self.dbFilename) # sqlite DB file.
         self.init_db()
         configDir = user_config_dir(self.appPathName, self.appPathName) # Place where app ini config file goes.
         if not os.path.exists(configDir):
@@ -1587,7 +1718,6 @@ class MainApp(MDApp):
         # TODO - delete DB records not in files
         # TODO - https://github.com/kivy-garden/graph
         # TODO - add graphs: total duration per date/log, max distance per log, # flights per day, avg duration per flight per log, etc.
-        # TODO - CSV export
 
 
     def build(self):
