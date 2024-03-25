@@ -237,13 +237,13 @@ class MainApp(MDApp):
                             isFlying = False
                             statusChanged = True
                             firstTs = None
-                            distTraveled = None
+                            distTraveled = 0
                     elif droneMotorStatus == MotorStatus.LIFT:
                         isFlying = True
                         statusChanged = True
                     else:
                         firstTs = None
-                        distTraveled = None
+                        distTraveled = 0
 
                     # Calculate timestamp for the record.
                     readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
@@ -303,7 +303,8 @@ class MainApp(MDApp):
                                     lastSegment = pathCoord[len(pathCoord)-1]
                                     lastSegment.append(lastCoord)
                                 lastSegment.append([dronelon, dronelat])
-                                distTraveled = 0 if distTraveled == None else distTraveled + (haversine(lastCoord[0], lastCoord[1], dronelon, dronelat) * 1000)
+                                if lastCoord[0] != 9999:
+                                    distTraveled = distTraveled + (haversine(lastCoord[0], lastCoord[1], dronelon, dronelat) * 1000)
                             if pathNum == len(self.flightStats):
                                 self.flightStats.append([dist3metric, alt2metric, speed2metric, elapsedTs, dronelat, dronelon, dronelat, dronelon, speed2vertmetricabs])
                             else:
