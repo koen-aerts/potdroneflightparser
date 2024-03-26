@@ -114,12 +114,6 @@ class MainApp(MDApp):
                         fpvStat[fpvRecord[:14]] = fpvRecord[15:] # Android
             fpvFile.close()
 
-        # Read the Flight Status files. These files are required to be present.
-        #files = sorted(glob.glob(os.path.join(binLog, '**/*-FC.bin'), recursive=True) + glob.glob(os.path.join(binLog, '**/*-FC.fc'), recursive=True))
-        #if (len(files) == 0):
-        #    self.show_error_message(message=f'Log file is empty: {selectedFile}')
-        #    return
-
         timestampMarkers = []
 
         # First grab timestamps from the filenames. Those are used to calculate the real timestamps with the elapsed time from each record.
@@ -416,7 +410,7 @@ class MainApp(MDApp):
     def show_flight_stats(self):
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Flight", bold=True, max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Duration", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Dist Moved", bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Dist Flown", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Distance", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Altitude", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max H Speed", bold=True, max_lines=1, halign="right", valign="center"))
@@ -830,8 +824,6 @@ class MainApp(MDApp):
             if self.root.ids.value_duration.text != "":
                 durstr = self.root.ids.value_duration.text.split(":")
                 durval = datetime.timedelta(hours=int(durstr[0]), minutes=int(durstr[1]), seconds=int(durstr[2]))
-                self.root.ids.flight_progress.min = 0
-                self.root.ids.flight_progress.max = 100
                 if durval != 0: # Prevent division by zero
                     self.root.ids.flight_progress.value = elapsed / durval * 100
                 else:
@@ -1293,7 +1285,7 @@ class MainApp(MDApp):
         self.root.ids.log_files.clear_widgets()
         self.root.ids.log_files.add_widget(MDLabel(text="Date", bold=True, max_lines=1, halign="left", valign="top", role=role, padding=[dp(24),0,0,0]))
         self.root.ids.log_files.add_widget(MDLabel(text="# flights", bold=True, max_lines=1, halign="right", valign="top", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Tot Moved", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Tot Flown", bold=True, max_lines=1, halign="right", valign="top", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="Tot Time", bold=True, max_lines=1, halign="right", valign="top", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="Max Dist", bold=True, max_lines=1, halign="right", valign="top", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="Max Alt", bold=True, max_lines=1, halign="right", valign="top", role=role))
@@ -1621,8 +1613,6 @@ class MainApp(MDApp):
             self.root.ids.value1_elapsed.text = ""
             self.root.ids.value2_elapsed.text = ""
             self.root.ids.flight_progress.is_updating = True
-            self.root.ids.flight_progress.min = 0
-            self.root.ids.flight_progress.max = 100
             self.root.ids.flight_progress.value = 0
             self.root.ids.flight_progress.is_updating = False
             self.root.ids.flight_stats_grid.clear_widgets()
