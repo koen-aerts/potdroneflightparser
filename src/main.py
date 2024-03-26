@@ -16,7 +16,7 @@ from enum import Enum
 from kivy.core.window import Window
 Window.allow_screensaver = False
 
-from platformdirs import user_config_dir, user_data_dir
+from platformdirs import user_config_dir, user_data_dir, user_cache_dir
 
 from kivy.utils import platform
 from kivy.config import Config
