@@ -130,7 +130,7 @@ class MainApp(MDApp):
         filenameTs = timestampMarkers[0]
         prevReadingTs = timestampMarkers[0]
         firstTs = None
-        distTraveled = None
+        distTraveled = 0
         self.pathCoords = []
         self.flightStarts = {}
         self.flightEnds = {}
@@ -266,7 +266,7 @@ class MainApp(MDApp):
                     # Build paths for each flight and keep metric summaries of each path (flight), as well as for the entire log file.
                     pathNum = 0
                     if pathNum == len(self.flightStats):
-                        self.flightStats.append([dist3metric, alt2metric, speed2metric, None, dronelat, dronelon, dronelat, dronelon, speed2vertmetricabs])
+                        self.flightStats.append([dist3metric, alt2metric, speed2metric, None, dronelat, dronelon, dronelat, dronelon, speed2vertmetricabs, None])
                     else:
                         if dist3metric > self.flightStats[pathNum][0]: # Overall Max distance
                             self.flightStats[pathNum][0] = dist3metric
@@ -306,7 +306,7 @@ class MainApp(MDApp):
                                 if lastCoord[0] != 9999:
                                     distTraveled = distTraveled + (haversine(lastCoord[0], lastCoord[1], dronelon, dronelat) * 1000)
                             if pathNum == len(self.flightStats):
-                                self.flightStats.append([dist3metric, alt2metric, speed2metric, elapsedTs, dronelat, dronelon, dronelat, dronelon, speed2vertmetricabs])
+                                self.flightStats.append([dist3metric, alt2metric, speed2metric, elapsedTs, dronelat, dronelon, dronelat, dronelon, speed2vertmetricabs, distTraveled])
                             else:
                                 if dist3metric > self.flightStats[pathNum][0]: # Flight Max distance
                                     self.flightStats[pathNum][0] = dist3metric
@@ -325,6 +325,7 @@ class MainApp(MDApp):
                                     self.flightStats[pathNum][7] = dronelon
                                 if speed2vertmetricabs > self.flightStats[pathNum][8]: # Vertical Max speed (could be up or down)
                                     self.flightStats[pathNum][8] = speed2vertmetricabs
+                                self.flightStats[pathNum][9] = distTraveled # Distance Travelled
 
                     # Get corresponding record from the controller. There may not be one, or any at all. Match up to 5 seconds ago.
                     fpvRssi = ""
@@ -364,7 +365,7 @@ class MainApp(MDApp):
         if (len(pathCoord) > 0):
             self.pathCoords.append(pathCoord)
         dbRows = self.execute_db("""
-            SELECT flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed
+            SELECT flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed, traveled
             FROM flight_stats WHERE importref = ?
             """, (importRef,)
         )
@@ -373,10 +374,10 @@ class MainApp(MDApp):
             if not hasData:
                 # These stats are used in the log file list to show metrics for each file.
                 self.execute_db("""
-                    INSERT INTO flight_stats(importref, flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed)
-                    VALUES(?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO flight_stats(importref, flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed, traveled)
+                    VALUES(?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (importRef, i, self.flightStats[i][3].total_seconds(), self.flightStats[i][0], self.flightStats[i][1], self.flightStats[i][2], self.flightStats[i][8])
+                    (importRef, i, self.flightStats[i][3].total_seconds(), self.flightStats[i][0], self.flightStats[i][1], self.flightStats[i][2], self.flightStats[i][8], self.flightStats[i][9])
                 )
             if self.flightStats[0][3] == None:
                 self.flightStats[0][2] = self.flightStats[i][2] # Flight Horizontal Max speed
@@ -386,6 +387,7 @@ class MainApp(MDApp):
                 self.flightStats[0][6] = self.flightStats[i][6] # Flight Max latitude
                 self.flightStats[0][7] = self.flightStats[i][7] # Flight Max longitude
                 self.flightStats[0][8] = self.flightStats[i][8] # Vertical Max speed (could be up or down)
+                self.flightStats[0][9] = self.flightStats[i][9] # Distance Travelled (total)
             else:
                 self.flightStats[0][3] = self.flightStats[0][3] + self.flightStats[i][3] # Total duration
                 if self.flightStats[i][2] > self.flightStats[0][2]: # Flight Horizontal Max speed
@@ -400,6 +402,7 @@ class MainApp(MDApp):
                     self.flightStats[0][7] = self.flightStats[i][7]
                 if self.flightStats[i][8] > self.flightStats[0][8]: # Vertical Max speed (could be up or down)
                     self.flightStats[0][8] = self.flightStats[i][8]
+                self.flightStats[0][9] = self.flightStats[0][9] + self.flightStats[i][9] # Total Distance Travelled
 
         mainthread(self.show_flight_date)(importRef)
         mainthread(self.show_flight_stats)()
@@ -413,6 +416,7 @@ class MainApp(MDApp):
     def show_flight_stats(self):
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Flight", bold=True, max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Duration", bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Dist Moved", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Distance", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Altitude", bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max H Speed", bold=True, max_lines=1, halign="right", valign="center"))
@@ -421,6 +425,7 @@ class MainApp(MDApp):
         for i in range(0 if rowcount > 2 else 1, rowcount):
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=(f"Flight #{i}" if i > 0 else "Overall"), max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=str(self.flightStats[i][3]), max_lines=1, halign="right", valign="center"))
+            self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.dist_val(self.flightStats[i][9]))} {self.dist_unit()}", max_lines=1, halign="right", valign="center"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.dist_val(self.flightStats[i][0]))} {self.dist_unit()}", max_lines=1, halign="right", valign="center"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.dist_val(self.flightStats[i][1]))} {self.dist_unit()}", max_lines=1, halign="right", valign="center"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.speed_val(self.flightStats[i][2]))} {self.speed_unit()}", max_lines=1, halign="right", valign="center"))
@@ -825,6 +830,8 @@ class MainApp(MDApp):
             if self.root.ids.value_duration.text != "":
                 durstr = self.root.ids.value_duration.text.split(":")
                 durval = datetime.timedelta(hours=int(durstr[0]), minutes=int(durstr[1]), seconds=int(durstr[2]))
+                self.root.ids.flight_progress.min = 0
+                self.root.ids.flight_progress.max = 100
                 if durval != 0: # Prevent division by zero
                     self.root.ids.flight_progress.value = elapsed / durval * 100
                 else:
@@ -1142,6 +1149,7 @@ class MainApp(MDApp):
             self.root.ids.value_maxhspeed.text = f"{self.fmt_num(self.flightStats[flightNum][2])} {self.speed_unit()}"
             self.root.ids.value_maxvspeed.text = f"{self.fmt_num(self.flightStats[flightNum][8])} {self.speed_unit()}"
             self.root.ids.value_duration.text = str(self.flightStats[flightNum][3])
+            self.root.ids.value_tottraveled.text = f"{self.fmt_num(self.flightStats[flightNum][9])} {self.dist_unit()}"
 
 
     '''
@@ -1272,7 +1280,7 @@ class MainApp(MDApp):
 
     def list_log_files(self):
         imports = self.execute_db("""
-            SELECT i.importref, i.dateref, count(s.flight_number), sum(duration), max(duration), max(max_distance), max(max_altitude), max(max_h_speed), max(max_v_speed)
+            SELECT i.importref, i.dateref, count(s.flight_number), sum(duration), max(duration), max(max_distance), max(max_altitude), max(max_h_speed), max(max_v_speed), sum(traveled)
             FROM imports i
             LEFT OUTER JOIN flight_stats s ON s.importref = i.importref
             WHERE modelref = ?
@@ -1285,8 +1293,8 @@ class MainApp(MDApp):
         self.root.ids.log_files.clear_widgets()
         self.root.ids.log_files.add_widget(MDLabel(text="Date", bold=True, max_lines=1, halign="left", valign="top", role=role, padding=[dp(24),0,0,0]))
         self.root.ids.log_files.add_widget(MDLabel(text="# flights", bold=True, max_lines=1, halign="right", valign="top", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Total Length", bold=True, max_lines=1, halign="right", valign="top", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max Length", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Tot Moved", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text="Tot Time", bold=True, max_lines=1, halign="right", valign="top", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="Max Dist", bold=True, max_lines=1, halign="right", valign="top", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="Max Alt", bold=True, max_lines=1, halign="right", valign="top", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="Max H Sp", bold=True, max_lines=1, halign="right", valign="top", role=role))
@@ -1299,9 +1307,9 @@ class MainApp(MDApp):
             self.root.ids.log_files.add_widget(button1)
             countVal = "" if importRef[3] is None else f"{importRef[2]}" # Check an aggregated field for None
             self.root.ids.log_files.add_widget(MDLabel(text=countVal, max_lines=1, halign="right", valign="top", role=role))
-            durVal = "" if importRef[3] is None else f"{datetime.timedelta(seconds=importRef[3])}"
+            durVal = "" if importRef[9] is None else f"{self.fmt_num(self.dist_val(importRef[9]))} {self.dist_unit()}"
             self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="top", role=role))
-            durVal = "" if importRef[3] is None else f"{datetime.timedelta(seconds=importRef[4])}"
+            durVal = "" if importRef[3] is None else f"{datetime.timedelta(seconds=importRef[3])}"
             self.root.ids.log_files.add_widget(MDLabel(text=durVal, max_lines=1, halign="right", valign="top", role=role))
             distVal = "" if importRef[4] is None else f"{self.fmt_num(self.dist_val(importRef[5]))} {self.dist_unit()}"
             self.root.ids.log_files.add_widget(MDLabel(text=distVal, max_lines=1, halign="right", valign="top", role=role))
@@ -1574,6 +1582,7 @@ class MainApp(MDApp):
                 max_altitude REAL NOT NULL,
                 max_h_speed REAL NOT NULL,
                 max_v_speed REAL NOT NULL,
+                traveled REAL NOT NULL,
                 FOREIGN KEY (importref) REFERENCES imports(importref) ON DELETE CASCADE ON UPDATE NO ACTION
             )
         """)
@@ -1598,6 +1607,7 @@ class MainApp(MDApp):
             self.root.ids.value_maxhspeed.text = ""
             self.root.ids.value_maxvspeed.text = ""
             self.root.ids.value_duration.text = ""
+            self.root.ids.value_tottraveled.text = ""
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
@@ -1611,6 +1621,8 @@ class MainApp(MDApp):
             self.root.ids.value1_elapsed.text = ""
             self.root.ids.value2_elapsed.text = ""
             self.root.ids.flight_progress.is_updating = True
+            self.root.ids.flight_progress.min = 0
+            self.root.ids.flight_progress.max = 100
             self.root.ids.flight_progress.value = 0
             self.root.ids.flight_progress.is_updating = False
             self.root.ids.flight_stats_grid.clear_widgets()

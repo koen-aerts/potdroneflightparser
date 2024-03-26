@@ -182,17 +182,6 @@ MDGridLayout:
                                 width: dp(90) if app.is_desktop else dp(60)
                                 role: "large" if app.is_desktop else "small"
                             StatLabel:
-                                text: "Travelled:"
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(105) if app.is_desktop else dp(90)
-                                role: "large" if app.is_desktop else "small"
-                            StatValue:
-                                id: value1_traveled
-                                text: ""
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(90) if app.is_desktop else dp(60)
-                                role: "large" if app.is_desktop else "small"
-                            StatLabel:
                                 text: "Distance:"
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(105) if app.is_desktop else dp(90)
@@ -232,6 +221,17 @@ MDGridLayout:
                                 role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value1_vspeed
+                                text: ""
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
+                            StatLabel:
+                                text: "Moved:"
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value1_traveled
                                 text: ""
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(90) if app.is_desktop else dp(60)
@@ -310,6 +310,17 @@ MDGridLayout:
                                 role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value_duration
+                                text: ""
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
+                            StatLabel:
+                                text: "Dist Moved:"
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value_tottraveled
                                 text: ""
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(90) if app.is_desktop else dp(60)
@@ -473,7 +484,7 @@ MDGridLayout:
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"
                 MDScrollView:
                     MDGridLayout:
-                        cols: 6
+                        cols: 7
                         id: flight_stats_grid
                         md_bg_color: self.theme_cls.backgroundColor
                         row_default_height: dp(30)
