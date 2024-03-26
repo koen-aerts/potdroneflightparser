@@ -398,7 +398,7 @@ MDGridLayout:
                                 size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
                         MDSlider:
                             id: flight_progress
-                            size_hint: (.9, None)
+                            size_hint: (None if selected_path.text == "--" else .9, None)
                             pos_hint: {"center_x": .5}
                             y: dp(55) if app.is_desktop else dp(45)
                             is_updating: False
