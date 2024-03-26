@@ -1610,7 +1610,9 @@ class MainApp(MDApp):
             self.root.ids.value2_sats.text = ""
             self.root.ids.value1_elapsed.text = ""
             self.root.ids.value2_elapsed.text = ""
+            self.root.ids.flight_progress.is_updating = True
             self.root.ids.flight_progress.value = 0
+            self.root.ids.flight_progress.is_updating = False
             self.root.ids.flight_stats_grid.clear_widgets()
             self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box"
         self.flightOptions = []
