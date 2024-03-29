@@ -412,15 +412,15 @@ MDGridLayout:
                             size_hint: (.9, None)
                             pos_hint: {"center_x": .5}
                             y: dp(55) if app.is_desktop else dp(45)
-                            is_updating: False
+                            is_updating: True
                             opacity: 0 if selected_path.text == "--" else 1
-                            on_value_pos: app.select_flight_progress(*args)
+                            on_value: app.select_flight_progress(*args)
                             track_active_color: "#444444"
                             track_inactive_color: "#aaaaaa"
                             min: 0.
                             max: 100.
                             step: 0
-                            value: 0
+                            value: 0.
                             MDSliderHandle:
                         MDGridLayout:
                             id: mapnav

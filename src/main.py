@@ -867,7 +867,7 @@ class MainApp(MDApp):
         prevTs = None
         timeElapsed = None
         while (not self.stopRequested) and (self.currentRowIdx < self.currentEndIdx):
-            self.set_markers()
+            mainthread(self.set_markers)()
             time.sleep(refreshRate)
             now = datetime.datetime.now()
             timeElapsed = now - prevTs if prevTs else datetime.timedelta()
