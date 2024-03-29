@@ -1260,14 +1260,14 @@ class MainApp(MDApp):
     def model_selection_callback(self, text_item):
         self.select_drone_model(text_item)
         self.model_selection_menu.dismiss()
-        Config.set('preferences', 'selected_model', text_item)
-        Config.write()
         self.stop_flight(True)
         self.list_log_files()
 
 
     def select_drone_model(self, model_name):
         self.root.ids.selected_model.text = model_name
+        Config.set('preferences', 'selected_model', model_name)
+        Config.write()
 
 
     def list_log_files(self):
@@ -1374,6 +1374,7 @@ class MainApp(MDApp):
             importRef = self.execute_db("SELECT count (1) FROM imports WHERE modelref = ?", (modelRef[0][0],))
             if importRef is None or len(importRef) == 0 or importRef[0][0] == 0:
                 self.execute_db("DELETE FROM models WHERE modelref = ?", (modelRef[0][0],))
+                self.select_drone_model("--")
         self.list_log_files()
         self.close_delete_log_dialog(None)
 
@@ -1695,7 +1696,7 @@ class MainApp(MDApp):
             'show_marker_home': True,
             'show_marker_ctrl': False,
             'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
-            'selected_model': ''
+            'selected_model': '--'
         })
         Window.bind(on_keyboard=self.events)
         self.flightPaths = None
