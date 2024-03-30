@@ -1229,7 +1229,7 @@ class MainApp(MDApp):
     def fmt_num(self, num):
         if (num is None):
             return ''
-        return locale.format_string("%.0f", num, True) if self.root.ids.selected_rounding.active else locale.format_string("%.2f", num, True)
+        return locale.format_string("%.0f", num, grouping=True, monetary=False) if self.root.ids.selected_rounding.active else locale.format_string("%.2f", num, grouping=True, monetary=False)
 
 
     '''
