@@ -113,8 +113,8 @@ MDGridLayout:
                             role: "medium" if app.is_desktop else "small"
                             bold: True
                 MDScrollView:
-                    scroll_type: ["bars", "content"] if app.is_desktop else ["content"]
-                    bar_width: dp(15) if app.is_desktop else 0
+                    scroll_type: ["bars", "content"]
+                    bar_width: dp(15)
                     MDGridLayout:
                         cols: 9
                         id: log_files
@@ -123,7 +123,7 @@ MDGridLayout:
                         row_default_height: dp(22) if app.is_desktop else dp(14)
                         size_hint: (1, None)
                         height: self.minimum_height
-                        padding: [0, 0, dp(15), 0] if app.is_desktop else 0
+                        padding: [0, 0, dp(15), 0]
         BaseScreen:
             name: "Screen_Map"
             on_enter: app.entered_screen_map()
@@ -488,15 +488,15 @@ MDGridLayout:
                             icon: "wrench-cog-outline"
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"
                 MDScrollView:
-                    scroll_type: ["bars", "content"] if app.is_desktop else ["content"]
-                    bar_width: dp(15) if app.is_desktop else 0
+                    scroll_type: ["bars", "content"]
+                    bar_width: dp(15)
                     MDGridLayout:
                         cols: 7
                         id: flight_stats_grid
                         md_bg_color: self.theme_cls.backgroundColor
                         row_default_height: dp(30)
                         adaptive_height: True
-                        padding: [0, 0, dp(15), 0] if app.is_desktop else 0
+                        padding: [0, 0, dp(15), 0]
         BaseScreen:
             name: "Screen_Preferences"
             MDGridLayout:
