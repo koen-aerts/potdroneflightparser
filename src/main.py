@@ -69,7 +69,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.1.0"
+    appVersion = "v2.1.0-beta"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -1402,13 +1402,15 @@ class MainApp(MDApp):
 
     def backup_data(self, buttonObj):
         self.close_backup_dialog(None)
-        backupName = f"{self.appPathName}_{self.appVersion}_Backup_{datetime.datetime.now().isoformat()}.zip"
+        dtpart = re.sub("[^0-9]", "", datetime.datetime.now().isoformat())
+        backupName = f"{self.appPathName}_{self.appVersion}_Backup_{dtpart}.zip"
         if platform == 'android':
             cache_dir = user_cache_dir(self.appPathName, self.appPathName)
             zipFile = os.path.join(cache_dir, backupName)
             try:
                 with ZipFile(zipFile, 'w') as zip:
                     zip.write(self.dbFile, os.path.basename(self.dbFile))
+                    zip.write(self.configFile, os.path.basename(self.configFile))
                     for bin_file in self.get_dir_content(self.logfileDir):
                         zip.write(bin_file, os.path.basename(bin_file))
                 url = self.shared_storage.copy_to_shared(zipFile)
