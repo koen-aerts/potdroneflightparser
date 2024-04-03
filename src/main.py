@@ -69,7 +69,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.1.0-beta"
+    appVersion = "v2.1.1"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -1136,12 +1136,12 @@ class MainApp(MDApp):
             self.centerlon = (self.flightStats[flightNum][5] + self.flightStats[flightNum][7]) / 2
             self.zoom_to_fit()
             # Show flight stats.
-            self.root.ids.value_maxdist.text = f"{self.fmt_num(self.flightStats[flightNum][0])} {self.dist_unit()}"
-            self.root.ids.value_maxalt.text = f"{self.fmt_num(self.flightStats[flightNum][1])} {self.dist_unit()}"
-            self.root.ids.value_maxhspeed.text = f"{self.fmt_num(self.flightStats[flightNum][2])} {self.speed_unit()}"
-            self.root.ids.value_maxvspeed.text = f"{self.fmt_num(self.flightStats[flightNum][8])} {self.speed_unit()}"
+            self.root.ids.value_maxdist.text = f"{self.fmt_num(self.dist_val(self.flightStats[flightNum][0]))} {self.dist_unit()}"
+            self.root.ids.value_maxalt.text = f"{self.fmt_num(self.dist_val(self.flightStats[flightNum][1]))} {self.dist_unit()}"
+            self.root.ids.value_maxhspeed.text = f"{self.fmt_num(self.speed_val(self.flightStats[flightNum][2]))} {self.speed_unit()}"
+            self.root.ids.value_maxvspeed.text = f"{self.fmt_num(self.speed_val(self.flightStats[flightNum][8]))} {self.speed_unit()}"
             self.root.ids.value_duration.text = str(self.flightStats[flightNum][3])
-            self.root.ids.value_tottraveled.text = f"{self.fmt_num(self.flightStats[flightNum][9])} {self.dist_unit()}"
+            self.root.ids.value_tottraveled.text = f"{self.fmt_num(self.dist_val(self.flightStats[flightNum][9]))} {self.dist_unit()}"
 
 
     '''
