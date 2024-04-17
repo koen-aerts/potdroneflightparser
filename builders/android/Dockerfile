@@ -15,7 +15,7 @@ RUN echo "export PATH=$PATH:~/.local/bin/" >> .profile; \
     echo "export PATH=$PATH:~/.local/bin/" >> .bashrc; \
     export PATH=$PATH:~/.local/bin/; \
     pip3 install --upgrade buildozer; \
-    pip3 install --upgrade Cython==0.29.33 wheel pip setuptools virtualenv; \
+    pip3 install --upgrade Cython==0.29.36 wheel pip setuptools virtualenv; \
     git clone https://github.com/kivy/python-for-android.git; \
     cd source; \
     yes | buildozer android debug; \
