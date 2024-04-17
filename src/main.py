@@ -1245,7 +1245,7 @@ class MainApp(MDApp):
     '''
     def shorten_dist_val(self, numval):
         num = locale.atof(numval) if isinstance(numval, str) else numval
-        return self.fmt_num(num / 5280) if self.root.ids.selected_uom.text == 'imperial' else self.fmt_num(num / 1000)
+        return self.fmt_num(num / 5280, True) if self.root.ids.selected_uom.text == 'imperial' else self.fmt_num(num / 1000, True)
 
 
     '''
@@ -1265,10 +1265,10 @@ class MainApp(MDApp):
     '''
     Format number based on selected rounding option.
     '''
-    def fmt_num(self, num):
+    def fmt_num(self, num, decimal=False):
         if (num is None):
             return ''
-        return locale.format_string("%.0f", num, grouping=True, monetary=False) if self.root.ids.selected_rounding.active else locale.format_string("%.2f", num, grouping=True, monetary=False)
+        return locale.format_string("%.0f", num, grouping=True, monetary=False) if self.root.ids.selected_rounding.active and not decimal else locale.format_string("%.2f", num, grouping=True, monetary=False)
 
 
     '''
