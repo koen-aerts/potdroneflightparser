@@ -38,6 +38,10 @@ from kivy_garden.mapview.utils import haversine
 if platform == 'android':
     from android.permissions import request_permissions, Permission
     from androidstorage4kivy import SharedStorage, Chooser, ShareSheet
+elif platform == 'ios':
+    # TODO - iOS not currently supported yet. Will require new custom recipe, example .buildozer/ios/platform/kivy-ios/kivy-ios/recipes/ios/src/ios_filechooser.m
+    import ios_utils
+    filechooser = ios_utils.IOSFileChooser()
 else:
     Window.maximize()
     from plyer import filechooser
@@ -69,7 +73,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.1.0-beta"
+    appVersion = "v2.1.1"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -512,6 +516,15 @@ class MainApp(MDApp):
                 time.sleep(0.2)
             if self.chosenFile is not None:
                 self.initiate_import_file(self.chosenFile)
+        elif platform == 'ios':
+            # TODO - iOS not currently supported yet.
+            self.chosenFile = None
+            filechooser.open_file(mime_type="application/zip", on_selection=self.import_ios_chooser_callback)
+            self.chooser_open = True
+            while (self.chooser_open):
+                time.sleep(0.2)
+            if self.chosenFile is not None:
+                self.initiate_import_file(self.chosenFile)
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
@@ -577,13 +590,21 @@ class MainApp(MDApp):
     '''
     File Chooser, called when a file has been selected on the Android device.
     '''
-    def import_chooser_callback(self, uri_list):
+    def import_android_chooser_callback(self, uri_list):
         try:
             for uri in uri_list:
                 self.chosenFile = self.shared_storage.copy_from_shared(uri) # copy to private storage
                 break # Only open the first file from the selection.
         except Exception as e:
             print(f"File Chooser Error: {e}")
+        self.chooser_open = False
+
+
+    '''
+    File Chooser, called when a file has been selected on the iOS device.
+    '''
+    def import_ios_chooser_callback(self, uri_list):
+        # TODO - iOS not supported yet.
         self.chooser_open = False
 
 
@@ -809,6 +830,7 @@ class MainApp(MDApp):
         self.root.ids.value1_alt.text = f"{record[self.columns.index('altitude2')]} {self.dist_unit()}"
         self.root.ids.value2_alt.text = f"Alt: {record[self.columns.index('altitude2')]} {self.dist_unit()}"
         self.root.ids.value1_traveled.text = f"{record[self.columns.index('traveled')]} {self.dist_unit()}"
+        self.root.ids.value1_traveled_short.text = f"({self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()})"
         self.root.ids.value1_dist.text = f"{record[self.columns.index('distance3')]} {self.dist_unit()}"
         self.root.ids.value2_dist.text = f"Dist: {record[self.columns.index('distance3')]} {self.dist_unit()}"
         self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
@@ -1116,6 +1138,7 @@ class MainApp(MDApp):
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
+            self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value2_dist.text = ""
             self.root.ids.value1_hspeed.text = ""
@@ -1136,12 +1159,13 @@ class MainApp(MDApp):
             self.centerlon = (self.flightStats[flightNum][5] + self.flightStats[flightNum][7]) / 2
             self.zoom_to_fit()
             # Show flight stats.
-            self.root.ids.value_maxdist.text = f"{self.fmt_num(self.flightStats[flightNum][0])} {self.dist_unit()}"
-            self.root.ids.value_maxalt.text = f"{self.fmt_num(self.flightStats[flightNum][1])} {self.dist_unit()}"
-            self.root.ids.value_maxhspeed.text = f"{self.fmt_num(self.flightStats[flightNum][2])} {self.speed_unit()}"
-            self.root.ids.value_maxvspeed.text = f"{self.fmt_num(self.flightStats[flightNum][8])} {self.speed_unit()}"
+            self.root.ids.value_maxdist.text = f"{self.fmt_num(self.dist_val(self.flightStats[flightNum][0]))} {self.dist_unit()}"
+            self.root.ids.value_maxalt.text = f"{self.fmt_num(self.dist_val(self.flightStats[flightNum][1]))} {self.dist_unit()}"
+            self.root.ids.value_maxhspeed.text = f"{self.fmt_num(self.speed_val(self.flightStats[flightNum][2]))} {self.speed_unit()}"
+            self.root.ids.value_maxvspeed.text = f"{self.fmt_num(self.speed_val(self.flightStats[flightNum][8]))} {self.speed_unit()}"
             self.root.ids.value_duration.text = str(self.flightStats[flightNum][3])
-            self.root.ids.value_tottraveled.text = f"{self.fmt_num(self.flightStats[flightNum][9])} {self.dist_unit()}"
+            self.root.ids.value_tottraveled.text = f"{self.fmt_num(self.dist_val(self.flightStats[flightNum][9]))} {self.dist_unit()}"
+            self.root.ids.value_tottraveled_short.text = f"({self.shorten_dist_val(self.dist_val(self.flightStats[flightNum][9]))} {self.dist_unit_km()})"
 
 
     '''
@@ -1217,6 +1241,14 @@ class MainApp(MDApp):
 
 
     '''
+    Convert ft to miles or m to km.
+    '''
+    def shorten_dist_val(self, numval):
+        num = locale.atof(numval) if isinstance(numval, str) else numval
+        return self.fmt_num(num / 5280, True) if self.root.ids.selected_uom.text == 'imperial' else self.fmt_num(num / 1000, True)
+
+
+    '''
     Return selected distance unit of measure.
     '''
     def dist_unit(self):
@@ -1224,12 +1256,19 @@ class MainApp(MDApp):
 
 
     '''
+    Return selected distance unit of measure.
+    '''
+    def dist_unit_km(self):
+        return "mi" if self.root.ids.selected_uom.text == 'imperial' else "km"
+
+
+    '''
     Format number based on selected rounding option.
     '''
-    def fmt_num(self, num):
+    def fmt_num(self, num, decimal=False):
         if (num is None):
             return ''
-        return locale.format_string("%.0f", num, grouping=True, monetary=False) if self.root.ids.selected_rounding.active else locale.format_string("%.2f", num, grouping=True, monetary=False)
+        return locale.format_string("%.0f", num, grouping=True, monetary=False) if self.root.ids.selected_rounding.active and not decimal else locale.format_string("%.2f", num, grouping=True, monetary=False)
 
 
     '''
@@ -1603,9 +1642,11 @@ class MainApp(MDApp):
             self.root.ids.value_maxvspeed.text = ""
             self.root.ids.value_duration.text = ""
             self.root.ids.value_tottraveled.text = ""
+            self.root.ids.value_tottraveled_short.text = ""
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
+            self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value2_dist.text = ""
             self.root.ids.value1_hspeed.text = ""
@@ -1682,7 +1723,7 @@ class MainApp(MDApp):
             self.shared_storage = SharedStorage()
             self.chosenFile = None
             self.chooser_open = False # To track Android File Manager (Chooser)
-            self.chooser = Chooser(self.import_chooser_callback)
+            self.chooser = Chooser(self.import_android_chooser_callback)
         Config.read(self.configFile)
         Config.set('kivy', 'window_icon', 'assets/app-icon256.png')
         Config.setdefaults('preferences', {

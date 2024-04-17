@@ -37,7 +37,7 @@ version = 2.1.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = sqlite3,python3==3.11.8,hostpython3==3.11.8,kivy,https://github.com/kivymd/KivyMD/archive/master.zip,androidstorage4kivy,pillow,materialyoucolor,exceptiongroup,asyncgui,asynckivy,platformdirs
+requirements = python3==3.11.8,hostpython3==3.11.8,kivy,https://github.com/kivymd/KivyMD/archive/master.zip,androidstorage4kivy,pillow,materialyoucolor,exceptiongroup,asyncgui,asynckivy,platformdirs,plyer
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -287,7 +287,7 @@ android.minapi = 29
 
 # (list) The Android archs to build for, choices: armeabi-v7a, arm64-v8a, x86, x86_64
 # In past, was `android.arch` as we weren't supporting builds for multiple archs at the same time.
-android.archs = arm64-v8a, armeabi-v7a
+android.archs = arm64-v8a, x86_64
 #android.archs = arm64-v8a
 
 # (int) overrides automatic versionCode computation (used in build.gradle)
@@ -333,7 +333,7 @@ android.debug_artifact = apk
 #p4a.commit = HEAD
 
 # (str) python-for-android git clone directory (if empty, it will be automatically cloned from github)
-p4a.source_dir = /home/builder/python-for-android
+#p4a.source_dir = /home/arch/python-for-android
 
 # (str) The directory in which python-for-android should look for your own build recipes (if any)
 #p4a.local_recipes =
@@ -374,7 +374,7 @@ ios.kivy_ios_branch = master
 #ios.ios_deploy_dir = ../ios_deploy
 # Or specify URL and branch
 ios.ios_deploy_url = https://github.com/phonegap/ios-deploy
-ios.ios_deploy_branch = 1.10.0
+ios.ios_deploy_branch = 1.12.2
 
 # (bool) Whether or not to sign the code
 ios.codesign.allowed = false
