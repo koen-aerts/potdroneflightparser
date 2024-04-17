@@ -49,7 +49,7 @@ To solve this, you can remove the Extended Attributes from the file. You will ha
 
 ```sh
 % cd ~/Downloads
-% xattr -r -d "com.apple.quarantine" ./FlightLogViewer_macos_[arch]_v[x].[x].[x].zip
+% xattr -r -c ./FlightLogViewer_macos_[arch]_v[x].[x].[x].zip
 % unzip ./FlightLogViewer_macos_[arch]_v[x].[x].[x].zip
 ```
 
