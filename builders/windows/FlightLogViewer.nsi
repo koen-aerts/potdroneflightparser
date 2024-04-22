@@ -1,7 +1,7 @@
 # Package script for nullsoft NSIS 3.08 or higher.
 
 !define PRODUCT_NAME "Flight Log Viewer"
-!define PRODUCT_VERSION "2.1.1"
+!define PRODUCT_VERSION "2.1.2"
 !define EXECUTABLE "FlightLogViewer.exe"
 
 # define installer name

@@ -36,18 +36,18 @@ class IOSFileChooser(FileChooser):
         #picker = autoclass("UIDocumentMenuViewController")
         #print(f"######## UIDocumentMenuViewController")
         #print(dir(picker.alloc()))
-        #picker = autoclass("UIDocumentPickerViewController") # This is the controller we want to use; probably requires some custom recipe in kivy-ios, see ios_filechooser.m for reference.
-        picker = autoclass("UIDocumentBrowserViewController")
+        picker = autoclass("UIDocumentPickerViewController") # This is the controller we want to use; probably requires some custom recipe in kivy-ios, see ios_filechooser.m for reference.
+        #picker = autoclass("UIDocumentBrowserViewController")
         #po = picker.alloc().initWithDocumentTypes_(mime_list, True)
         #po = picker.alloc().initWithDocumentTypes_inMode_(mime_list, 0)
-        #po = picker.alloc().initForOpeningContentTypes_asCopy_(mime_list, True)
-        po = picker.alloc().initForOpeningContentTypes_(mime_list)
-        #po.modalPresentationStyle = 2 # UIModalPresentationFullScreen
+        po = picker.alloc().initForOpeningContentTypes_asCopy_(mime_list, True)
+        #po = picker.alloc().initForOpeningContentTypes_(mime_list)
+        po.modalPresentationStyle = 2 # UIModalPresentationFullScreen
         #po.definesPresentationContext = True
-        po.allowsDocumentCreation = False
-        #po.allowsMultipleSelection = False
-        po.allowsPickingMultipleItems = False
-        #po.shouldShowFileExtensions = True
+        #po.allowsDocumentCreation = False
+        po.allowsMultipleSelection = False
+        #po.allowsPickingMultipleItems = False
+        po.shouldShowFileExtensions = True
         po.delegate = self
         return po
 

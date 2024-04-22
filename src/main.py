@@ -16,8 +16,6 @@ from enum import Enum
 from kivy.core.window import Window
 Window.allow_screensaver = False
 
-from platformdirs import user_config_dir, user_data_dir, user_cache_dir
-
 from kivy.utils import platform
 from kivy.config import Config
 from kivymd.app import MDApp
@@ -35,16 +33,16 @@ from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
 
-if platform == 'android':
+if platform == 'android': # Android
     from android.permissions import request_permissions, Permission
     from androidstorage4kivy import SharedStorage, Chooser, ShareSheet
-elif platform == 'ios':
-    # TODO - iOS not currently supported yet. Will require new custom recipe, example .buildozer/ios/platform/kivy-ios/kivy-ios/recipes/ios/src/ios_filechooser.m
-    import ios_utils
-    filechooser = ios_utils.IOSFileChooser()
-else:
+    from platformdirs import user_config_dir, user_data_dir, user_cache_dir
+elif platform == 'ios': # iOS
+    from plyer import storagepath
+else: # Windows, MacOS, Linux
     Window.maximize()
     from plyer import filechooser
+    from platformdirs import user_config_dir, user_data_dir, user_cache_dir
 
 from pathlib import Path
 from zipfile import ZipFile
@@ -73,7 +71,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.1.1"
+    appVersion = "v2.1.2"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -447,6 +445,7 @@ class MainApp(MDApp):
                 self.dialog_wait.open()
                 threading.Thread(target=self.import_file, args=(droneModel, zipBaseName, selectedFile)).start()
             else:
+                self.post_import_cleanup(selectedFile)
                 self.show_warning_message(message=f'This file is already imported on: {already_imported[0][0]}')
                 return
 
@@ -496,7 +495,20 @@ class MainApp(MDApp):
             mainthread(self.select_flight)()
             mainthread(self.select_drone_model)(droneModel)
             mainthread(self.list_log_files)()
+        self.post_import_cleanup(selectedFile)
         self.dialog_wait.dismiss()
+
+
+    '''
+    Delete the import zip file. Applies to iOS only.
+    '''
+    def post_import_cleanup(self, selectedFile):
+        if platform == 'ios':
+            os.remove(selectedFile)
+
+
+    def ios_doc_path(self):
+        return storagepath.get_documents_dir()[7:] # remove "file://" from URL to create a Python-friendly path.
 
 
     '''
@@ -517,14 +529,15 @@ class MainApp(MDApp):
             if self.chosenFile is not None:
                 self.initiate_import_file(self.chosenFile)
         elif platform == 'ios':
-            # TODO - iOS not currently supported yet.
-            self.chosenFile = None
-            filechooser.open_file(mime_type="application/zip", on_selection=self.import_ios_chooser_callback)
-            self.chooser_open = True
-            while (self.chooser_open):
-                time.sleep(0.2)
-            if self.chosenFile is not None:
-                self.initiate_import_file(self.chosenFile)
+            # iOS File Dialog is currently not supported through the Kivy framework. Instead,
+            # grab the zip file through the exposed app's Documents directory where users can
+            # drop the file via the OS File Browser or through iTunes.
+            gotFile = False
+            for zipFile in glob.glob(os.path.join(self.ios_doc_path(), '*.zip'), recursive=False):
+                self.initiate_import_file(zipFile)
+                break
+            if not gotFile:
+                self.show_warning_message(message=f'Nothing to import. Place the log zip file in the flightlogviewer Documents directory, then try again.')
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
@@ -569,6 +582,14 @@ class MainApp(MDApp):
                 self.save_csv_file(csvFile)
                 url = self.shared_storage.copy_to_shared(csvFile)
                 ShareSheet().share_file(url)
+            except Exception as e:
+                print(f"Error saving CSV file {csvFile}: {e}")
+                self.show_error_message(message=f'Error while saving file {csvFile}: {e}')
+        elif platform == 'ios':
+            csvFile = os.path.join(self.ios_doc_path(), csvFilename)
+            try:
+                self.save_csv_file(csvFile)
+                self.show_info_message(message=f'{csvFile} has been exported to the flightlogviewer Documents directory.')
             except Exception as e:
                 print(f"Error saving CSV file {csvFile}: {e}")
                 self.show_error_message(message=f'Error while saving file {csvFile}: {e}')
@@ -1244,8 +1265,10 @@ class MainApp(MDApp):
     Convert ft to miles or m to km.
     '''
     def shorten_dist_val(self, numval):
+        if numval is None:
+            return ""
         num = locale.atof(numval) if isinstance(numval, str) else numval
-        return self.fmt_num(num / 5280, True) if self.root.ids.selected_uom.text == 'imperial' else self.fmt_num(num / 1000, True)
+        return self.fmt_num(num / 5280.0, True) if self.root.ids.selected_uom.text == 'imperial' else self.fmt_num(num / 1000.0, True)
 
 
     '''
@@ -1707,14 +1730,17 @@ class MainApp(MDApp):
         super().__init__(**kwargs)
         locale.setlocale(locale.LC_ALL, '')
         self.is_desktop = platform in ('linux', 'win', 'macosx')
+        self.is_ios = platform == 'ios'
         self.title = self.appTitle
-        self.dataDir = user_data_dir(self.appPathName, self.appPathName)
+        self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
+        print(f"dataDir:{self.dataDir}")
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
         if not os.path.exists(self.logfileDir):
             Path(self.logfileDir).mkdir(parents=True, exist_ok=True)
+        print(f"logfileDir:{self.logfileDir}")
         self.dbFile = os.path.join(self.dataDir, self.dbFilename) # sqlite DB file.
         self.init_db()
-        configDir = user_config_dir(self.appPathName, self.appPathName) # Place where app ini config file goes.
+        configDir = self.dataDir if self.is_ios else user_config_dir(self.appPathName, self.appPathName) # Place where app ini config file goes.
         if not os.path.exists(configDir):
             Path(configDir).mkdir(parents=True, exist_ok=True)
         self.configFile = os.path.join(configDir, self.configFilename) # ini config file.
