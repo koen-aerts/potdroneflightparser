@@ -66,14 +66,21 @@ If you are updating the app to a newer version, you should be able to install on
 ### 1.2.4 iOS
 Option 1: Download the .ipa file to your Mac or Windows computer. Use [Sideloadly](<https://sideloadly.io/> "Sideloadly") to side-load it to your iPhone or iPad. No jailbreak required but you need to re-sync the app from your computer every 7 days.
 
-Option 2: Install [Trollstore](<https://ios.cfw.guide/installing-trollstore/> "Trollstore") on your mobile device. Then download the .ipa file to your device and install it via the Trollstore app. No jailbreak required.
-
-Option 3: [Jailbreak](<https://ios.cfw.guide/get-started/> "iOS Jailbreak Guide") your iOS device, allowing you to install many 3rd party apps that are not available through the Apple Store.
-
-Note about the iOS version of this app. Unlike on the other platforms, the iOS version does not have a File Browser for opening log files and for saving CSV or backup files. Instead, you use the app's Documents folder. You copy the log zip files to that folder, then use the import button to import one log file at a time. Once imported, the log file will disappear from the Documents folder. Similarly, when you export a CSV file or a backup, the file will be created in the app's Documents folder, from where you can then copy it to other locations.
+Option 2: Install [Trollstore](<https://ios.cfw.guide/installing-trollstore/> "Trollstore") on your mobile device.
 
 ![iOS Apps](<resources/ios_desktop1.png> "iOS Apps")
 
+Then download the .ipa file to your device and install it via the Trollstore app. No jailbreak required.
+
+Option 3: [Jailbreak](<https://ios.cfw.guide/get-started/> "iOS Jailbreak Guide") your iOS device, allowing you to install many 3rd party apps that are not available through the Apple Store.
+
+Note about the iOS version of this app. Unlike on the other platforms, the iOS version does not have a File Browser for opening log files and for saving CSV or backup files. Instead, you use the app's Documents folder. You copy the log zip files to that folder, then use the import button to import one log file at a time.
+
+![iOS File Browser](<resources/ios_file_browser1.png> "iOS File Browser")
+
+Once imported, the log file will disappear from the Documents folder. Similarly, when you export a CSV file or a backup, the file will be created in the app's Documents folder, from where you can then copy it to other locations.
+
+![App Documents Folder](<resources/ios_file_browser2.png> "App Documents Folder")
 
 ## 1.2. From Source
 You can run the app directly from source. Use Python 3.11 or greater.
