@@ -58,9 +58,21 @@ Download the .apk file to your device and open it. Depending on your Android ver
 
 Uninstalling the app is the same as you would for any other mobile app.
 
-If you are updating the app to a newer version, you can try to install on top of the existing app, but chances are this will not work. If so, you should use the app's backup feature first to back up your data. It will be saved in a zip file, so make sure you pay attention where you save it. Then you can uninstall the app and install the new version. Once you have the new version running, you will be able to import the backup zip file into the app to restore your data.
+If you are updating the app to a newer version, you should be able to install on top of the existing app. If this does not work, use the app's backup feature first to back up your data. It will be saved to a zip file, so make sure you pay attention where you save it. Then you can uninstall the app and install the new version. Once you have the new version running, you will be able to import the backup zip file into the app to restore your data.
 
 ![App File Buttons](<resources/buttons1.png> "App File Buttons")
+
+
+### 1.2.4 iOS
+Option 1: Download the .ipa file to your Mac or Windows computer. Use [Sideloadly](<https://sideloadly.io/> "Sideloadly") to side-load it to your iPhone or iPad. No jailbreak required but you need to re-sync the app from your computer every 7 days.
+
+Option 2: Install [Trollstore](<https://ios.cfw.guide/installing-trollstore/> "Trollstore") on your mobile device. Then download the .ipa file to your device and install it via the Trollstore app. No jailbreak required.
+
+Option 3: [Jailbreak](<https://ios.cfw.guide/get-started/> "iOS Jailbreak Guide") your iOS device, allowing you to install many 3rd party apps that are not available through the Apple Store.
+
+Note about the iOS version of this app. Unlike on the other platforms, the iOS version does not have a File Browser for opening log files and for saving CSV or backup files. Instead, you use the app's Documents folder. You copy the log zip files to that folder, then use the import button to import one log file at a time. Once imported, the log file will disappear from the Documents folder. Similarly, when you export a CSV file or a backup, the file will be created in the app's Documents folder, from where you can then copy it to other locations.
+
+![iOS Apps](<resources/ios_desktop1.png> "iOS Apps")
 
 
 ## 1.2. From Source

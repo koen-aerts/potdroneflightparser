@@ -531,11 +531,12 @@ class MainApp(MDApp):
         elif platform == 'ios':
             # iOS File Dialog is currently not supported through the Kivy framework. Instead,
             # grab the zip file through the exposed app's Documents directory where users can
-            # drop the file via the OS File Browser or through iTunes.
+            # drop the file via the OS File Browser or through iTunes. Load oldest file first.
             gotFile = False
-            for zipFile in glob.glob(os.path.join(self.ios_doc_path(), '*.zip'), recursive=False):
-                self.initiate_import_file(zipFile)
-                break
+            for zipFile in sorted(glob.glob(os.path.join(self.ios_doc_path(), '*.zip'), recursive=False)):
+                if not "_Backup_" in os.path.basename(zipFile): # Ignore backup zip files.
+                    self.initiate_import_file(zipFile)
+                    break
             if not gotFile:
                 self.show_warning_message(message=f'Nothing to import. Place the log zip file in the flightlogviewer Documents directory, then try again.')
         else:
@@ -1480,6 +1481,17 @@ class MainApp(MDApp):
             except Exception as e:
                 print(f"Error saving zip file {zipFile}: {e}")
                 self.show_error_message(message=f'Error while saving file {zipFile}: {e}')
+        elif platform == 'ios':
+            zipFile = os.path.join(self.ios_doc_path(), backupName)
+            try:
+                with ZipFile(zipFile, 'w') as zip:
+                    zip.write(self.dbFile, os.path.basename(self.dbFile))
+                    zip.write(self.configFile, os.path.basename(self.configFile))
+                    for bin_file in self.get_dir_content(self.logfileDir):
+                        zip.write(bin_file, os.path.basename(bin_file))
+            except Exception as e:
+                print(f"Error saving zip file {zipFile}: {e}")
+                self.show_error_message(message=f'Error while saving file {zipFile}: {e}')
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.choose_dir(title="Save backup file.")
@@ -1540,6 +1552,16 @@ class MainApp(MDApp):
                 time.sleep(0.2)
             if self.chosenFile is not None:
                 self.restore_data(self.chosenFile)
+        elif platform == 'ios':
+            gotFile = False
+            # Restore from the most recent backup file, if there are multiple.
+            for zipFile in sorted(glob.glob(os.path.join(self.ios_doc_path(), '*.zip'), recursive=False), reverse=True):
+                if "_Backup_" in os.path.basename(zipFile): # Ignore zip files that are not backups.
+                    self.restore_data(zipFile)
+                    gotFile = True
+                    break
+            if not gotFile:
+                self.show_warning_message(message=f'Nothing to import. Place the backup zip file in the flightlogviewer Documents directory, then try again.')
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.open_file(title="Select a backup zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")

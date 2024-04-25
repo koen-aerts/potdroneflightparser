@@ -49,18 +49,16 @@ if [ ${hasPythonVersion} -eq 0 ]; then
   pyenv install ${PYTHON_VERSION}
 fi
 pyenv local ${PYTHON_VERSION}
-python -m venv venv
 export PATH=${BIN}:${PATH}
+python -m venv venv
 
 # Install mapview and patch in source location, if not done already.
 if [ ! -d "${SRC}/kivy_garden" ]; then
   ../install_mapview.sh
 fi
 
-# Copy source code to venv
-cp -R ${SRC} ${VIRTUAL_ENV}
-
 # Prep build environment.
+cp -R ${SRC} ${VIRTUAL_ENV}
 cp ${LOC}/FlightLogViewer.spec ${TRG}/
 
 echo "Building .app folder..."
