@@ -1293,8 +1293,8 @@ class MainApp(MDApp):
     Format number based on selected rounding option.
     '''
     def fmt_num(self, num, decimal=False):
-        if (num is None):
-            return ''
+        if num is None:
+            return ""
         return locale.format_string("%.0f", num, grouping=True, monetary=False) if self.root.ids.selected_rounding.active and not decimal else locale.format_string("%.2f", num, grouping=True, monetary=False)
 
 
@@ -1302,6 +1302,8 @@ class MainApp(MDApp):
     Return specified speed in the proper Unit (metric vs imperial).
     '''
     def speed_val(self, num):
+        if num is None:
+            return None
         return num * 2.236936 if self.root.ids.selected_uom.text == 'imperial' else num * 3.6
 
 
