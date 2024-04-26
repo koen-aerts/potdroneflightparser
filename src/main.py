@@ -138,11 +138,6 @@ class MainApp(MDApp):
         tableLen = 0
         for fileRef in binFiles:
             file = fileRef[0]
-            offset1 = 0
-            offset2 = 0
-            if file.endswith(".fc"):
-                offset1 = -6
-                offset2 = -10
             with open(os.path.join(self.logfileDir, file), mode='rb') as flightFile:
                 while True:
                     fcRecord = flightFile.read(512)
@@ -154,6 +149,12 @@ class MainApp(MDApp):
                     elapsed = struct.unpack('<Q', fcRecord[5:13])[0] # Microseconds elapsed since previous reading.
                     if (elapsed == 0):
                         continue # handle rare case of invalid record
+                    isLegacyLog = struct.unpack('<B', fcRecord[509:510])[0] == 0 and struct.unpack('<B', fcRecord[510:511])[0] == 0 and struct.unpack('<B', fcRecord[511:512])[0] == 0
+                    offset1 = 0
+                    offset2 = 0
+                    if not isLegacyLog:
+                        offset1 = -6
+                        offset2 = -10
                     satellites = struct.unpack('<B', fcRecord[46:47])[0] # Number of satellites.
                     dronelat = struct.unpack('<i', fcRecord[53+offset1:57+offset1])[0]/10000000 # Drone coords.
                     dronelon = struct.unpack('<i', fcRecord[57+offset1:61+offset1])[0]/10000000
@@ -168,7 +169,7 @@ class MainApp(MDApp):
                     dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
                     dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
                     dist3metric = struct.unpack('f', fcRecord[431+offset2:435+offset2])[0]# Distance from home point, as reported by the drone.
-                    dist3 = self.dist_val(dist3metric) 
+                    dist3 = self.dist_val(dist3metric)
                     gps = struct.unpack('f', fcRecord[279+offset2:283+offset2])[0] # GPS (-1 = no GPS, 0 = GPS ready, 2 and up = GPS in use)
                     gpsStatus = 'Yes' if gps >= 0 else 'No'
                     #sdff = (special - 2) * 4 * 60 * 1000
@@ -1755,11 +1756,9 @@ class MainApp(MDApp):
         self.is_ios = platform == 'ios'
         self.title = self.appTitle
         self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
-        print(f"dataDir:{self.dataDir}")
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
         if not os.path.exists(self.logfileDir):
             Path(self.logfileDir).mkdir(parents=True, exist_ok=True)
-        print(f"logfileDir:{self.logfileDir}")
         self.dbFile = os.path.join(self.dataDir, self.dbFilename) # sqlite DB file.
         self.init_db()
         configDir = self.dataDir if self.is_ios else user_config_dir(self.appPathName, self.appPathName) # Place where app ini config file goes.
