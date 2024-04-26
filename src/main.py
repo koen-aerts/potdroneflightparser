@@ -152,7 +152,7 @@ class MainApp(MDApp):
                     isLegacyLog = struct.unpack('<B', fcRecord[509:510])[0] == 0 and struct.unpack('<B', fcRecord[510:511])[0] == 0 and struct.unpack('<B', fcRecord[511:512])[0] == 0
                     offset1 = 0
                     offset2 = 0
-                    if not isLegacyLog:
+                    if not isLegacyLog: # 0,0,0 = legacy, 3,3,0 = new
                         offset1 = -6
                         offset2 = -10
                     satellites = struct.unpack('<B', fcRecord[46:47])[0] # Number of satellites.
