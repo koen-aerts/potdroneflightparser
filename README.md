@@ -74,7 +74,7 @@ Then download the .ipa file to your device and install it via the Trollstore app
 
 Option 3: [Jailbreak](<https://ios.cfw.guide/get-started/> "iOS Jailbreak Guide") your iOS device, allowing you to install many 3rd party apps that are not available through the Apple Store.
 
-Note about the iOS version of this app. Unlike on the other platforms, the iOS version does not have a File Browser for opening log files and for saving CSV or backup files. Instead, you use the app's Documents folder. You copy the log zip files to that folder, then use the import button to import one log file at a time.
+Note about the iOS version of this app. Unlike on the other platforms, the app does not open a File Browser when you want to import a log file or save a CSV or backup. Instead, you use the standard File Browser on your device to copy files in and out of the Flight Log Viewer Documents folder. You copy the log zip files into that folder, then use the import button to import one log file at a time.
 
 ![iOS File Browser](<resources/ios_file_browser1.png> "iOS File Browser")
 
