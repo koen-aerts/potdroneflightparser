@@ -1260,6 +1260,8 @@ class MainApp(MDApp):
     Return specified distance in the proper Unit (metric vs imperial).
     '''
     def dist_val(self, num):
+        if num is None:
+            return None
         return num * 3.28084 if self.root.ids.selected_uom.text == 'imperial' else num
 
 
