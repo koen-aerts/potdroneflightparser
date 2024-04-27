@@ -197,6 +197,17 @@ MDGridLayout:
                                 width: dp(90) if app.is_desktop else dp(60)
                                 role: "large" if app.is_desktop else "small"
                             StatLabel:
+                                text: ""
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value1_dist_short
+                                text: ""
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
+                            StatLabel:
                                 text: "Altitude:"
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(105) if app.is_desktop else dp(90)
@@ -230,23 +241,12 @@ MDGridLayout:
                                 width: dp(90) if app.is_desktop else dp(60)
                                 role: "large" if app.is_desktop else "small"
                             StatLabel:
-                                text: "Flown:"
+                                text: "Dist Flown:"
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(105) if app.is_desktop else dp(90)
                                 role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value1_traveled
-                                text: ""
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(90) if app.is_desktop else dp(60)
-                                role: "large" if app.is_desktop else "small"
-                            StatLabel:
-                                text: ""
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(105) if app.is_desktop else dp(90)
-                                role: "large" if app.is_desktop else "small"
-                            StatValue:
-                                id: value1_traveled_short
                                 text: ""
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(90) if app.is_desktop else dp(60)
@@ -286,6 +286,17 @@ MDGridLayout:
                                 width: dp(90) if app.is_desktop else dp(60)
                                 role: "large" if app.is_desktop else "small"
                             StatLabel:
+                                text: ""
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value_maxdist_short
+                                text: ""
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
+                            StatLabel:
                                 text: "Max Alt:"
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(105) if app.is_desktop else dp(90)
@@ -297,7 +308,7 @@ MDGridLayout:
                                 width: dp(90) if app.is_desktop else dp(60)
                                 role: "large" if app.is_desktop else "small"
                             StatLabel:
-                                text: "Max H Speed:"
+                                text: "Max H Spd:"
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(105) if app.is_desktop else dp(90)
                                 role: "large" if app.is_desktop else "small"
@@ -308,29 +319,7 @@ MDGridLayout:
                                 width: dp(90) if app.is_desktop else dp(60)
                                 role: "large" if app.is_desktop else "small"
                             StatLabel:
-                                text: "Max V Speed:"
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(105) if app.is_desktop else dp(90)
-                                role: "large" if app.is_desktop else "small"
-                            StatValue:
-                                id: value_maxvspeed
-                                text: ""
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(90) if app.is_desktop else dp(60)
-                                role: "large" if app.is_desktop else "small"
-                            StatLabel:
-                                text: "Duration:"
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(105) if app.is_desktop else dp(90)
-                                role: "large" if app.is_desktop else "small"
-                            StatValue:
-                                id: value_duration
-                                text: ""
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(90) if app.is_desktop else dp(60)
-                                role: "large" if app.is_desktop else "small"
-                            StatLabel:
-                                text: "Dist Flown:"
+                                text: "Total Dist:"
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(105) if app.is_desktop else dp(90)
                                 role: "large" if app.is_desktop else "small"
@@ -347,6 +336,17 @@ MDGridLayout:
                                 role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value_tottraveled_short
+                                text: ""
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
+                            StatLabel:
+                                text: "Duration:"
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value_duration
                                 text: ""
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(90) if app.is_desktop else dp(60)
