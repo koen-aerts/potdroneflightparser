@@ -16,8 +16,6 @@ from enum import Enum
 from kivy.core.window import Window
 Window.allow_screensaver = False
 
-from platformdirs import user_config_dir, user_data_dir, user_cache_dir
-
 from kivy.utils import platform
 from kivy.config import Config
 from kivymd.app import MDApp
@@ -35,16 +33,16 @@ from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
 
-if platform == 'android':
+if platform == 'android': # Android
     from android.permissions import request_permissions, Permission
     from androidstorage4kivy import SharedStorage, Chooser, ShareSheet
-elif platform == 'ios':
-    # TODO - iOS not currently supported yet. Will require new custom recipe, example .buildozer/ios/platform/kivy-ios/kivy-ios/recipes/ios/src/ios_filechooser.m
-    import ios_utils
-    filechooser = ios_utils.IOSFileChooser()
-else:
+    from platformdirs import user_config_dir, user_data_dir, user_cache_dir
+elif platform == 'ios': # iOS
+    from plyer import storagepath
+else: # Windows, MacOS, Linux
     Window.maximize()
     from plyer import filechooser
+    from platformdirs import user_config_dir, user_data_dir, user_cache_dir
 
 from pathlib import Path
 from zipfile import ZipFile
@@ -73,7 +71,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.1.1"
+    appVersion = "v2.1.2"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -140,11 +138,6 @@ class MainApp(MDApp):
         tableLen = 0
         for fileRef in binFiles:
             file = fileRef[0]
-            offset1 = 0
-            offset2 = 0
-            if file.endswith(".fc"):
-                offset1 = -6
-                offset2 = -10
             with open(os.path.join(self.logfileDir, file), mode='rb') as flightFile:
                 while True:
                     fcRecord = flightFile.read(512)
@@ -156,6 +149,12 @@ class MainApp(MDApp):
                     elapsed = struct.unpack('<Q', fcRecord[5:13])[0] # Microseconds elapsed since previous reading.
                     if (elapsed == 0):
                         continue # handle rare case of invalid record
+                    isLegacyLog = struct.unpack('<B', fcRecord[509:510])[0] == 0 and struct.unpack('<B', fcRecord[510:511])[0] == 0 and struct.unpack('<B', fcRecord[511:512])[0] == 0
+                    offset1 = 0
+                    offset2 = 0
+                    if not isLegacyLog: # 0,0,0 = legacy, 3,3,0 = new
+                        offset1 = -6
+                        offset2 = -10
                     satellites = struct.unpack('<B', fcRecord[46:47])[0] # Number of satellites.
                     dronelat = struct.unpack('<i', fcRecord[53+offset1:57+offset1])[0]/10000000 # Drone coords.
                     dronelon = struct.unpack('<i', fcRecord[57+offset1:61+offset1])[0]/10000000
@@ -170,7 +169,7 @@ class MainApp(MDApp):
                     dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
                     dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
                     dist3metric = struct.unpack('f', fcRecord[431+offset2:435+offset2])[0]# Distance from home point, as reported by the drone.
-                    dist3 = self.dist_val(dist3metric) 
+                    dist3 = self.dist_val(dist3metric)
                     gps = struct.unpack('f', fcRecord[279+offset2:283+offset2])[0] # GPS (-1 = no GPS, 0 = GPS ready, 2 and up = GPS in use)
                     gpsStatus = 'Yes' if gps >= 0 else 'No'
                     #sdff = (special - 2) * 4 * 60 * 1000
@@ -447,6 +446,7 @@ class MainApp(MDApp):
                 self.dialog_wait.open()
                 threading.Thread(target=self.import_file, args=(droneModel, zipBaseName, selectedFile)).start()
             else:
+                self.post_import_cleanup(selectedFile)
                 self.show_warning_message(message=f'This file is already imported on: {already_imported[0][0]}')
                 return
 
@@ -496,7 +496,20 @@ class MainApp(MDApp):
             mainthread(self.select_flight)()
             mainthread(self.select_drone_model)(droneModel)
             mainthread(self.list_log_files)()
+        self.post_import_cleanup(selectedFile)
         self.dialog_wait.dismiss()
+
+
+    '''
+    Delete the import zip file. Applies to iOS only.
+    '''
+    def post_import_cleanup(self, selectedFile):
+        if platform == 'ios':
+            os.remove(selectedFile)
+
+
+    def ios_doc_path(self):
+        return storagepath.get_documents_dir()[7:] # remove "file://" from URL to create a Python-friendly path.
 
 
     '''
@@ -517,14 +530,16 @@ class MainApp(MDApp):
             if self.chosenFile is not None:
                 self.initiate_import_file(self.chosenFile)
         elif platform == 'ios':
-            # TODO - iOS not currently supported yet.
-            self.chosenFile = None
-            filechooser.open_file(mime_type="application/zip", on_selection=self.import_ios_chooser_callback)
-            self.chooser_open = True
-            while (self.chooser_open):
-                time.sleep(0.2)
-            if self.chosenFile is not None:
-                self.initiate_import_file(self.chosenFile)
+            # iOS File Dialog is currently not supported through the Kivy framework. Instead,
+            # grab the zip file through the exposed app's Documents directory where users can
+            # drop the file via the OS File Browser or through iTunes. Load oldest file first.
+            gotFile = False
+            for zipFile in sorted(glob.glob(os.path.join(self.ios_doc_path(), '*.zip'), recursive=False)):
+                if not "_Backup_" in os.path.basename(zipFile): # Ignore backup zip files.
+                    self.initiate_import_file(zipFile)
+                    break
+            if not gotFile:
+                self.show_warning_message(message=f'Nothing to import. Place the log zip file in the flightlogviewer Documents directory, then try again.')
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
@@ -569,6 +584,14 @@ class MainApp(MDApp):
                 self.save_csv_file(csvFile)
                 url = self.shared_storage.copy_to_shared(csvFile)
                 ShareSheet().share_file(url)
+            except Exception as e:
+                print(f"Error saving CSV file {csvFile}: {e}")
+                self.show_error_message(message=f'Error while saving file {csvFile}: {e}')
+        elif platform == 'ios':
+            csvFile = os.path.join(self.ios_doc_path(), csvFilename)
+            try:
+                self.save_csv_file(csvFile)
+                self.show_info_message(message=f'{csvFile} has been exported to the flightlogviewer Documents directory.')
             except Exception as e:
                 print(f"Error saving CSV file {csvFile}: {e}")
                 self.show_error_message(message=f'Error while saving file {csvFile}: {e}')
@@ -830,8 +853,8 @@ class MainApp(MDApp):
         self.root.ids.value1_alt.text = f"{record[self.columns.index('altitude2')]} {self.dist_unit()}"
         self.root.ids.value2_alt.text = f"Alt: {record[self.columns.index('altitude2')]} {self.dist_unit()}"
         self.root.ids.value1_traveled.text = f"{record[self.columns.index('traveled')]} {self.dist_unit()}"
-        self.root.ids.value1_traveled_short.text = f"({self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()})"
         self.root.ids.value1_dist.text = f"{record[self.columns.index('distance3')]} {self.dist_unit()}"
+        self.root.ids.value1_dist_short.text = f"({self.shorten_dist_val(record[self.columns.index('distance3')])} {self.dist_unit_km()})"
         self.root.ids.value2_dist.text = f"Dist: {record[self.columns.index('distance3')]} {self.dist_unit()}"
         self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
         self.root.ids.value2_hspeed.text = f"HS: {record[self.columns.index('speed2')]} {self.speed_unit()}"
@@ -1138,8 +1161,8 @@ class MainApp(MDApp):
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
-            self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_dist.text = ""
+            self.root.ids.value1_dist_short.text = ""
             self.root.ids.value2_dist.text = ""
             self.root.ids.value1_hspeed.text = ""
             self.root.ids.value2_hspeed.text = ""
@@ -1160,9 +1183,9 @@ class MainApp(MDApp):
             self.zoom_to_fit()
             # Show flight stats.
             self.root.ids.value_maxdist.text = f"{self.fmt_num(self.dist_val(self.flightStats[flightNum][0]))} {self.dist_unit()}"
+            self.root.ids.value_maxdist_short.text = f"({self.shorten_dist_val(self.fmt_num(self.dist_val(self.flightStats[flightNum][0])))} {self.dist_unit_km()})"
             self.root.ids.value_maxalt.text = f"{self.fmt_num(self.dist_val(self.flightStats[flightNum][1]))} {self.dist_unit()}"
             self.root.ids.value_maxhspeed.text = f"{self.fmt_num(self.speed_val(self.flightStats[flightNum][2]))} {self.speed_unit()}"
-            self.root.ids.value_maxvspeed.text = f"{self.fmt_num(self.speed_val(self.flightStats[flightNum][8]))} {self.speed_unit()}"
             self.root.ids.value_duration.text = str(self.flightStats[flightNum][3])
             self.root.ids.value_tottraveled.text = f"{self.fmt_num(self.dist_val(self.flightStats[flightNum][9]))} {self.dist_unit()}"
             self.root.ids.value_tottraveled_short.text = f"({self.shorten_dist_val(self.dist_val(self.flightStats[flightNum][9]))} {self.dist_unit_km()})"
@@ -1237,6 +1260,8 @@ class MainApp(MDApp):
     Return specified distance in the proper Unit (metric vs imperial).
     '''
     def dist_val(self, num):
+        if num is None:
+            return None
         return num * 3.28084 if self.root.ids.selected_uom.text == 'imperial' else num
 
 
@@ -1244,8 +1269,10 @@ class MainApp(MDApp):
     Convert ft to miles or m to km.
     '''
     def shorten_dist_val(self, numval):
+        if numval is None:
+            return ""
         num = locale.atof(numval) if isinstance(numval, str) else numval
-        return self.fmt_num(num / 5280, True) if self.root.ids.selected_uom.text == 'imperial' else self.fmt_num(num / 1000, True)
+        return self.fmt_num(num / 5280.0, True) if self.root.ids.selected_uom.text == 'imperial' else self.fmt_num(num / 1000.0, True)
 
 
     '''
@@ -1266,8 +1293,8 @@ class MainApp(MDApp):
     Format number based on selected rounding option.
     '''
     def fmt_num(self, num, decimal=False):
-        if (num is None):
-            return ''
+        if num is None:
+            return ""
         return locale.format_string("%.0f", num, grouping=True, monetary=False) if self.root.ids.selected_rounding.active and not decimal else locale.format_string("%.2f", num, grouping=True, monetary=False)
 
 
@@ -1275,6 +1302,8 @@ class MainApp(MDApp):
     Return specified speed in the proper Unit (metric vs imperial).
     '''
     def speed_val(self, num):
+        if num is None:
+            return None
         return num * 2.236936 if self.root.ids.selected_uom.text == 'imperial' else num * 3.6
 
 
@@ -1457,6 +1486,17 @@ class MainApp(MDApp):
             except Exception as e:
                 print(f"Error saving zip file {zipFile}: {e}")
                 self.show_error_message(message=f'Error while saving file {zipFile}: {e}')
+        elif platform == 'ios':
+            zipFile = os.path.join(self.ios_doc_path(), backupName)
+            try:
+                with ZipFile(zipFile, 'w') as zip:
+                    zip.write(self.dbFile, os.path.basename(self.dbFile))
+                    zip.write(self.configFile, os.path.basename(self.configFile))
+                    for bin_file in self.get_dir_content(self.logfileDir):
+                        zip.write(bin_file, os.path.basename(bin_file))
+            except Exception as e:
+                print(f"Error saving zip file {zipFile}: {e}")
+                self.show_error_message(message=f'Error while saving file {zipFile}: {e}')
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.choose_dir(title="Save backup file.")
@@ -1517,6 +1557,16 @@ class MainApp(MDApp):
                 time.sleep(0.2)
             if self.chosenFile is not None:
                 self.restore_data(self.chosenFile)
+        elif platform == 'ios':
+            gotFile = False
+            # Restore from the most recent backup file, if there are multiple.
+            for zipFile in sorted(glob.glob(os.path.join(self.ios_doc_path(), '*.zip'), recursive=False), reverse=True):
+                if "_Backup_" in os.path.basename(zipFile): # Ignore zip files that are not backups.
+                    self.restore_data(zipFile)
+                    gotFile = True
+                    break
+            if not gotFile:
+                self.show_warning_message(message=f'Nothing to import. Place the backup zip file in the flightlogviewer Documents directory, then try again.')
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.open_file(title="Select a backup zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
@@ -1637,17 +1687,17 @@ class MainApp(MDApp):
             self.clear_map()
             self.root.ids.value_date.text = ""
             self.root.ids.value_maxdist.text = ""
+            self.root.ids.value_maxdist_short.text = ""
             self.root.ids.value_maxalt.text = ""
             self.root.ids.value_maxhspeed.text = ""
-            self.root.ids.value_maxvspeed.text = ""
             self.root.ids.value_duration.text = ""
             self.root.ids.value_tottraveled.text = ""
             self.root.ids.value_tottraveled_short.text = ""
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
-            self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_dist.text = ""
+            self.root.ids.value1_dist_short.text = ""
             self.root.ids.value2_dist.text = ""
             self.root.ids.value1_hspeed.text = ""
             self.root.ids.value2_hspeed.text = ""
@@ -1707,14 +1757,15 @@ class MainApp(MDApp):
         super().__init__(**kwargs)
         locale.setlocale(locale.LC_ALL, '')
         self.is_desktop = platform in ('linux', 'win', 'macosx')
+        self.is_ios = platform == 'ios'
         self.title = self.appTitle
-        self.dataDir = user_data_dir(self.appPathName, self.appPathName)
+        self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
         if not os.path.exists(self.logfileDir):
             Path(self.logfileDir).mkdir(parents=True, exist_ok=True)
         self.dbFile = os.path.join(self.dataDir, self.dbFilename) # sqlite DB file.
         self.init_db()
-        configDir = user_config_dir(self.appPathName, self.appPathName) # Place where app ini config file goes.
+        configDir = self.dataDir if self.is_ios else user_config_dir(self.appPathName, self.appPathName) # Place where app ini config file goes.
         if not os.path.exists(configDir):
             Path(configDir).mkdir(parents=True, exist_ok=True)
         self.configFile = os.path.join(configDir, self.configFilename) # ini config file.
