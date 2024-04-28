@@ -71,7 +71,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.1.2"
+    appVersion = "v2.2.0"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -89,6 +89,7 @@ class MainApp(MDApp):
     '''
     def parse_atom_logs(self, importRef):
         self.zipFilename = importRef
+        self.root.ids.maptitle.text = importRef
         fpvFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype = 'FPV' ORDER BY filename", (importRef,))
         binFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype IN ('BIN','FC') ORDER BY filename", (importRef,))
 
@@ -853,6 +854,7 @@ class MainApp(MDApp):
         self.root.ids.value1_alt.text = f"{record[self.columns.index('altitude2')]} {self.dist_unit()}"
         self.root.ids.value2_alt.text = f"Alt: {record[self.columns.index('altitude2')]} {self.dist_unit()}"
         self.root.ids.value1_traveled.text = f"{record[self.columns.index('traveled')]} {self.dist_unit()}"
+        self.root.ids.value1_traveled_short.text = f"({self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()})"
         self.root.ids.value1_dist.text = f"{record[self.columns.index('distance3')]} {self.dist_unit()}"
         self.root.ids.value1_dist_short.text = f"({self.shorten_dist_val(record[self.columns.index('distance3')])} {self.dist_unit_km()})"
         self.root.ids.value2_dist.text = f"Dist: {record[self.columns.index('distance3')]} {self.dist_unit()}"
@@ -1161,6 +1163,7 @@ class MainApp(MDApp):
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
+            self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value1_dist_short.text = ""
             self.root.ids.value2_dist.text = ""
@@ -1682,6 +1685,7 @@ class MainApp(MDApp):
         self.playback_speed = 1
         self.map_rebuild_required = True
         if self.root:
+            self.root.ids.maptitle.text = f"{self.appTitle} - Map"
             self.root.ids.selected_path.text = '--'
             self.zoom = self.defaultMapZoom
             self.clear_map()
@@ -1696,6 +1700,7 @@ class MainApp(MDApp):
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
+            self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value1_dist_short.text = ""
             self.root.ids.value2_dist.text = ""

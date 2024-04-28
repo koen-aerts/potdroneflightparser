@@ -138,6 +138,7 @@ MDGridLayout:
                             icon: "close"
                             on_release: app.close_map_screen()
                     MDTopAppBarTitle:
+                        id: maptitle
                         text: f"{app.appTitle} - Map"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
@@ -247,6 +248,17 @@ MDGridLayout:
                                 role: "large" if app.is_desktop else "small"
                             StatValue:
                                 id: value1_traveled
+                                text: ""
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(60)
+                                role: "large" if app.is_desktop else "small"
+                            StatLabel:
+                                text: ""
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value1_traveled_short
                                 text: ""
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(90) if app.is_desktop else dp(60)
