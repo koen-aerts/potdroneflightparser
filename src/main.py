@@ -33,6 +33,7 @@ from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
 
+
 if platform == 'android': # Android
     from android.permissions import request_permissions, Permission
     from androidstorage4kivy import SharedStorage, Chooser, ShareSheet
@@ -407,7 +408,15 @@ class MainApp(MDApp):
 
     def show_flight_date(self, importRef):
         logDate = re.sub(r"-.*", r"", importRef) # Extract date section from log (zip) filename.
-        self.root.ids.value_date.text = datetime.date.fromisoformat(logDate).strftime("%x")
+        if platform == 'linux':
+            date_str = logDate
+            year = int(date_str[0:4])
+            month = int(date_str[4:6])
+            day = int(date_str[6:8])
+            xddt = datetime.date(year, month, day)
+            self.root.ids.value_date.text = xddt.strftime("%x")
+        else:
+            self.root.ids.value_date.text = datetime.date.fromisoformat(logDate).strftime("%x")
 
 
     def show_flight_stats(self):
@@ -1361,7 +1370,15 @@ class MainApp(MDApp):
         self.root.ids.log_files.add_widget(MDLabel(text="Max V Sp", bold=True, max_lines=1, halign="right", valign="top", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="", bold=True))
         for importRef in imports:
-            dt = datetime.date.fromisoformat(importRef[1]).strftime("%x")
+            if platform == 'linux':
+                date_str = importRef[1]
+                year = int(date_str[0:4])
+                month = int(date_str[4:6])
+                day = int(date_str[6:8])
+                xddt = datetime.date(year, month, day)
+                dt = xddt.strftime("%x")
+            else:
+                dt = datetime.date.fromisoformat(importRef[1]).strftime("%x")
             button1 = MDButton(MDButtonText(text=f"{dt}"), on_release=self.initiate_log_file, style="text", size_hint=(None, None))
             button1.value = importRef[0]
             self.root.ids.log_files.add_widget(button1)
