@@ -124,6 +124,11 @@ class MainApp(MDApp):
             file = fileRef[0]
             timestampMarkers.append(datetime.datetime.strptime(re.sub("-.*", "", file), '%Y%m%d%H%M%S'))
 
+        if len(timestampMarkers) == 0:
+            # Code should not get here, unless empty files were imported in older versions of this app.
+            self.show_warning_message(message=f'No flight data in zip file.')
+            return
+
         filenameTs = timestampMarkers[0]
         prevReadingTs = timestampMarkers[0]
         firstTs = None
@@ -453,8 +458,9 @@ class MainApp(MDApp):
 
 
     def import_file(self, droneModel, zipBaseName, selectedFile):
-        isNewZip = True
+        hasFc = False
         lcDM = droneModel.lower()
+        fpvList = []
         # Extract the bin files and copy to the app data directory, then update the DB references.
         binLog = os.path.join(tempfile.gettempdir(), "flightdata")
         shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
@@ -466,23 +472,33 @@ class MainApp(MDApp):
                 "BIN" if binBaseName.endswith("-FC.bin") else (
                 "FC" if binBaseName.endswith("-FC.fc") else None))
             if binType is not None:
-                if isNewZip:
-                    logDate = re.sub(r"-.*", r"", zipBaseName) # Extract date section from zip filename.
-                    self.execute_db("INSERT OR IGNORE INTO models(modelref) VALUES(?)", (droneModel,))
+                if binType == 'FPV':
+                    fpvList.append(binFile)
+                else:
+                    if not hasFc:
+                        logDate = re.sub(r"-.*", r"", zipBaseName) # Extract date section from zip filename.
+                        self.execute_db("INSERT OR IGNORE INTO models(modelref) VALUES(?)", (droneModel,))
+                        self.execute_db(
+                            "INSERT OR IGNORE INTO imports(importref, modelref, dateref, importedon) VALUES(?,?,?,?)",
+                            (zipBaseName, droneModel, logDate, datetime.datetime.now().isoformat())
+                        )
+                        hasFc = True
+                    shutil.copyfile(binFile, os.path.join(self.logfileDir, binBaseName))
                     self.execute_db(
-                        "INSERT OR IGNORE INTO imports(importref, modelref, dateref, importedon) VALUES(?,?,?,?)",
-                        (zipBaseName, droneModel, logDate, datetime.datetime.now().isoformat())
+                        "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
+                        (binBaseName, zipBaseName, binType)
                     )
-                    isNewZip = False
-                shutil.copyfile(binFile, os.path.join(self.logfileDir, binBaseName))
+        if hasFc:
+            # Once we have FC bin/fc files, we will also import FVP files as well.
+            for fpvFile in fpvList:
+                fpvBaseName = os.path.basename(fpvFile)
+                shutil.copyfile(fpvFile, os.path.join(self.logfileDir, fpvBaseName))
                 self.execute_db(
                     "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
-                    (binBaseName, zipBaseName, binType)
+                    (fpvBaseName, zipBaseName, "FPV")
                 )
         shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
-        if isNewZip:
-            self.show_warning_message(message=f'Nothing to import.')
-        else:
+        if hasFc:
             self.show_info_message(message=f'Log file import completed.')
             self.map_rebuild_required = False
             mainthread(self.open_view)("Screen_Map")
@@ -497,6 +513,8 @@ class MainApp(MDApp):
             mainthread(self.select_flight)()
             mainthread(self.select_drone_model)(droneModel)
             mainthread(self.list_log_files)()
+        else:
+            self.show_warning_message(message=f'Nothing to import.')
         self.post_import_cleanup(selectedFile)
         self.dialog_wait.dismiss()
 
@@ -1600,6 +1618,8 @@ class MainApp(MDApp):
                 else:
                     shutil.copy(binFile, os.path.join(self.logfileDir, binBaseName))
             self.show_info_message(message=f'Restored from: {selectedFile}.')
+            Config.read(self.configFile)
+            self.init_prefs()
             self.reset()
         else:
             self.show_error_message(message=f'Not a valid backup zip file specified: {selectedFile}')
@@ -1676,6 +1696,21 @@ class MainApp(MDApp):
         self.execute_db("CREATE INDEX IF NOT EXISTS flight_stats_index ON flight_stats(importref)")
 
 
+    def init_prefs(self):
+        self.root.ids.selected_uom.text = Config.get('preferences', 'unit_of_measure')
+        self.root.ids.selected_home_marker.active = Config.getboolean('preferences', 'show_marker_home')
+        self.root.ids.selected_ctrl_marker.active = Config.getboolean('preferences', 'show_marker_ctrl')
+        self.root.ids.selected_flight_path_width.value = Config.get('preferences', 'flight_path_width')
+        self.root.ids.selected_flight_path_color.value = Config.getint('preferences', 'flight_path_color')
+        self.root.ids.selected_marker_drone_color.value = Config.getint('preferences', 'marker_drone_color')
+        self.root.ids.selected_marker_ctrl_color.value = Config.getint('preferences', 'marker_ctrl_color')
+        self.root.ids.selected_marker_home_color.value = Config.getint('preferences', 'marker_home_color')
+        self.root.ids.selected_rounding.active = Config.getboolean('preferences', 'rounded_readings')
+        self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
+        self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
+        self.root.ids.selected_model.text = Config.get('preferences', 'selected_model')
+
+
     '''
     Reset the application as it were before opening a file.
     '''
@@ -1729,6 +1764,44 @@ class MainApp(MDApp):
         if self.root:
             self.root.ids.screen_manager.current = "Screen_Log_Files"
             self.center_map()
+
+
+    def cleanup_orphaned_refs(self):
+        importedFiles = []
+        for fileRef in self.execute_db("SELECT filename FROM log_files"):
+            importedFiles.append(fileRef[0])
+        filesOnDisk = []
+        for binFile in glob.glob(os.path.join(self.logfileDir, '*'), recursive=False):
+            binBasename = os.path.basename(binFile)
+            if binBasename in importedFiles:
+                filesOnDisk.append(binBasename)
+            else:
+                print(f"Deleting unreferenced file {binBasename}")
+                os.remove(binFile)
+        for importedFile in importedFiles:
+            if importedFile not in filesOnDisk:
+                print(f"Deleting orphaned reference to {importedFile}")
+                importRefRecs = self.execute_db("SELECT importref FROM log_files WHERE filename = ?", (importedFile,))
+                importRef = importRefRecs[0][0] if importRefRecs is not None and len(importRefRecs) > 0 else None
+                if importRef is not None:
+                    logFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ?", (importRef,))
+                    for fileRef in logFiles:
+                        file = fileRef[0]
+                        try:
+                            os.remove(os.path.join(self.logfileDir, file))
+                        except:
+                            # Do nothing.
+                            ...
+                    modelRef = self.execute_db("SELECT modelref FROM imports WHERE importref = ?", (importRef,))
+                    self.execute_db("DELETE FROM flight_stats WHERE importref = ?", (importRef,))
+                    self.execute_db("DELETE FROM log_files WHERE importref = ?", (importRef,))
+                    self.execute_db("DELETE FROM imports WHERE importref = ?", (importRef,))
+                    if modelRef is not None and len(modelRef) > 0:
+                        importRef = self.execute_db("SELECT count (1) FROM imports WHERE modelref = ?", (modelRef[0][0],))
+                        if importRef is None or len(importRef) == 0 or importRef[0][0] == 0:
+                            self.execute_db("DELETE FROM models WHERE modelref = ?", (modelRef[0][0],))
+                else:
+                    self.execute_db("DELETE FROM log_files WHERE filename = ?", (importedFile,))
 
 
     '''
@@ -1826,26 +1899,14 @@ class MainApp(MDApp):
             )
         )
         self.dialog_wait.auto_dismiss = False
-        # TODO - delete bin files not in DB
-        # TODO - delete DB records not in files
+        self.cleanup_orphaned_refs()
         # TODO - https://github.com/kivy-garden/graph
         # TODO - add graphs: total duration per date/log, max distance per log, # flights per day, avg duration per flight per log, etc.
 
 
     def build(self):
         self.icon = 'assets/app-icon256.png'
-        self.root.ids.selected_uom.text = Config.get('preferences', 'unit_of_measure')
-        self.root.ids.selected_home_marker.active = Config.getboolean('preferences', 'show_marker_home')
-        self.root.ids.selected_ctrl_marker.active = Config.getboolean('preferences', 'show_marker_ctrl')
-        self.root.ids.selected_flight_path_width.value = Config.get('preferences', 'flight_path_width')
-        self.root.ids.selected_flight_path_color.value = Config.getint('preferences', 'flight_path_color')
-        self.root.ids.selected_marker_drone_color.value = Config.getint('preferences', 'marker_drone_color')
-        self.root.ids.selected_marker_ctrl_color.value = Config.getint('preferences', 'marker_ctrl_color')
-        self.root.ids.selected_marker_home_color.value = Config.getint('preferences', 'marker_home_color')
-        self.root.ids.selected_rounding.active = Config.getboolean('preferences', 'rounded_readings')
-        self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
-        self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
-        self.root.ids.selected_model.text = Config.get('preferences', 'selected_model')
+        self.init_prefs()
 
 
     def on_start(self):

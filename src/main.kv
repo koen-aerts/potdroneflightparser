@@ -164,7 +164,22 @@ MDGridLayout:
                             size_hint: (1, None)
                             pos_hint: {"top": 1, "right": 1}
                             md_bg_color: self.theme_cls.backgroundColor
-                            row_default_height: dp(22) if app.is_desktop else dp(14)
+                            row_default_height: dp(22) if app.is_desktop else dp(12)
+                            StatLabel:
+                                text: "Flight #:"
+                                valign: "top"
+                                padding: [0, 0, 0, dp(4)] if app.is_desktop else [0, 0, 0, dp(7)]
+                                height: dp(18) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(90)
+                                role: "large" if app.is_desktop else "small"
+                            MDDropDownItem:
+                                on_release: app.open_flight_selection(*args)
+                                MDDropDownItemText:
+                                    font_style: "Title"
+                                    id: selected_path
+                                    text: "--"
+                                    role: "medium" if app.is_desktop else "small"
+                                    bold: True
                             StatLabel:
                                 text: ""
                                 height: dp(18) if app.is_desktop else dp(10)
@@ -266,16 +281,6 @@ MDGridLayout:
                             MDDivider:
                             MDDivider:
                             StatLabel:
-                                text: ""
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(105) if app.is_desktop else dp(90)
-                                role: "large" if app.is_desktop else "small"
-                            StatValue:
-                                text: ""
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(90) if app.is_desktop else dp(60)
-                                role: "large" if app.is_desktop else "small"
-                            StatLabel:
                                 text: "Date:"
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(105) if app.is_desktop else dp(90)
@@ -363,33 +368,6 @@ MDGridLayout:
                                 height: dp(18) if app.is_desktop else dp(10)
                                 width: dp(90) if app.is_desktop else dp(60)
                                 role: "large" if app.is_desktop else "small"
-                            MDDivider:
-                            MDDivider:
-                            StatLabel:
-                                text: ""
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(105) if app.is_desktop else dp(90)
-                                role: "large" if app.is_desktop else "small"
-                            StatValue:
-                                text: ""
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(90) if app.is_desktop else dp(60)
-                                role: "large" if app.is_desktop else "small"
-                            StatLabel:
-                                text: "Flight #:"
-                                valign: "top"
-                                padding: [0, 0, 0, dp(4)] if app.is_desktop else [0, 0, 0, dp(7)]
-                                height: dp(18) if app.is_desktop else dp(10)
-                                width: dp(105) if app.is_desktop else dp(90)
-                                role: "large" if app.is_desktop else "small"
-                            MDDropDownItem:
-                                on_release: app.open_flight_selection(*args)
-                                MDDropDownItemText:
-                                    font_style: "Title"
-                                    id: selected_path
-                                    text: "--"
-                                    role: "medium" if app.is_desktop else "small"
-                                    bold: True
                     MDRelativeLayout:
                         size_hint: (1 - ((dp(225) if app.is_desktop else dp(175)) if theapp.show_nav_section else 0), 1)
                         MapView:
