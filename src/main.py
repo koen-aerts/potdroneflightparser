@@ -89,7 +89,6 @@ class MainApp(MDApp):
     '''
     def parse_atom_logs(self, importRef):
         self.zipFilename = importRef
-        self.root.ids.maptitle.text = importRef
         fpvFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype = 'FPV' ORDER BY filename", (importRef,))
         binFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype IN ('BIN','FC') ORDER BY filename", (importRef,))
 
@@ -639,14 +638,6 @@ class MainApp(MDApp):
                 break # Only open the first file from the selection.
         except Exception as e:
             print(f"File Chooser Error: {e}")
-        self.chooser_open = False
-
-
-    '''
-    File Chooser, called when a file has been selected on the iOS device.
-    '''
-    def import_ios_chooser_callback(self, uri_list):
-        # TODO - iOS not supported yet.
         self.chooser_open = False
 
 
@@ -1720,7 +1711,6 @@ class MainApp(MDApp):
         self.playback_speed = 1
         self.map_rebuild_required = True
         if self.root:
-            self.root.ids.maptitle.text = f"{self.appTitle} - Map"
             self.root.ids.selected_path.text = '--'
             self.zoom = self.defaultMapZoom
             self.clear_map()
