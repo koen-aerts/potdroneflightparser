@@ -1,0 +1,268 @@
+# Dutch translations for PROJECT.
+# Copyright (C) 2024 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2024-05-13 16:11-0600\n"
+"PO-Revision-Date: 2024-05-15 09:33-0600\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: nl\n"
+"Language-Team: nl <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.15.0\n"
+
+msgid "title_logs"
+msgstr "Logs"
+
+msgid "title_map"
+msgstr "Kaart"
+
+msgid "title_flights"
+msgstr "Vluchten"
+
+msgid "title_preferences"
+msgstr "Voorkeuren"
+
+msgid "logs_date"
+msgstr "Datum"
+
+msgid "logs_number_flights"
+msgstr "Vluchten"
+
+msgid "logs_total_flown"
+msgstr "Tot Verpl"
+
+msgid "logs_total_time"
+msgstr "Tot Tijd"
+
+msgid "logs_maximum_distance"
+msgstr "Max Afst"
+
+msgid "logs_maximum_altitude"
+msgstr "Max Hoogte"
+
+msgid "logs_maximum_horizontal_speed"
+msgstr "Max H Sn"
+
+msgid "logs_maximum_vertical_speed"
+msgstr "Max V Sn"
+
+msgid "map_time"
+msgstr "Tijd:"
+
+msgid "map_distance"
+msgstr "Afstand:"
+
+msgid "map_dist"
+msgstr "Afst: {distance} {unit}"
+
+msgid "map_altitude"
+msgstr "Hoogte:"
+
+msgid "map_alt"
+msgstr "Hoogte: {altitude} {unit}"
+
+msgid "map_horizontal_speed"
+msgstr "H Snelheid:"
+
+msgid "map_hs"
+msgstr "HS: {speed} {unit}"
+
+msgid "map_vertical_speed"
+msgstr "V Snelheid:"
+
+msgid "map_vs"
+msgstr "VS: {speed} {unit}"
+
+msgid "map_distance_flown"
+msgstr "Verplaatsing:"
+
+msgid "map_sats"
+msgstr "Sats: {satellites}"
+
+msgid "map_date"
+msgstr "Datum:"
+
+msgid "map_maximum_distance"
+msgstr "Max Afst:"
+
+msgid "map_maximum_altitude"
+msgstr "Max Hoogte:"
+
+msgid "map_maximum_horizontal_speed"
+msgstr "Max H Sn:"
+
+msgid "map_total_distance"
+msgstr "Totale Verpl:"
+
+msgid "map_duration"
+msgstr "Duur:"
+
+msgid "map_flight_number"
+msgstr "Vlucht #:"
+
+msgid "flight_flight"
+msgstr "Vlucht"
+
+msgid "flight_duration"
+msgstr "Duur"
+
+msgid "flight_distance_flown"
+msgstr "Verplaatsing"
+
+msgid "flight_maximum_distance"
+msgstr "Max Afstand"
+
+msgid "flight_maximum_altitude"
+msgstr "Max Hoogte"
+
+msgid "flight_maximum_horizontal_speed"
+msgstr "Max H Snelheid"
+
+msgid "flight_maximum_vertical_speed"
+msgstr "Max V Snelheid"
+
+msgid "flight_flight_number"
+msgstr "Vlucht #{flight_number}"
+
+msgid "flight_overall"
+msgstr "Alles"
+
+msgid "preference_unit_of_measure"
+msgstr "Maateenheid:"
+
+msgid "preference_home_marker"
+msgstr "Huis Pin:"
+
+msgid "preference_playback_rate"
+msgstr "Afspelen:"
+
+msgid "preference_controller_marker"
+msgstr "Zender Pin:"
+
+msgid "preference_map_tile_server"
+msgstr "Kaart Server:"
+
+msgid "preference_rounded_values"
+msgstr "Afronden:"
+
+msgid "preference_flight_path_width"
+msgstr "Vluchtlijn Breedte:"
+
+msgid "preference_flight_path_color"
+msgstr "Vluchtlijn Kleur:"
+
+msgid "preference_controller_color"
+msgstr "Zender Kleur:"
+
+msgid "preference_drone_color"
+msgstr "Drone Kleur:"
+
+msgid "preference_home_color"
+msgstr "Huis Kleur:"
+
+msgid "no_data_in_zip_file"
+msgstr "Geen vlucht gegevens in zip bestand."
+
+msgid "no_valid_file_specified"
+msgstr "Ongeldig bestand: {filename}"
+
+msgid "file_already_imported_on"
+msgstr "Dit bestand is reeds geladen: {timestamp}"
+
+msgid "log_import_completed"
+msgstr "Log bestand ingeladen."
+
+msgid "nothing_to_import"
+msgstr "Geen bestanden om in te laden."
+
+msgid "drone_not_supported"
+msgstr "Dit model van drone is niet ondersteund in deze toepassing: {modelname}"
+
+msgid "ios_nothing_to_import"
+msgstr "Geen bestanden gevonden. Plaats de log zip bestanden in de flightlogviewer Documents map en probeer nogmaals."
+
+msgid "select_log_zip_file"
+msgstr "Kies een log zip bestand."
+
+msgid "zip_files"
+msgstr "Zip bestanden"
+
+msgid "data_exported_to"
+msgstr "Gegevens zijn opgeslagen in {filename}"
+
+msgid "save_export_csv_file"
+msgstr "Opslaan CSV log bestand."
+
+msgid "export_csv_file_saved"
+msgstr "{filename} is opgeslagen in de flightlogviewer Documents map."
+
+msgid "error_saving_export_csv"
+msgstr "Fout tijdens opslaan CSV bestand {filename}: {error}"
+
+msgid "no_data_to_play_back"
+msgstr "Geen gegevens om af the spelen."
+
+msgid "no_flight_selected"
+msgstr "Geen vlucht gekozen."
+
+msgid "no_previous_flight"
+msgstr "Geen vorige vlucht."
+
+msgid "no_next_flight"
+msgstr "Geen volgende vlucht."
+
+msgid "select_flight_to_play_back"
+msgstr "Kies een vlucht om af te spelen."
+
+msgid "reopen_log_for_changes_to_take_effect"
+msgstr "Heropen het log bestand on de veranderingen toe te passen."
+
+msgid "delete"
+msgstr "Verwijder"
+
+msgid "cancel"
+msgstr "Annuleer"
+
+msgid "backup"
+msgstr "Back-up"
+
+msgid "restore"
+msgstr "Herstel"
+
+msgid "delete_file"
+msgstr "Verwijder {filename}?"
+
+msgid "backup_system_data"
+msgstr "Bewaren van toepassing gegevens?"
+
+msgid "error_saving_backup_zip"
+msgstr "Fout tijdens bewaren van zip bestand {filename}: {error}"
+
+msgid "not_valid_backup_file_specified"
+msgstr "Ongeldig back-up bestand: {filename}"
+
+msgid "not_valid_backup_zip_file_specified"
+msgstr "Ongeldig back-up zip bestand: {filename}"
+
+msgid "save_backup_file"
+msgstr "Bewaar back-up bestand."
+
+msgid "restore_system_data"
+msgstr "Herstellen van toepassing gegevens?"
+
+msgid "restored_from"
+msgstr "Hersteld van: {filename}."
+
+msgid "select_backup_zip_file"
+msgstr "Kies een back-up zip bestand."
+
+msgid "parsing_log_file"
+msgstr "Inlezen Log Bestand..."
