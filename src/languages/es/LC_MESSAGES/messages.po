@@ -1,267 +1,268 @@
-# Translations template for PROJECT.
+# Spanish translations for PROJECT.
 # Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-05-13 16:11-0600\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2024-05-16 15:47-0600\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.15.0\n"
 
 msgid "title_logs"
-msgstr "Logs"
+msgstr "Registros"
 
 msgid "title_map"
-msgstr "Map"
+msgstr "Mapa"
 
 msgid "title_flights"
-msgstr "Flights"
+msgstr "Vuelos"
 
 msgid "title_preferences"
-msgstr "Preferences"
+msgstr "Preferencias"
 
 msgid "logs_date"
-msgstr "Date"
+msgstr "Fecha"
 
 msgid "logs_number_flights"
-msgstr "# flights"
+msgstr "# vuelos"
 
 msgid "logs_total_flown"
-msgstr "Tot Flown"
+msgstr "Total volado"
 
 msgid "logs_total_time"
-msgstr "Tot Time"
+msgstr "Tiempo total"
 
 msgid "logs_maximum_distance"
-msgstr "Max Dist"
+msgstr "Dist. máxima"
 
 msgid "logs_maximum_altitude"
-msgstr "Max Alt"
+msgstr "Altitud máxima"
 
 msgid "logs_maximum_horizontal_speed"
-msgstr "Max H Sp"
+msgstr "Vel. H máx."
 
 msgid "logs_maximum_vertical_speed"
-msgstr "Max V Sp"
+msgstr "Vel. V máx."
 
 msgid "map_time"
-msgstr "Time:"
+msgstr "Tiempo:"
 
 msgid "map_distance"
-msgstr "Distance:"
+msgstr "Distancia:"
 
 msgid "map_dist"
 msgstr "Dist: {distance} {unit}"
 
 msgid "map_altitude"
-msgstr "Altitude:"
+msgstr "Altitud:"
 
 msgid "map_alt"
 msgstr "Alt: {altitude} {unit}"
 
 msgid "map_horizontal_speed"
-msgstr "H Speed:"
+msgstr "Vel. H:"
 
 msgid "map_hs"
 msgstr "HS: {speed} {unit}"
 
 msgid "map_vertical_speed"
-msgstr "V Speed:"
+msgstr "Vel. V:"
 
 msgid "map_vs"
 msgstr "VS: {speed} {unit}"
 
 msgid "map_distance_flown"
-msgstr "Dist Flown:"
+msgstr "Dist. volada:"
 
 msgid "map_sats"
 msgstr "Sats: {satellites}"
 
 msgid "map_date"
-msgstr "Date:"
+msgstr "Fecha:"
 
 msgid "map_maximum_distance"
-msgstr "Max Dist:"
+msgstr "Dist. máxima:"
 
 msgid "map_maximum_altitude"
-msgstr "Max Alt:"
+msgstr "Altitud máxima:"
 
 msgid "map_maximum_horizontal_speed"
-msgstr "Max H Spd:"
+msgstr "Vel. H máx.:"
 
 msgid "map_total_distance"
-msgstr "Total Dist:"
+msgstr "Dist. total:"
 
 msgid "map_duration"
-msgstr "Duration:"
+msgstr "Duración:"
 
 msgid "map_flight_number"
-msgstr "Flight #:"
+msgstr "Vuelo #:"
 
 msgid "flight_flight"
-msgstr "Flight"
+msgstr "Vuelo"
 
 msgid "flight_duration"
-msgstr "Duration"
+msgstr "Duración"
 
 msgid "flight_distance_flown"
-msgstr "Dist Flown"
+msgstr "Dist. volada"
 
 msgid "flight_maximum_distance"
-msgstr "Max Distance"
+msgstr "Distancia máxima"
 
 msgid "flight_maximum_altitude"
-msgstr "Max Altitude"
+msgstr "Altitud máxima"
 
 msgid "flight_maximum_horizontal_speed"
-msgstr "Max H Speed"
+msgstr "Vel. H máx."
 
 msgid "flight_maximum_vertical_speed"
-msgstr "Max V Speed"
+msgstr "Vel. V máx."
 
 msgid "flight_flight_number"
-msgstr "Flight #{flight_number}"
+msgstr "Vuelo #{flight_number}"
 
 msgid "flight_overall"
-msgstr "Overall"
+msgstr "General"
 
 msgid "preference_unit_of_measure"
-msgstr "Unit of Measure:"
+msgstr "Unidad de medida:"
 
 msgid "preference_home_marker"
-msgstr "Home Marker:"
+msgstr "Marcador de inicio:"
 
 msgid "preference_playback_rate"
-msgstr "Playback Rate:"
+msgstr "Velocidad de reproducción:"
 
 msgid "preference_controller_marker"
-msgstr "Controller Marker:"
+msgstr "Marcador del controlador:"
 
 msgid "preference_map_tile_server"
-msgstr "Map Tile Server:"
+msgstr "Servidor de mosaicos del mapa:"
 
 msgid "preference_rounded_values"
-msgstr "Rounded Values:"
+msgstr "Valores redondeados:"
 
 msgid "preference_flight_path_width"
-msgstr "Flight Path Width:"
+msgstr "Ancho de la ruta de vuelo:"
 
 msgid "preference_flight_path_color"
-msgstr "Flight Path Colour:"
+msgstr "Color de la ruta de vuelo:"
 
 msgid "preference_controller_color"
-msgstr "Controller Colour:"
+msgstr "Color del controlador:"
 
 msgid "preference_drone_color"
-msgstr "Drone Colour:"
+msgstr "Color del dron:"
 
 msgid "preference_home_color"
-msgstr "Home Colour:"
+msgstr "Color de inicio:"
 
 msgid "no_data_in_zip_file"
-msgstr "No flight data in zip file."
+msgstr "No hay datos de vuelo en el archivo zip."
 
 msgid "no_valid_file_specified"
-msgstr "Not a valid file specified: {filename}"
+msgstr "No se especificó un archivo válido: {filename}"
 
 msgid "file_already_imported_on"
-msgstr "This file is already imported on: {timestamp}"
+msgstr "Este archivo ya se importó en: {timestamp}"
 
 msgid "log_import_completed"
-msgstr "Log file import completed."
+msgstr "Importación del archivo de registro completada."
 
 msgid "nothing_to_import"
-msgstr "Nothing to import."
+msgstr "Nada que importar."
 
 msgid "drone_not_supported"
-msgstr "This drone model may not be supported in this software: {modelname}"
+msgstr "Es posible que este modelo de dron no sea compatible con este software: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr "Nothing to import. Place the log zip file in the flightlogviewer Documents directory, then try again."
+msgstr "Nada que importar. Coloque el archivo zip de registro en el directorio de Documentos de flightlogviewer, luego intente nuevamente."
 
 msgid "select_log_zip_file"
-msgstr "Select a log zip file."
+msgstr "Seleccione un archivo zip de registro."
 
 msgid "zip_files"
-msgstr "Zip files"
+msgstr "Archivos Zip"
 
 msgid "data_exported_to"
-msgstr "Data has been exported to {filename}"
+msgstr "Los datos se han exportado a {filename}"
 
 msgid "save_export_csv_file"
-msgstr "Save CSV log file."
+msgstr "Guardar archivo de registro CSV."
 
 msgid "export_csv_file_saved"
-msgstr "{filename} has been exported to the flightlogviewer Documents directory."
+msgstr "{filename} se ha exportado al directorio de Documentos de flightlogviewer."
 
 msgid "error_saving_export_csv"
-msgstr "Error saving CSV file {filename}: {error}"
+msgstr "Error al guardar el archivo CSV {filename}: {error}"
 
 msgid "no_data_to_play_back"
-msgstr "No data to play back."
+msgstr "No hay datos para reproducir."
 
 msgid "no_flight_selected"
-msgstr "No flight selected."
+msgstr "Ningún vuelo seleccionado."
 
 msgid "no_previous_flight"
-msgstr "No previous flight."
+msgstr "No hay vuelo anterior."
 
 msgid "no_next_flight"
-msgstr "No next flight."
+msgstr "No hay siguiente vuelo."
 
 msgid "select_flight_to_play_back"
-msgstr "Select a flight to play back."
+msgstr "Seleccione un vuelo para reproducir."
 
 msgid "reopen_log_for_changes_to_take_effect"
-msgstr "Re-open the log file for the changes to take effect."
+msgstr "Vuelva a abrir el archivo de registro para que los cambios surtan efecto."
 
 msgid "delete"
-msgstr "Delete"
+msgstr "Eliminar"
 
 msgid "cancel"
-msgstr "Cancel"
+msgstr "Cancelar"
 
 msgid "backup"
-msgstr "Backup"
+msgstr "Copia de seguridad"
 
 msgid "restore"
-msgstr "Restore"
+msgstr "Restaurar"
 
 msgid "delete_file"
-msgstr "Delete {filename}?"
+msgstr "¿Eliminar {filename}?"
 
 msgid "backup_system_data"
-msgstr "Backup your system data?"
+msgstr "¿Hacer una copia de seguridad de sus datos del sistema?"
 
 msgid "error_saving_backup_zip"
 msgstr "Error saving zip file {filename}: {error}"
 
 msgid "not_valid_backup_file_specified"
-msgstr "Not a valid backup file specified: {filename}"
+msgstr "No se especificó un archivo de respaldo válido: {filename}"
 
 msgid "not_valid_backup_zip_file_specified"
-msgstr "Not a valid backup zip file specified: {filename}"
+msgstr "No se especificó un archivo zip de respaldo válido: {filename}"
 
 msgid "save_backup_file"
-msgstr "Save backup file."
+msgstr "Guardar archivo de respaldo."
 
 msgid "restore_system_data"
-msgstr "Restore your system data?"
+msgstr "¿Restaurar sus datos del sistema?"
 
 msgid "restored_from"
-msgstr "Restored from: {filename}."
+msgstr "Restaurado desde: {filename}."
 
 msgid "select_backup_zip_file"
-msgstr "Select a backup zip file."
+msgstr "Seleccione un archivo zip de respaldo."
 
 msgid "parsing_log_file"
-msgstr "Parsing Log File..."
+msgstr "Analizando archivo de registro..." 

@@ -82,7 +82,7 @@ msgid "map_vs"
 msgstr "VV: {speed} {unit}"
 
 msgid "map_distance_flown"
-msgstr "Dist volé:"
+msgstr "Dist volée:"
 
 msgid "map_sats"
 msgstr "Sats: {satellites}"
@@ -115,7 +115,7 @@ msgid "flight_duration"
 msgstr "Durée"
 
 msgid "flight_distance_flown"
-msgstr "Volé Dist"
+msgstr "Dist volée"
 
 msgid "flight_maximum_distance"
 msgstr "Dist Max"
@@ -139,13 +139,13 @@ msgid "preference_unit_of_measure"
 msgstr "Unité de mesure:"
 
 msgid "preference_home_marker"
-msgstr "Marqueur de maison:"
+msgstr "Repère maison:"
 
 msgid "preference_playback_rate"
 msgstr "Taux de lecture:"
 
 msgid "preference_controller_marker"
-msgstr "Marqueur de contr.:"
+msgstr "Repère radiocom.:"
 
 msgid "preference_map_tile_server"
 msgstr "Serveur de carte:"
@@ -160,19 +160,19 @@ msgid "preference_flight_path_color"
 msgstr "Couleur de vol:"
 
 msgid "preference_controller_color"
-msgstr "Couleur du contr.:"
+msgstr "Couleur de radiocom.:"
 
 msgid "preference_drone_color"
 msgstr "Couleur du drone:"
 
 msgid "preference_home_color"
-msgstr "Couleur de la maison:"
+msgstr "Couleur de maison:"
 
 msgid "no_data_in_zip_file"
 msgstr "Aucune donnée de vol dans le fichier zip."
 
 msgid "no_valid_file_specified"
-msgstr "Il ne s'agit pas d'un fichier valide spécifié: {filename}"
+msgstr "Fichier spécifié invalide: {filename}"
 
 msgid "file_already_imported_on"
 msgstr "Ce fichier est déjà importé: {timestamp}"
@@ -184,10 +184,10 @@ msgid "nothing_to_import"
 msgstr "Rien à importer."
 
 msgid "drone_not_supported"
-msgstr "Ce modèle de drone peut ne pas être pris en charge dans ce logiciel: {modelname}"
+msgstr "Ce modèle de drone peut ne pas être pris en charge par ce logiciel: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr "Rien à importer. Placez le fichier zip du journal dans le répertoire Flightlogviewer Documents, puis réessayez."
+msgstr "Rien à importer. Placez le fichier zip du journal dans le répertoire des Documents de Flightlogviewer, puis réessayez."
 
 msgid "select_log_zip_file"
 msgstr "Sélectionnez un fichier journal zip."
@@ -202,7 +202,7 @@ msgid "save_export_csv_file"
 msgstr "Enregistrez le fichier journal CSV."
 
 msgid "export_csv_file_saved"
-msgstr "{filename} a été exporté vers le répertoire des documents de FlightlogViewer."
+msgstr "{filename} a été exporté vers le répertoire des Documents de FlightlogViewer."
 
 msgid "error_saving_export_csv"
 msgstr "Erreur lors de l'enregistrement du fichier CSV {filename}: {error}"
@@ -217,7 +217,7 @@ msgid "no_previous_flight"
 msgstr "Aucun vol précédent."
 
 msgid "no_next_flight"
-msgstr "Pas de prochain vol."
+msgstr "Aucun vol suivant."
 
 msgid "select_flight_to_play_back"
 msgstr "Sélectionnez un vol à lire."
@@ -226,19 +226,19 @@ msgid "reopen_log_for_changes_to_take_effect"
 msgstr "Rouvrez le fichier journal pour que les modifications prennent effet."
 
 msgid "delete"
-msgstr "Supprime"
+msgstr "Supprimer"
 
 msgid "cancel"
 msgstr "Annuler"
 
 msgid "backup"
-msgstr "Sauvegardez"
+msgstr "Sauvegarder"
 
 msgid "restore"
 msgstr "Restaurer"
 
 msgid "delete_file"
-msgstr "Supprime {filename}?"
+msgstr "Supprimer {filename}?"
 
 msgid "backup_system_data"
 msgstr "Sauvegarder les données de votre application?"
@@ -247,16 +247,16 @@ msgid "error_saving_backup_zip"
 msgstr "Erreur lors de l'enregistrement du fichier zip {filename}: {error}"
 
 msgid "not_valid_backup_file_specified"
-msgstr "Il ne s'agit pas d'un fichier de sauvegarde valide spécifié: {filename}"
+msgstr "Le fichier de sauvegarde spécifié est invalide: {filename}"
 
 msgid "not_valid_backup_zip_file_specified"
-msgstr "Il ne s'agit pas d'un fichier zip de sauvegarde valide spécifié: {filename}"
+msgstr "Le fichier de sauvegarde compressé spécifié est invalide: {filename}"
 
 msgid "save_backup_file"
 msgstr "Enregistrer le fichier de sauvegarde."
 
 msgid "restore_system_data"
-msgstr "Restaurer les données de votre application?"
+msgstr "Restaurer vos données de l'application?"
 
 msgid "restored_from"
 msgstr "Restauré à partir de: {filename}."
