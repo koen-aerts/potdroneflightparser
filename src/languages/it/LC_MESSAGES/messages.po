@@ -9,7 +9,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-05-13 16:11-0600\n"
 "PO-Revision-Date: 2024-05-16 14:07-0600\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: Stefano Rapegno\n"
 "Language: it\n"
 "Language-Team: it <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -37,22 +37,22 @@ msgid "logs_number_flights"
 msgstr "# Voli"
 
 msgid "logs_total_flown"
-msgstr "Distanza Tot Percorsa"
+msgstr "Dist Tot Percorsa"
 
 msgid "logs_total_time"
 msgstr "Tempo Totale"
 
 msgid "logs_maximum_distance"
-msgstr "Distanza Massima"
+msgstr "Dist. Max "
 
 msgid "logs_maximum_altitude"
-msgstr "Altezza Massima"
+msgstr "Alt. Max"
 
 msgid "logs_maximum_horizontal_speed"
-msgstr "Velocità Massima orizzontale"
+msgstr "Vel. Max orizz."
 
 msgid "logs_maximum_vertical_speed"
-msgstr "Velocità Massima Verticale"
+msgstr "Vel. Max Vert."
 
 msgid "map_time"
 msgstr "Tempo:"
@@ -70,13 +70,13 @@ msgid "map_alt"
 msgstr "Alt: {altitude} {unit}"
 
 msgid "map_horizontal_speed"
-msgstr "Velocità Orizzontale:"
+msgstr "Vel. Orizz.:"
 
 msgid "map_hs"
 msgstr "VO: {speed} {unit}"
 
 msgid "map_vertical_speed"
-msgstr "Velocità verticale:"
+msgstr "Vel. Vert.:"
 
 msgid "map_vs"
 msgstr "VV: {speed} {unit}"
@@ -91,16 +91,16 @@ msgid "map_date"
 msgstr "Data:"
 
 msgid "map_maximum_distance"
-msgstr "Massima Distanza:"
+msgstr "Max Distanza:"
 
 msgid "map_maximum_altitude"
-msgstr "Massima Altitudine:"
+msgstr "Max Altitu.:"
 
 msgid "map_maximum_horizontal_speed"
-msgstr "Velocità massima orizzontale:"
+msgstr "Vel Max orizz:"
 
 msgid "map_total_distance"
-msgstr "Distanza Totale:"
+msgstr "Dist. Totale:"
 
 msgid "map_duration"
 msgstr "Durata:"
@@ -115,25 +115,25 @@ msgid "flight_duration"
 msgstr "Durata Volo"
 
 msgid "flight_distance_flown"
-msgstr "Distanza del Volo"
+msgstr "Dist del Volo"
 
 msgid "flight_maximum_distance"
-msgstr "Massima Distanza"
+msgstr "Max Distanza"
 
 msgid "flight_maximum_altitude"
-msgstr "Massima Altitudine"
+msgstr "Max Altitu."
 
 msgid "flight_maximum_horizontal_speed"
-msgstr "Massima velocità orizzontale"
+msgstr "Max Vel. Orizz. "
 
 msgid "flight_maximum_vertical_speed"
-msgstr "Massima Velocità Verticale"
+msgstr "Max Vel. Vert. "
 
 msgid "flight_flight_number"
 msgstr "Volo #{flight_number}"
 
 msgid "flight_overall"
-msgstr "Tutti i Voli"
+msgstr "Tutti i Voli "
 
 msgid "preference_unit_of_measure"
 msgstr "Unità di Misura:"
@@ -142,10 +142,10 @@ msgid "preference_home_marker"
 msgstr "Indicatore di Home:"
 
 msgid "preference_playback_rate"
-msgstr "Velocità di Riproduzione:"
+msgstr "Avanz. Rapid.:"
 
 msgid "preference_controller_marker"
-msgstr "Indicatore posizione Telecomando:"
+msgstr "Radiocomando:"
 
 msgid "preference_map_tile_server"
 msgstr "Server delle Mappe:"
@@ -154,13 +154,13 @@ msgid "preference_rounded_values"
 msgstr "Valore Arrotondato:"
 
 msgid "preference_flight_path_width"
-msgstr "Larghezza del Tratto di Volo:"
+msgstr "Tratto del Volo:"
 
 msgid "preference_flight_path_color"
 msgstr "Colore Tratto di Volo:"
 
 msgid "preference_controller_color"
-msgstr "Colore Telecomando:"
+msgstr "Colore Radiocomando:"
 
 msgid "preference_drone_color"
 msgstr "Colore del Drone:"
@@ -266,4 +266,3 @@ msgstr "Seleziona un file zip di backup."
 
 msgid "parsing_log_file"
 msgstr "Analisi del file di Registro..."
-
