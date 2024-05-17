@@ -9,7 +9,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-05-13 16:11-0600\n"
 "PO-Revision-Date: 2024-05-17 07:32-0600\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: LINARDO BENTHARA HANGGA <den.lio5050@gmail.com>\n"
 "Language: id\n"
 "Language-Team: id <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -266,7 +266,3 @@ msgstr "Pilih berkas zip cadangan."
 
 msgid "parsing_log_file"
 msgstr "Mengurai Berkas Catatan..."
-
-*INDONESIAN
-*LINARDO BENTHARA HANGGA
-*den.lio5050@gmail.com
