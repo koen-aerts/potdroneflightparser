@@ -37,7 +37,7 @@ msgid "logs_number_flights"
 msgstr "# vuelos"
 
 msgid "logs_total_flown"
-msgstr "Total volado"
+msgstr "Total tiempo volando"
 
 msgid "logs_total_time"
 msgstr "Tiempo total"
@@ -82,7 +82,7 @@ msgid "map_vs"
 msgstr "VS: {speed} {unit}"
 
 msgid "map_distance_flown"
-msgstr "Dist. volada:"
+msgstr "Dist. en vuelo:"
 
 msgid "map_sats"
 msgstr "Sats: {satellites}"
@@ -115,7 +115,7 @@ msgid "flight_duration"
 msgstr "Duración"
 
 msgid "flight_distance_flown"
-msgstr "Dist. volada"
+msgstr "Dist. en vuelo"
 
 msgid "flight_maximum_distance"
 msgstr "Distancia máxima"
@@ -142,25 +142,25 @@ msgid "preference_home_marker"
 msgstr "Marcador de inicio:"
 
 msgid "preference_playback_rate"
-msgstr "Velocidad de reproducción:"
+msgstr "Velocidad reprod.:"
 
 msgid "preference_controller_marker"
-msgstr "Marcador del controlador:"
+msgstr "Icono controlador:"
 
 msgid "preference_map_tile_server"
-msgstr "Servidor de mosaicos del mapa:"
+msgstr "Servidor del mapa:"
 
 msgid "preference_rounded_values"
 msgstr "Valores redondeados:"
 
 msgid "preference_flight_path_width"
-msgstr "Ancho de la ruta de vuelo:"
+msgstr "Ancho de vuelo:"
 
 msgid "preference_flight_path_color"
-msgstr "Color de la ruta de vuelo:"
+msgstr "Color del vuelo:"
 
 msgid "preference_controller_color"
-msgstr "Color del controlador:"
+msgstr "Color del control:"
 
 msgid "preference_drone_color"
 msgstr "Color del dron:"
