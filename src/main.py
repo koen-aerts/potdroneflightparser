@@ -14,6 +14,8 @@ import gettext
 
 from enum import Enum
 
+# Use user's locale. Language and number format.
+locale.setlocale(locale.LC_ALL, '')
 lang = None
 langpath = os.path.join(os.path.dirname(__file__), 'languages')
 try:
@@ -1838,7 +1840,6 @@ class MainApp(MDApp):
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        locale.setlocale(locale.LC_ALL, '')
         self.is_desktop = platform in ('linux', 'win', 'macosx')
         self.is_ios = platform == 'ios'
         self.title = self.appTitle
