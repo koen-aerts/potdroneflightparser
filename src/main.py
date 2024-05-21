@@ -1858,6 +1858,7 @@ class MainApp(MDApp):
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        locale.setlocale(locale.LC_ALL, '')
         self.is_desktop = platform in ('linux', 'win', 'macosx')
         self.is_ios = platform == 'ios'
         self.title = self.appTitle
