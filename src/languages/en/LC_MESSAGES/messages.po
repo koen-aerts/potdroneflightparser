@@ -156,6 +156,9 @@ msgstr "Rounded Values:"
 msgid "preference_flight_path_width"
 msgstr "Flight Path Width:"
 
+msgid "preference_language"
+msgstr "Language:"
+
 msgid "preference_flight_path_color"
 msgstr "Flight Path Colour:"
 
@@ -224,6 +227,9 @@ msgstr "Select a flight to play back."
 
 msgid "reopen_log_for_changes_to_take_effect"
 msgstr "Re-open the log file for the changes to take effect."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Re-open the application for the changes to take effect."
 
 msgid "delete"
 msgstr "Delete"

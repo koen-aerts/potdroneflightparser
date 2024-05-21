@@ -156,6 +156,9 @@ msgstr "Nilai Lingkaran:"
 msgid "preference_flight_path_width"
 msgstr "Lebar Jalur Penerbangan:"
 
+msgid "preference_language"
+msgstr "Bahasa:"
+
 msgid "preference_flight_path_color"
 msgstr "Warna Jalur Penerbangan:"
 
@@ -224,6 +227,9 @@ msgstr "Pilih Penerbangan utk diputar."
 
 msgid "reopen_log_for_changes_to_take_effect"
 msgstr "Buka-ulang berkas catatan agar perubahan dapat berlaku."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Buka-ulang perangkat lunak agar perubahan dapat berlaku."
 
 msgid "delete"
 msgstr "Hapus"

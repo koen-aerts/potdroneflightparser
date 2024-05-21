@@ -156,6 +156,9 @@ msgstr "Valore Arrotondato:"
 msgid "preference_flight_path_width"
 msgstr "Tratto del Volo:"
 
+msgid "preference_language"
+msgstr "Lingua:"
+
 msgid "preference_flight_path_color"
 msgstr "Colore Tratto di Volo:"
 
@@ -224,6 +227,9 @@ msgstr "Seleziona un Volo da Riprodurre."
 
 msgid "reopen_log_for_changes_to_take_effect"
 msgstr "Riapri il file di registro affinché le modifiche abbiano effetto."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Riapri l'applicazione affinché le modifiche abbiano effetto."
 
 msgid "delete"
 msgstr "Elimina"

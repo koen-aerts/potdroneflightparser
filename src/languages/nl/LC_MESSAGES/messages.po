@@ -156,6 +156,9 @@ msgstr "Afronden:"
 msgid "preference_flight_path_width"
 msgstr "Vluchtlijn Breedte:"
 
+msgid "preference_language"
+msgstr "Taal:"
+
 msgid "preference_flight_path_color"
 msgstr "Vluchtlijn Kleur:"
 
@@ -223,7 +226,10 @@ msgid "select_flight_to_play_back"
 msgstr "Kies een vlucht om af te spelen."
 
 msgid "reopen_log_for_changes_to_take_effect"
-msgstr "Heropen het log bestand on de veranderingen toe te passen."
+msgstr "Heropen het log bestand om de veranderingen te activeren."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Heropen de toepassing om de veranderingen te activeren."
 
 msgid "delete"
 msgstr "Verwijder"

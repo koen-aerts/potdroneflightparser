@@ -156,6 +156,9 @@ msgstr "Valores redondeados:"
 msgid "preference_flight_path_width"
 msgstr "Ancho de vuelo:"
 
+msgid "preference_language"
+msgstr "Idioma:"
+
 msgid "preference_flight_path_color"
 msgstr "Color del vuelo:"
 
@@ -224,6 +227,9 @@ msgstr "Seleccione un vuelo para reproducir."
 
 msgid "reopen_log_for_changes_to_take_effect"
 msgstr "Vuelva a abrir el archivo de registro para que los cambios surtan efecto."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Vuelva a abrir la aplicación para que los cambios surtan efecto."
 
 msgid "delete"
 msgstr "Eliminar"

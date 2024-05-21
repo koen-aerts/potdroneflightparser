@@ -14,15 +14,7 @@ import gettext
 
 from enum import Enum
 
-# Use user's locale. Language and number format.
-locale.setlocale(locale.LC_ALL, '')
-lang = None
 langpath = os.path.join(os.path.dirname(__file__), 'languages')
-try:
-    lang = gettext.translation('messages', localedir=langpath)
-except:
-    lang = gettext.translation('messages', localedir=langpath, languages=['en'])
-lang.install()
 
 from kivy.core.window import Window
 Window.allow_screensaver = False
@@ -93,6 +85,14 @@ class MainApp(MDApp):
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
+    languages = {
+        'en': 'English',
+        'fr': 'Français',
+        'es': 'Española',
+        'it': 'Italiana',
+        'nl': 'Nederlands',
+        'id': 'Indonesia'
+    }
 
 
     '''
@@ -1341,6 +1341,23 @@ class MainApp(MDApp):
 
 
     '''
+    Change Language (Preferences).
+    '''
+    def language_selection(self, item):
+        menu_items = []
+        for languageId in self.languages:
+            menu_items.append({"text": self.languages.get(languageId), "on_release": lambda x=languageId: self.language_selection_callback(x)})
+        self.language_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.language_selection_menu.open()
+    def language_selection_callback(self, lang_id):
+        self.root.ids.selected_language.text = self.languages.get(lang_id)
+        self.language_selection_menu.dismiss()
+        Config.set('preferences', 'language', lang_id)
+        Config.write()
+        self.show_info_message(message=_('reopen_app_for_changes_to_take_effect'))
+
+
+    '''
     Dropdown selection with different drone models determined from the imported log files.
     Model names are slightly inconsistent based on the version of the Potensic app they were generated in.
     '''
@@ -1717,6 +1734,7 @@ class MainApp(MDApp):
         self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
         self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
         self.root.ids.selected_model.text = Config.get('preferences', 'selected_model')
+        self.root.ids.selected_language.text = self.languages.get(Config.get('preferences', 'language'))
 
 
     '''
@@ -1874,8 +1892,11 @@ class MainApp(MDApp):
             'show_marker_home': True,
             'show_marker_ctrl': False,
             'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
-            'selected_model': '--'
+            'selected_model': '--',
+            'language': 'en'
         })
+        lang = gettext.translation('messages', localedir=langpath, languages=[Config.get('preferences', 'language')])
+        lang.install()
         Window.bind(on_keyboard=self.events)
         self.flightPaths = None
         self.pathCoords = None

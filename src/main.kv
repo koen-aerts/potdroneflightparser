@@ -635,9 +635,14 @@ MDGridLayout:
                         width: dp(160)
                         PrefSliderHandle:
                     PrefLabel:
-                        text: ""
-                    PrefLabel:
-                        text: ""
+                        text: _('preference_language')
+                    PrefSelect:
+                        on_release: app.language_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_language
+                            text: ""
                     PrefLabel:
                         text: _('preference_flight_path_color')
                     PrefSlider:

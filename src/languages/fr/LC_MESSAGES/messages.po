@@ -156,6 +156,9 @@ msgstr "Valeurs arrondies:"
 msgid "preference_flight_path_width"
 msgstr "Largeur de vol:"
 
+msgid "preference_language"
+msgstr "Langue:"
+
 msgid "preference_flight_path_color"
 msgstr "Couleur de vol:"
 
@@ -224,6 +227,9 @@ msgstr "Sélectionnez un vol à lire."
 
 msgid "reopen_log_for_changes_to_take_effect"
 msgstr "Rouvrez le fichier journal pour que les modifications prennent effet."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Rouvrez le logiciel pour que les modifications prennent effet."
 
 msgid "delete"
 msgstr "Supprimer"
