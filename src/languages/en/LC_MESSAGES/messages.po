@@ -171,6 +171,9 @@ msgstr "Drone Colour:"
 msgid "preference_home_color"
 msgstr "Home Colour:"
 
+msgid "preference_app_version"
+msgstr "App Version:"
+
 msgid "no_data_in_zip_file"
 msgstr "No flight data in zip file."
 

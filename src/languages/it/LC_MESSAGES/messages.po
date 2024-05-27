@@ -43,7 +43,7 @@ msgid "logs_total_time"
 msgstr "Tempo Totale"
 
 msgid "logs_maximum_distance"
-msgstr "Dist. Max "
+msgstr "Dist. Max"
 
 msgid "logs_maximum_altitude"
 msgstr "Alt. Max"
@@ -97,7 +97,7 @@ msgid "map_maximum_altitude"
 msgstr "Max Altitu.:"
 
 msgid "map_maximum_horizontal_speed"
-msgstr "Vel Max orizz:"
+msgstr "V. Max oriz.:"
 
 msgid "map_total_distance"
 msgstr "Dist. Totale:"
@@ -124,16 +124,16 @@ msgid "flight_maximum_altitude"
 msgstr "Max Altitu."
 
 msgid "flight_maximum_horizontal_speed"
-msgstr "Max Vel. Orizz. "
+msgstr "Max V. Orizz."
 
 msgid "flight_maximum_vertical_speed"
-msgstr "Max Vel. Vert. "
+msgstr "Max V. Vert."
 
 msgid "flight_flight_number"
 msgstr "Volo #{flight_number}"
 
 msgid "flight_overall"
-msgstr "Tutti i Voli "
+msgstr "Tutti i Voli"
 
 msgid "preference_unit_of_measure"
 msgstr "Unità di Misura:"
@@ -170,6 +170,9 @@ msgstr "Colore del Drone:"
 
 msgid "preference_home_color"
 msgstr "Colore della Home:"
+
+msgid "preference_app_version"
+msgstr "App Version:"
 
 msgid "no_data_in_zip_file"
 msgstr "Il file non è in zip file."

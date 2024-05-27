@@ -154,7 +154,7 @@ msgid "preference_rounded_values"
 msgstr "Valeurs arrondies:"
 
 msgid "preference_flight_path_width"
-msgstr "Largeur de vol:"
+msgstr "Largeur trace de vol:"
 
 msgid "preference_language"
 msgstr "Langue:"
@@ -170,6 +170,9 @@ msgstr "Couleur du drone:"
 
 msgid "preference_home_color"
 msgstr "Couleur de maison:"
+
+msgid "preference_app_version"
+msgstr "App Version:"
 
 msgid "no_data_in_zip_file"
 msgstr "Aucune donnée de vol dans le fichier zip."
@@ -247,7 +250,7 @@ msgid "delete_file"
 msgstr "Supprimer {filename}?"
 
 msgid "backup_system_data"
-msgstr "Sauvegarder les données de votre application?"
+msgstr "Sauvegarder vos données de l'application?"
 
 msgid "error_saving_backup_zip"
 msgstr "Erreur lors de l'enregistrement du fichier zip {filename}: {error}"
@@ -266,9 +269,6 @@ msgstr "Restaurer vos données de l'application?"
 
 msgid "restored_from"
 msgstr "Restauré à partir de: {filename}."
-
-msgid "nothing_to_import"
-msgstr "Rien à importer. Placez le fichier zip de sauvegarde dans le répertoire Documents de FlightlogViewer, puis réessayez."
 
 msgid "select_backup_zip_file"
 msgstr "Sélectionnez un fichier zip de sauvegarde."

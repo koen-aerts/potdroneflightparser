@@ -49,6 +49,16 @@
     track_active_width: dp(10)
     track_inactive_width: dp(10)
 
+<PrefText@MDLabel>
+    halign: "left"
+    valign: "bottom"
+    max_lines: 1
+    size_hint: (None, None)
+    height: dp(40)
+    width: dp(160)
+    text_size: self.size
+    padding: dp(4)
+
 <PrefSliderHandle@MDSliderHandle>
     size: [dp(14), dp(14)]
     state_layer_color: "#008800"
@@ -79,7 +89,7 @@ MDGridLayout:
                             icon: "database-import-outline"
                             on_release: app.open_restore_dialog()
                     MDTopAppBarTitle:
-                        text: f"{app.appTitle} - {_('title_logs')}"
+                        text: f"{app.appName} - {_('title_logs')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
                         MDActionTopAppBarButton:
@@ -138,8 +148,7 @@ MDGridLayout:
                             icon: "close"
                             on_release: app.close_map_screen()
                     MDTopAppBarTitle:
-                        id: maptitle
-                        text: f"{app.appTitle} - {_('title_map')}"
+                        text: f"{app.appName} - {_('title_map')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
                         MDActionTopAppBarButton:
@@ -532,7 +541,7 @@ MDGridLayout:
                             icon: "content-save"
                             on_release: app.open_file_export_dialog()
                     MDTopAppBarTitle:
-                        text: f"{app.appTitle} - {_('title_flights')}"
+                        text: f"{app.appName} - {_('title_flights')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
                         MDActionTopAppBarButton:
@@ -564,7 +573,7 @@ MDGridLayout:
                             icon: "close"
                             on_release: app.close_pref_screen()
                     MDTopAppBarTitle:
-                        text: f"{app.appTitle} - {_('title_preferences')}"
+                        text: f"{app.appName} - {_('title_preferences')}"
                         pos_hint: {"center_x": .5}
                 MDGridLayout:
                     cols: 4
@@ -657,7 +666,6 @@ MDGridLayout:
                         pos_hint: {None, None}
                         size_hint: (None, None)
                         width: dp(160)
-                        #value_track_color: [1,15,77,34]
                         PrefSliderHandle:
                     PrefLabel:
                         text: _('preference_controller_color')
@@ -704,3 +712,11 @@ MDGridLayout:
                         size_hint: (None, None)
                         width: dp(160)
                         PrefSliderHandle:
+                    PrefLabel:
+                        text: _('preference_app_version')
+                    PrefText:
+                        text: f"{app.appVersion}"
+                    PrefLabel:
+                        text: ""
+                    PrefLabel:
+                        text: ""

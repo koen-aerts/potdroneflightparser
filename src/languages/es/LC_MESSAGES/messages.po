@@ -34,19 +34,19 @@ msgid "logs_date"
 msgstr "Fecha"
 
 msgid "logs_number_flights"
-msgstr "# vuelos"
+msgstr "Núm. vuelos"
 
 msgid "logs_total_flown"
-msgstr "Total tiempo volando"
+msgstr "Vuelo tot."
 
 msgid "logs_total_time"
 msgstr "Tiempo total"
 
 msgid "logs_maximum_distance"
-msgstr "Dist. máxima"
+msgstr "Dist. máx."
 
 msgid "logs_maximum_altitude"
-msgstr "Altitud máxima"
+msgstr "Alt. máx."
 
 msgid "logs_maximum_horizontal_speed"
 msgstr "Vel. H máx."
@@ -82,7 +82,7 @@ msgid "map_vs"
 msgstr "VS: {speed} {unit}"
 
 msgid "map_distance_flown"
-msgstr "Dist. en vuelo:"
+msgstr "Dist. vuelo:"
 
 msgid "map_sats"
 msgstr "Sats: {satellites}"
@@ -91,10 +91,10 @@ msgid "map_date"
 msgstr "Fecha:"
 
 msgid "map_maximum_distance"
-msgstr "Dist. máxima:"
+msgstr "Dist. máx.:"
 
 msgid "map_maximum_altitude"
-msgstr "Altitud máxima:"
+msgstr "Alt. máx.:"
 
 msgid "map_maximum_horizontal_speed"
 msgstr "Vel. H máx.:"
@@ -106,7 +106,7 @@ msgid "map_duration"
 msgstr "Duración:"
 
 msgid "map_flight_number"
-msgstr "Vuelo #:"
+msgstr "Vuelo núm.:"
 
 msgid "flight_flight"
 msgstr "Vuelo"
@@ -115,13 +115,13 @@ msgid "flight_duration"
 msgstr "Duración"
 
 msgid "flight_distance_flown"
-msgstr "Dist. en vuelo"
+msgstr "Dist. vuelo"
 
 msgid "flight_maximum_distance"
-msgstr "Distancia máxima"
+msgstr "Dist. máx."
 
 msgid "flight_maximum_altitude"
-msgstr "Altitud máxima"
+msgstr "Alt. máx."
 
 msgid "flight_maximum_horizontal_speed"
 msgstr "Vel. H máx."
@@ -136,79 +136,82 @@ msgid "flight_overall"
 msgstr "General"
 
 msgid "preference_unit_of_measure"
-msgstr "Unidad de medida:"
+msgstr "Unid. de medida:"
 
 msgid "preference_home_marker"
-msgstr "Marcador de inicio:"
+msgstr "Marcador inicio:"
 
 msgid "preference_playback_rate"
-msgstr "Velocidad reprod.:"
+msgstr "Vel. reproducción:"
 
 msgid "preference_controller_marker"
-msgstr "Icono controlador:"
+msgstr "Marcador control:"
 
 msgid "preference_map_tile_server"
-msgstr "Servidor del mapa:"
+msgstr "Serv. mosaico mapa:"
 
 msgid "preference_rounded_values"
 msgstr "Valores redondeados:"
 
 msgid "preference_flight_path_width"
-msgstr "Ancho de vuelo:"
+msgstr "Ancho ruta vuelo:"
 
 msgid "preference_language"
 msgstr "Idioma:"
 
 msgid "preference_flight_path_color"
-msgstr "Color del vuelo:"
+msgstr "Color ruta vuelo:"
 
 msgid "preference_controller_color"
-msgstr "Color del control:"
+msgstr "Color controlador:"
 
 msgid "preference_drone_color"
-msgstr "Color del dron:"
+msgstr "Color dron:"
 
 msgid "preference_home_color"
-msgstr "Color de inicio:"
+msgstr "Color inicio:"
+
+msgid "preference_app_version"
+msgstr "App Version:"
 
 msgid "no_data_in_zip_file"
-msgstr "No hay datos de vuelo en el archivo zip."
+msgstr "No hay datos en zip."
 
 msgid "no_valid_file_specified"
-msgstr "No se especificó un archivo válido: {filename}"
+msgstr "Archivo no válido: {filename}"
 
 msgid "file_already_imported_on"
-msgstr "Este archivo ya se importó en: {timestamp}"
+msgstr "Archivo importado el: {timestamp}"
 
 msgid "log_import_completed"
-msgstr "Importación del archivo de registro completada."
+msgstr "Importación completada."
 
 msgid "nothing_to_import"
 msgstr "Nada que importar."
 
 msgid "drone_not_supported"
-msgstr "Es posible que este modelo de dron no sea compatible con este software: {modelname}"
+msgstr "Dron no soportado: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr "Nada que importar. Coloque el archivo zip de registro en el directorio de Documentos de flightlogviewer, luego intente nuevamente."
+msgstr "Nada que importar. Coloque el archivo zip en Documents y reintente."
 
 msgid "select_log_zip_file"
-msgstr "Seleccione un archivo zip de registro."
+msgstr "Seleccione zip de registro."
 
 msgid "zip_files"
 msgstr "Archivos Zip"
 
 msgid "data_exported_to"
-msgstr "Los datos se han exportado a {filename}"
+msgstr "Datos exportados a {filename}"
 
 msgid "save_export_csv_file"
-msgstr "Guardar archivo de registro CSV."
+msgstr "Guardar archivo CSV."
 
 msgid "export_csv_file_saved"
-msgstr "{filename} se ha exportado al directorio de Documentos de flightlogviewer."
+msgstr "{filename} exportado a Documents."
 
 msgid "error_saving_export_csv"
-msgstr "Error al guardar el archivo CSV {filename}: {error}"
+msgstr "Error al guardar CSV {filename}: {error}"
 
 msgid "no_data_to_play_back"
 msgstr "No hay datos para reproducir."
@@ -223,13 +226,13 @@ msgid "no_next_flight"
 msgstr "No hay siguiente vuelo."
 
 msgid "select_flight_to_play_back"
-msgstr "Seleccione un vuelo para reproducir."
+msgstr "Seleccione un vuelo."
 
 msgid "reopen_log_for_changes_to_take_effect"
-msgstr "Vuelva a abrir el archivo de registro para que los cambios surtan efecto."
+msgstr "Reabra el registro para aplicar cambios."
 
 msgid "reopen_app_for_changes_to_take_effect"
-msgstr "Vuelva a abrir la aplicación para que los cambios surtan efecto."
+msgstr "Reabra la app para aplicar cambios."
 
 msgid "delete"
 msgstr "Eliminar"
@@ -238,7 +241,7 @@ msgid "cancel"
 msgstr "Cancelar"
 
 msgid "backup"
-msgstr "Copia de seguridad"
+msgstr "Copia seg."
 
 msgid "restore"
 msgstr "Restaurar"
@@ -247,28 +250,28 @@ msgid "delete_file"
 msgstr "¿Eliminar {filename}?"
 
 msgid "backup_system_data"
-msgstr "¿Hacer una copia de seguridad de sus datos del sistema?"
+msgstr "¿Copia de seguridad de datos?"
 
 msgid "error_saving_backup_zip"
-msgstr "Error saving zip file {filename}: {error}"
+msgstr "Error al guardar zip {filename}: {error}"
 
 msgid "not_valid_backup_file_specified"
-msgstr "No se especificó un archivo de respaldo válido: {filename}"
+msgstr "Archivo de respaldo no válido: {filename}"
 
 msgid "not_valid_backup_zip_file_specified"
-msgstr "No se especificó un archivo zip de respaldo válido: {filename}"
+msgstr "Zip de respaldo no válido: {filename}"
 
 msgid "save_backup_file"
-msgstr "Guardar archivo de respaldo."
+msgstr "Guardar respaldo."
 
 msgid "restore_system_data"
-msgstr "¿Restaurar sus datos del sistema?"
+msgstr "¿Restaurar datos del sistema?"
 
 msgid "restored_from"
 msgstr "Restaurado desde: {filename}."
 
 msgid "select_backup_zip_file"
-msgstr "Seleccione un archivo zip de respaldo."
+msgstr "Seleccione zip de respaldo."
 
 msgid "parsing_log_file"
-msgstr "Analizando archivo de registro..." 
+msgstr "Analizando registro..."

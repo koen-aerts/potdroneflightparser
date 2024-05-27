@@ -171,6 +171,9 @@ msgstr "Warna Drone:"
 msgid "preference_home_color"
 msgstr "Warna Rumah:"
 
+msgid "preference_app_version"
+msgstr "App Version:"
+
 msgid "no_data_in_zip_file"
 msgstr "Tdk ada data penerbangan dlm file zip."
 

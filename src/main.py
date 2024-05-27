@@ -14,8 +14,6 @@ import gettext
 
 from enum import Enum
 
-langpath = os.path.join(os.path.dirname(__file__), 'languages')
-
 from kivy.core.window import Window
 Window.allow_screensaver = False
 
@@ -86,12 +84,14 @@ class MainApp(MDApp):
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
     languages = {
-        'en': 'English',
-        'fr': 'Français',
-        'es': 'Española',
-        'it': 'Italiana',
-        'nl': 'Nederlands',
-        'id': 'Indonesia'
+        'en_GB': 'English (GB)',
+        'en_US': 'English (US)',
+        'fr_FR': 'Français',
+        'es_ES': 'Español (ES)',
+        'es_MX': 'Español (MX)',
+        'it_IT': 'Italiano',
+        'nl_NL': 'Nederlands',
+        'id_ID': 'Indonesia'
     }
 
 
@@ -545,7 +545,7 @@ class MainApp(MDApp):
     Open a file import dialog (import zip file).
     '''
     def open_file_import_dialog(self):
-        if platform == 'android':
+        if self.is_android:
             # Open Android Shared Storage. This opens in a separate thread so we wait here
             # until that dialog has closed. Otherwise the map drawing will be triggered from
             # a thread other than the main Kivy one and it will complain about that.
@@ -558,7 +558,7 @@ class MainApp(MDApp):
                 time.sleep(0.2)
             if self.chosenFile is not None:
                 self.initiate_import_file(self.chosenFile)
-        elif platform == 'ios':
+        elif self.is_ios:
             # iOS File Dialog is currently not supported through the Kivy framework. Instead,
             # grab the zip file through the exposed app's Documents directory where users can
             # drop the file via the OS File Browser or through iTunes. Load oldest file first.
@@ -599,7 +599,6 @@ class MainApp(MDApp):
                     f.write('"' + str(col) + '"')
                     hasWritten = True
         f.close()
-        self.show_info_message(message=_('data_exported_to').format(filename=csvFilename))
 
 
     '''
@@ -607,17 +606,18 @@ class MainApp(MDApp):
     '''
     def open_file_export_dialog(self):
         csvFilename = re.sub("\.zip$", "", self.zipFilename) + ".csv"
-        if platform == 'android':
+        if self.is_android:
             csvFile = os.path.join(self.shared_storage.get_cache_dir(), csvFilename)
             try:
                 self.save_csv_file(csvFile)
                 url = self.shared_storage.copy_to_shared(csvFile)
                 ShareSheet().share_file(url)
+                self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
             except Exception as e:
                 msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
                 print(msg)
                 self.show_error_message(message=msg)
-        elif platform == 'ios':
+        elif self.is_ios:
             csvFile = os.path.join(self.ios_doc_path(), csvFilename)
             try:
                 self.save_csv_file(csvFile)
@@ -636,6 +636,7 @@ class MainApp(MDApp):
                 csvFile = os.path.join(myFiles[0], csvFilename)
                 try:
                     self.save_csv_file(csvFile)
+                    self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
                 except Exception as e:
                     msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
                     print(msg)
@@ -1515,7 +1516,7 @@ class MainApp(MDApp):
         self.close_backup_dialog(None)
         dtpart = re.sub("[^0-9]", "", datetime.datetime.now().isoformat())
         backupName = f"{self.appPathName}_{self.appVersion}_Backup_{dtpart}.zip"
-        if platform == 'android':
+        if self.is_android:
             cache_dir = user_cache_dir(self.appPathName, self.appPathName)
             zipFile = os.path.join(cache_dir, backupName)
             try:
@@ -1530,7 +1531,7 @@ class MainApp(MDApp):
                 msg = _('error_saving_backup_zip').format(filename=zipFile, error=e)
                 print(msg)
                 self.show_error_message(message=msg)
-        elif platform == 'ios':
+        elif self.is_ios:
             zipFile = os.path.join(self.ios_doc_path(), backupName)
             try:
                 with ZipFile(zipFile, 'w') as zip:
@@ -1594,7 +1595,7 @@ class MainApp(MDApp):
 
     def open_restore_file_dialog(self, buttonObj):
         self.close_restore_dialog(None)
-        if platform == 'android':
+        if self.is_android:
             # Open Android Shared Storage.
             self.chosenFile = None
             self.chooser.choose_content("application/zip")
@@ -1603,7 +1604,7 @@ class MainApp(MDApp):
                 time.sleep(0.2)
             if self.chosenFile is not None:
                 self.restore_data(self.chosenFile)
-        elif platform == 'ios':
+        elif self.is_ios:
             gotFile = False
             # Restore from the most recent backup file, if there are multiple.
             for zipFile in sorted(glob.glob(os.path.join(self.ios_doc_path(), '*.zip'), recursive=False), reverse=True):
@@ -1858,9 +1859,9 @@ class MainApp(MDApp):
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        locale.setlocale(locale.LC_ALL, '')
         self.is_desktop = platform in ('linux', 'win', 'macosx')
         self.is_ios = platform == 'ios'
+        self.is_android = platform == 'android'
         self.title = self.appTitle
         self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
@@ -1872,7 +1873,7 @@ class MainApp(MDApp):
         if not os.path.exists(configDir):
             Path(configDir).mkdir(parents=True, exist_ok=True)
         self.configFile = os.path.join(configDir, self.configFilename) # ini config file.
-        if platform == 'android':
+        if self.is_android:
             request_permissions([Permission.INTERNET, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE])
             self.shared_storage = SharedStorage()
             self.chosenFile = None
@@ -1894,9 +1895,16 @@ class MainApp(MDApp):
             'show_marker_ctrl': False,
             'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
             'selected_model': '--',
-            'language': 'en'
+            'language': 'en_US'
         })
-        lang = gettext.translation('messages', localedir=langpath, languages=[Config.get('preferences', 'language')])
+        langcode = Config.get('preferences', 'language')
+        langpath = os.path.join(os.path.dirname(__file__), 'languages')
+        lang = gettext.translation('messages', localedir=langpath, languages=[langcode])
+        try:
+            locale.setlocale(locale.LC_ALL, langcode)
+        except:
+            print(f"Using fallback locale. Unsupported: {langcode}")
+            locale.setlocale(locale.LC_ALL, '') # Fallback
         lang.install()
         Window.bind(on_keyboard=self.events)
         self.flightPaths = None
