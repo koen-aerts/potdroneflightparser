@@ -34,13 +34,13 @@ msgid "logs_date"
 msgstr "Fecha"
 
 msgid "logs_number_flights"
-msgstr "Núm. vuelos"
+msgstr "# vuelos"
 
 msgid "logs_total_flown"
 msgstr "Vuelo tot."
 
 msgid "logs_total_time"
-msgstr "Tiempo total"
+msgstr "Tiem. tot."
 
 msgid "logs_maximum_distance"
 msgstr "Dist. máx."
