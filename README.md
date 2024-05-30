@@ -114,7 +114,7 @@ Many thanks to Rob Pritt for his very significant contributions to the project, 
 
 A special thank-you goes to the following people who kindly provided the following languages for the app:
 
-French: PJ Guyot
-Spanish: Pepito Ruiz
-Italian: Stefano Rapegno
-Indonesian: Lio
+- French: PJ Guyot
+- Spanish: Pepito Ruiz
+- Italian: Stefano Rapegno
+- Indonesian: Lio
