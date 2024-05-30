@@ -111,3 +111,10 @@ Join the [Potensic Atom Flight Log Viewer](<https://www.facebook.com/groups/2607
 
 # Acknowledgements
 Many thanks to Rob Pritt for his very significant contributions to the project, and the many other users for their feedback and willingness to share their log files that help make this app better with each release.
+
+A special thank-you goes to the following people who kindly provided the following languages for the app:
+
+French: PJ Guyot
+Spanish: Pepito Ruiz
+Italian: Stefano Rapegno
+Indonesian: Lio
