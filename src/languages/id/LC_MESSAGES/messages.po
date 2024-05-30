@@ -1,0 +1,277 @@
+# Indonesian translations for PROJECT.
+# Copyright (C) 2024 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2024-05-13 16:11-0600\n"
+"PO-Revision-Date: 2024-05-17 07:32-0600\n"
+"Last-Translator: LINARDO BENTHARA HANGGA <den.lio5050@gmail.com>\n"
+"Language: id\n"
+"Language-Team: id <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.15.0\n"
+
+msgid "title_logs"
+msgstr "Pencatatan"
+
+msgid "title_map"
+msgstr "Peta"
+
+msgid "title_flights"
+msgstr "Penerbangan"
+
+msgid "title_preferences"
+msgstr "Prarasa"
+
+msgid "logs_date"
+msgstr "Tanggal"
+
+msgid "logs_number_flights"
+msgstr "# penerbangan"
+
+msgid "logs_total_flown"
+msgstr "TTL Mengudara"
+
+msgid "logs_total_time"
+msgstr "TTL Waktu"
+
+msgid "logs_maximum_distance"
+msgstr "Jarak Maks"
+
+msgid "logs_maximum_altitude"
+msgstr "Ketinggian Maks"
+
+msgid "logs_maximum_horizontal_speed"
+msgstr "Kecepatan H Maks"
+
+msgid "logs_maximum_vertical_speed"
+msgstr "Kecepatan V Maks"
+
+msgid "map_time"
+msgstr "Waktu:"
+
+msgid "map_distance"
+msgstr "Jarak:"
+
+msgid "map_dist"
+msgstr "Jrk: {distance} {unit}"
+
+msgid "map_altitude"
+msgstr "Ketinggian:"
+
+msgid "map_alt"
+msgstr "Alt: {altitude} {unit}"
+
+msgid "map_horizontal_speed"
+msgstr "Kecepatan H:"
+
+msgid "map_hs"
+msgstr "KH: {speed} {unit}"
+
+msgid "map_vertical_speed"
+msgstr "Kecepatan V:"
+
+msgid "map_vs"
+msgstr "KV: {speed} {unit}"
+
+msgid "map_distance_flown"
+msgstr "Jarak Penerbangan:"
+
+msgid "map_sats"
+msgstr "Sat: {satellites}"
+
+msgid "map_date"
+msgstr "Tanggal:"
+
+msgid "map_maximum_distance"
+msgstr "Jarak Maks:"
+
+msgid "map_maximum_altitude"
+msgstr "Alt Maks:"
+
+msgid "map_maximum_horizontal_speed"
+msgstr "Kec H Maks:"
+
+msgid "map_total_distance"
+msgstr "Total Jarak:"
+
+msgid "map_duration"
+msgstr "Durasi:"
+
+msgid "map_flight_number"
+msgstr "Penerbangan #:"
+
+msgid "flight_flight"
+msgstr "Penerbangan"
+
+msgid "flight_duration"
+msgstr "Durasi"
+
+msgid "flight_distance_flown"
+msgstr "Jarak Mengudara"
+
+msgid "flight_maximum_distance"
+msgstr "Jarak Maks"
+
+msgid "flight_maximum_altitude"
+msgstr "Ketinggian Maks"
+
+msgid "flight_maximum_horizontal_speed"
+msgstr "Maks Kec H"
+
+msgid "flight_maximum_vertical_speed"
+msgstr "Maks Kec V"
+
+msgid "flight_flight_number"
+msgstr "Mengudara #{flight_number}"
+
+msgid "flight_overall"
+msgstr "Keseluruhan"
+
+msgid "preference_unit_of_measure"
+msgstr "Satuan Ukur:"
+
+msgid "preference_home_marker"
+msgstr "Penanda Rumah:"
+
+msgid "preference_playback_rate"
+msgstr "Laju Pemutaran:"
+
+msgid "preference_controller_marker"
+msgstr "Tanda Pengontrol:"
+
+msgid "preference_map_tile_server"
+msgstr "Server Peta Dasar:"
+
+msgid "preference_rounded_values"
+msgstr "Nilai Lingkaran:"
+
+msgid "preference_flight_path_width"
+msgstr "Lebar Jalur Penerbangan:"
+
+msgid "preference_language"
+msgstr "Bahasa:"
+
+msgid "preference_flight_path_color"
+msgstr "Warna Jalur Penerbangan:"
+
+msgid "preference_controller_color"
+msgstr "Warna Pengendali:"
+
+msgid "preference_drone_color"
+msgstr "Warna Drone:"
+
+msgid "preference_home_color"
+msgstr "Warna Rumah:"
+
+msgid "preference_app_version"
+msgstr "App Version:"
+
+msgid "no_data_in_zip_file"
+msgstr "Tdk ada data penerbangan dlm file zip."
+
+msgid "no_valid_file_specified"
+msgstr "Berkas tdk Valid: {filename}"
+
+msgid "file_already_imported_on"
+msgstr "Berkas sdh pernah dimuat: {timestamp}"
+
+msgid "log_import_completed"
+msgstr "Pemuatan Catatan selesai."
+
+msgid "nothing_to_import"
+msgstr "Tidak ada yg dimuat."
+
+msgid "drone_not_supported"
+msgstr "Model Drone tdk didukung perangkat lunak: {modelname}"
+
+msgid "ios_nothing_to_import"
+msgstr "Tdk ada pemuatan. Letakkan berkas catatan zip ke direktori dokumen penampil-catatan-penerbangan, kemudian coba lagi."
+
+msgid "select_log_zip_file"
+msgstr "Pilih berkas catatan zip."
+
+msgid "zip_files"
+msgstr "Berkas Zip"
+
+msgid "data_exported_to"
+msgstr "Data berhasil diekspor ke {filename}"
+
+msgid "save_export_csv_file"
+msgstr "Simpan berkas catatan CSV."
+
+msgid "export_csv_file_saved"
+msgstr "{filename} telah diekspor ke direktori dokumen penampil-catatan-penerbangan."
+
+msgid "error_saving_export_csv"
+msgstr "Penyimpanan berkas CSV gagal {filename}: {error}"
+
+msgid "no_data_to_play_back"
+msgstr "Tidak ada data untuk diputar."
+
+msgid "no_flight_selected"
+msgstr "Tidak ada Penerbangan yg dipilih."
+
+msgid "no_previous_flight"
+msgstr "Tidak ada Penerbangan sebelumnya."
+
+msgid "no_next_flight"
+msgstr "Tidak ada Penerbangan Lanjutan."
+
+msgid "select_flight_to_play_back"
+msgstr "Pilih Penerbangan utk diputar."
+
+msgid "reopen_log_for_changes_to_take_effect"
+msgstr "Buka-ulang berkas catatan agar perubahan dapat berlaku."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Buka-ulang perangkat lunak agar perubahan dapat berlaku."
+
+msgid "delete"
+msgstr "Hapus"
+
+msgid "cancel"
+msgstr "Batal"
+
+msgid "backup"
+msgstr "Pencadangan"
+
+msgid "restore"
+msgstr "Kembalikan"
+
+msgid "delete_file"
+msgstr "Hapus {filename}?"
+
+msgid "backup_system_data"
+msgstr "Cadangkan data sistem anda?"
+
+msgid "error_saving_backup_zip"
+msgstr "Gagal menyimpan berkas zip {filename}: {error}"
+
+msgid "not_valid_backup_file_specified"
+msgstr "Bukan berkas cadangan valid yang ditetapkan: {filename}"
+
+msgid "not_valid_backup_zip_file_specified"
+msgstr "Bukan file zip cadangan valid yang ditetapkan: {filename}"
+
+msgid "save_backup_file"
+msgstr "Simpan Berkas Cadangan."
+
+msgid "restore_system_data"
+msgstr "Kembalikan data sistem anda?"
+
+msgid "restored_from"
+msgstr "Dikembalikan dari: {filename}."
+
+msgid "select_backup_zip_file"
+msgstr "Pilih berkas zip cadangan."
+
+msgid "parsing_log_file"
+msgstr "Mengurai Berkas Catatan..."

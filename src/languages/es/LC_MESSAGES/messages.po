@@ -1,0 +1,277 @@
+# Spanish translations for PROJECT.
+# Copyright (C) 2024 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2024-05-13 16:11-0600\n"
+"PO-Revision-Date: 2024-05-16 15:47-0600\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.15.0\n"
+
+msgid "title_logs"
+msgstr "Registros"
+
+msgid "title_map"
+msgstr "Mapa"
+
+msgid "title_flights"
+msgstr "Vuelos"
+
+msgid "title_preferences"
+msgstr "Preferencias"
+
+msgid "logs_date"
+msgstr "Fecha"
+
+msgid "logs_number_flights"
+msgstr "# vuelos"
+
+msgid "logs_total_flown"
+msgstr "Vuelo tot."
+
+msgid "logs_total_time"
+msgstr "Tiem. tot."
+
+msgid "logs_maximum_distance"
+msgstr "Dist. máx."
+
+msgid "logs_maximum_altitude"
+msgstr "Alt. máx."
+
+msgid "logs_maximum_horizontal_speed"
+msgstr "Vel. H máx."
+
+msgid "logs_maximum_vertical_speed"
+msgstr "Vel. V máx."
+
+msgid "map_time"
+msgstr "Tiempo:"
+
+msgid "map_distance"
+msgstr "Distancia:"
+
+msgid "map_dist"
+msgstr "Dist: {distance} {unit}"
+
+msgid "map_altitude"
+msgstr "Altitud:"
+
+msgid "map_alt"
+msgstr "Alt: {altitude} {unit}"
+
+msgid "map_horizontal_speed"
+msgstr "Vel. H:"
+
+msgid "map_hs"
+msgstr "HS: {speed} {unit}"
+
+msgid "map_vertical_speed"
+msgstr "Vel. V:"
+
+msgid "map_vs"
+msgstr "VS: {speed} {unit}"
+
+msgid "map_distance_flown"
+msgstr "Dist. vuelo:"
+
+msgid "map_sats"
+msgstr "Sats: {satellites}"
+
+msgid "map_date"
+msgstr "Fecha:"
+
+msgid "map_maximum_distance"
+msgstr "Dist. máx.:"
+
+msgid "map_maximum_altitude"
+msgstr "Alt. máx.:"
+
+msgid "map_maximum_horizontal_speed"
+msgstr "Vel. H máx.:"
+
+msgid "map_total_distance"
+msgstr "Dist. total:"
+
+msgid "map_duration"
+msgstr "Duración:"
+
+msgid "map_flight_number"
+msgstr "Vuelo núm.:"
+
+msgid "flight_flight"
+msgstr "Vuelo"
+
+msgid "flight_duration"
+msgstr "Duración"
+
+msgid "flight_distance_flown"
+msgstr "Dist. vuelo"
+
+msgid "flight_maximum_distance"
+msgstr "Dist. máx."
+
+msgid "flight_maximum_altitude"
+msgstr "Alt. máx."
+
+msgid "flight_maximum_horizontal_speed"
+msgstr "Vel. H máx."
+
+msgid "flight_maximum_vertical_speed"
+msgstr "Vel. V máx."
+
+msgid "flight_flight_number"
+msgstr "Vuelo #{flight_number}"
+
+msgid "flight_overall"
+msgstr "General"
+
+msgid "preference_unit_of_measure"
+msgstr "Unid. de medida:"
+
+msgid "preference_home_marker"
+msgstr "Marcador inicio:"
+
+msgid "preference_playback_rate"
+msgstr "Vel. reproducción:"
+
+msgid "preference_controller_marker"
+msgstr "Marcador control:"
+
+msgid "preference_map_tile_server"
+msgstr "Serv. mosaico mapa:"
+
+msgid "preference_rounded_values"
+msgstr "Valores redondeados:"
+
+msgid "preference_flight_path_width"
+msgstr "Ancho ruta vuelo:"
+
+msgid "preference_language"
+msgstr "Idioma:"
+
+msgid "preference_flight_path_color"
+msgstr "Color ruta vuelo:"
+
+msgid "preference_controller_color"
+msgstr "Color controlador:"
+
+msgid "preference_drone_color"
+msgstr "Color dron:"
+
+msgid "preference_home_color"
+msgstr "Color inicio:"
+
+msgid "preference_app_version"
+msgstr "App Version:"
+
+msgid "no_data_in_zip_file"
+msgstr "No hay datos en zip."
+
+msgid "no_valid_file_specified"
+msgstr "Archivo no válido: {filename}"
+
+msgid "file_already_imported_on"
+msgstr "Archivo importado el: {timestamp}"
+
+msgid "log_import_completed"
+msgstr "Importación completada."
+
+msgid "nothing_to_import"
+msgstr "Nada que importar."
+
+msgid "drone_not_supported"
+msgstr "Dron no soportado: {modelname}"
+
+msgid "ios_nothing_to_import"
+msgstr "Nada que importar. Coloque el archivo zip en Documents y reintente."
+
+msgid "select_log_zip_file"
+msgstr "Seleccione zip de registro."
+
+msgid "zip_files"
+msgstr "Archivos Zip"
+
+msgid "data_exported_to"
+msgstr "Datos exportados a {filename}"
+
+msgid "save_export_csv_file"
+msgstr "Guardar archivo CSV."
+
+msgid "export_csv_file_saved"
+msgstr "{filename} exportado a Documents."
+
+msgid "error_saving_export_csv"
+msgstr "Error al guardar CSV {filename}: {error}"
+
+msgid "no_data_to_play_back"
+msgstr "No hay datos para reproducir."
+
+msgid "no_flight_selected"
+msgstr "Ningún vuelo seleccionado."
+
+msgid "no_previous_flight"
+msgstr "No hay vuelo anterior."
+
+msgid "no_next_flight"
+msgstr "No hay siguiente vuelo."
+
+msgid "select_flight_to_play_back"
+msgstr "Seleccione un vuelo."
+
+msgid "reopen_log_for_changes_to_take_effect"
+msgstr "Reabra el registro para aplicar cambios."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Reabra la app para aplicar cambios."
+
+msgid "delete"
+msgstr "Eliminar"
+
+msgid "cancel"
+msgstr "Cancelar"
+
+msgid "backup"
+msgstr "Copia seg."
+
+msgid "restore"
+msgstr "Restaurar"
+
+msgid "delete_file"
+msgstr "¿Eliminar {filename}?"
+
+msgid "backup_system_data"
+msgstr "¿Copia de seguridad de datos?"
+
+msgid "error_saving_backup_zip"
+msgstr "Error al guardar zip {filename}: {error}"
+
+msgid "not_valid_backup_file_specified"
+msgstr "Archivo de respaldo no válido: {filename}"
+
+msgid "not_valid_backup_zip_file_specified"
+msgstr "Zip de respaldo no válido: {filename}"
+
+msgid "save_backup_file"
+msgstr "Guardar respaldo."
+
+msgid "restore_system_data"
+msgstr "¿Restaurar datos del sistema?"
+
+msgid "restored_from"
+msgstr "Restaurado desde: {filename}."
+
+msgid "select_backup_zip_file"
+msgstr "Seleccione zip de respaldo."
+
+msgid "parsing_log_file"
+msgstr "Analizando registro..."

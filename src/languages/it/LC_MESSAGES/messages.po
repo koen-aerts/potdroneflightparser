@@ -1,0 +1,277 @@
+# Italian translations for PROJECT.
+# Copyright (C) 2024 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2024-05-13 16:11-0600\n"
+"PO-Revision-Date: 2024-05-16 14:07-0600\n"
+"Last-Translator: Stefano Rapegno\n"
+"Language: it\n"
+"Language-Team: it <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.15.0\n"
+
+msgid "title_logs"
+msgstr "Registri"
+
+msgid "title_map"
+msgstr "Mappe"
+
+msgid "title_flights"
+msgstr "Voli"
+
+msgid "title_preferences"
+msgstr "Preferenze"
+
+msgid "logs_date"
+msgstr "Data"
+
+msgid "logs_number_flights"
+msgstr "# Voli"
+
+msgid "logs_total_flown"
+msgstr "Dist Tot Percorsa"
+
+msgid "logs_total_time"
+msgstr "Tempo Totale"
+
+msgid "logs_maximum_distance"
+msgstr "Dist. Max"
+
+msgid "logs_maximum_altitude"
+msgstr "Alt. Max"
+
+msgid "logs_maximum_horizontal_speed"
+msgstr "Vel. Max orizz."
+
+msgid "logs_maximum_vertical_speed"
+msgstr "Vel. Max Vert."
+
+msgid "map_time"
+msgstr "Tempo:"
+
+msgid "map_distance"
+msgstr "Distanza:"
+
+msgid "map_dist"
+msgstr "Dist: {distance} {unit}"
+
+msgid "map_altitude"
+msgstr "Altitudine:"
+
+msgid "map_alt"
+msgstr "Alt: {altitude} {unit}"
+
+msgid "map_horizontal_speed"
+msgstr "Vel. Orizz.:"
+
+msgid "map_hs"
+msgstr "VO: {speed} {unit}"
+
+msgid "map_vertical_speed"
+msgstr "Vel. Vert.:"
+
+msgid "map_vs"
+msgstr "VV: {speed} {unit}"
+
+msgid "map_distance_flown"
+msgstr "Dist Percorsa:"
+
+msgid "map_sats"
+msgstr "Satelliti: {satellites}"
+
+msgid "map_date"
+msgstr "Data:"
+
+msgid "map_maximum_distance"
+msgstr "Max Distanza:"
+
+msgid "map_maximum_altitude"
+msgstr "Max Altitu.:"
+
+msgid "map_maximum_horizontal_speed"
+msgstr "V. Max oriz.:"
+
+msgid "map_total_distance"
+msgstr "Dist. Totale:"
+
+msgid "map_duration"
+msgstr "Durata:"
+
+msgid "map_flight_number"
+msgstr "Volo #:"
+
+msgid "flight_flight"
+msgstr "Volo"
+
+msgid "flight_duration"
+msgstr "Durata Volo"
+
+msgid "flight_distance_flown"
+msgstr "Dist del Volo"
+
+msgid "flight_maximum_distance"
+msgstr "Max Distanza"
+
+msgid "flight_maximum_altitude"
+msgstr "Max Altitu."
+
+msgid "flight_maximum_horizontal_speed"
+msgstr "Max V. Orizz."
+
+msgid "flight_maximum_vertical_speed"
+msgstr "Max V. Vert."
+
+msgid "flight_flight_number"
+msgstr "Volo #{flight_number}"
+
+msgid "flight_overall"
+msgstr "Tutti i Voli"
+
+msgid "preference_unit_of_measure"
+msgstr "Unità di Misura:"
+
+msgid "preference_home_marker"
+msgstr "Indicatore di Home:"
+
+msgid "preference_playback_rate"
+msgstr "Avanz. Rapid.:"
+
+msgid "preference_controller_marker"
+msgstr "Radiocomando:"
+
+msgid "preference_map_tile_server"
+msgstr "Server delle Mappe:"
+
+msgid "preference_rounded_values"
+msgstr "Valore Arrotondato:"
+
+msgid "preference_flight_path_width"
+msgstr "Tratto del Volo:"
+
+msgid "preference_language"
+msgstr "Lingua:"
+
+msgid "preference_flight_path_color"
+msgstr "Colore Tratto di Volo:"
+
+msgid "preference_controller_color"
+msgstr "Colore Radiocomando:"
+
+msgid "preference_drone_color"
+msgstr "Colore del Drone:"
+
+msgid "preference_home_color"
+msgstr "Colore della Home:"
+
+msgid "preference_app_version"
+msgstr "App Version:"
+
+msgid "no_data_in_zip_file"
+msgstr "Il file non è in zip file."
+
+msgid "no_valid_file_specified"
+msgstr "File non valido specifica Nome: {filename}"
+
+msgid "file_already_imported_on"
+msgstr "Questo file è già stato importato: {timestamp}"
+
+msgid "log_import_completed"
+msgstr "File del registro importazione Completata."
+
+msgid "nothing_to_import"
+msgstr "Importazione non riuscita."
+
+msgid "drone_not_supported"
+msgstr "Questo modello di drone potrebbe non essere supportato per questo software: {modelname}"
+
+msgid "ios_nothing_to_import"
+msgstr "Nessuna importazione.Inserisci il file zip di registro volo nella directory flightlogviewer, Riprova."
+
+msgid "select_log_zip_file"
+msgstr "Seleziona il file Registro zip."
+
+msgid "zip_files"
+msgstr "File Zip"
+
+msgid "data_exported_to"
+msgstr "I dati sono stati esportatati in {filename}"
+
+msgid "save_export_csv_file"
+msgstr "Salva il File di Registro CSV."
+
+msgid "export_csv_file_saved"
+msgstr "{filename} hai esportato il documento nella directory flightlogviewer."
+
+msgid "error_saving_export_csv"
+msgstr "Errore salvataggio del file CSV {filename}: {error}"
+
+msgid "no_data_to_play_back"
+msgstr "Nessun Dato da riprodurre."
+
+msgid "no_flight_selected"
+msgstr "Nessun volo selezionato."
+
+msgid "no_previous_flight"
+msgstr "Nessun Volo precedente."
+
+msgid "no_next_flight"
+msgstr "Nessun volo successivo."
+
+msgid "select_flight_to_play_back"
+msgstr "Seleziona un Volo da Riprodurre."
+
+msgid "reopen_log_for_changes_to_take_effect"
+msgstr "Riapri il file di registro affinché le modifiche abbiano effetto."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Riapri l'applicazione affinché le modifiche abbiano effetto."
+
+msgid "delete"
+msgstr "Elimina"
+
+msgid "cancel"
+msgstr "Annulla"
+
+msgid "backup"
+msgstr "Backup"
+
+msgid "restore"
+msgstr "Ripristina"
+
+msgid "delete_file"
+msgstr "Elimina {filename}?"
+
+msgid "backup_system_data"
+msgstr "Vuoi fare il Backup dei dati del tuo sistema?"
+
+msgid "error_saving_backup_zip"
+msgstr "Errore durante il salvataggio del zip file {filename}: {error}"
+
+msgid "not_valid_backup_file_specified"
+msgstr "Non è  stato specificato un File di Beckup valido: {filename}"
+
+msgid "not_valid_backup_zip_file_specified"
+msgstr "Non è stato specificato un File zip di Beckup Valido: {filename}"
+
+msgid "save_backup_file"
+msgstr "Salva i file di backup."
+
+msgid "restore_system_data"
+msgstr "Ripristinare i dati di sistema?"
+
+msgid "restored_from"
+msgstr "Ripristinato da: {filename}."
+
+msgid "select_backup_zip_file"
+msgstr "Seleziona un file zip di backup."
+
+msgid "parsing_log_file"
+msgstr "Analisi del file di Registro..."

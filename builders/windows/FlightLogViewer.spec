@@ -15,7 +15,7 @@ a = Analysis(
     ['main.py'],
     pathex=[path],
     binaries=[],
-    datas=[('main.kv', '.'), ('./assets/*.png', 'assets')],
+    datas=[('main.kv', '.'), ('./assets/*.png', 'assets'), ('./languages', 'languages')],
     hiddenimports=['kivymd.icon_definitions', 'plyer.platforms.win.filechooser'],
     hookspath=[kivymd_hooks_path],
     hooksconfig={},

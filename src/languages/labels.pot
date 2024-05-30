@@ -1,0 +1,276 @@
+# Translations template for PROJECT.
+# Copyright (C) 2024 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2024-05-13 16:11-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.15.0\n"
+
+msgid "title_logs"
+msgstr "Logs"
+
+msgid "title_map"
+msgstr "Map"
+
+msgid "title_flights"
+msgstr "Flights"
+
+msgid "title_preferences"
+msgstr "Preferences"
+
+msgid "logs_date"
+msgstr "Date"
+
+msgid "logs_number_flights"
+msgstr "# flights"
+
+msgid "logs_total_flown"
+msgstr "Tot Flown"
+
+msgid "logs_total_time"
+msgstr "Tot Time"
+
+msgid "logs_maximum_distance"
+msgstr "Max Dist"
+
+msgid "logs_maximum_altitude"
+msgstr "Max Alt"
+
+msgid "logs_maximum_horizontal_speed"
+msgstr "Max H Sp"
+
+msgid "logs_maximum_vertical_speed"
+msgstr "Max V Sp"
+
+msgid "map_time"
+msgstr "Time:"
+
+msgid "map_distance"
+msgstr "Distance:"
+
+msgid "map_dist"
+msgstr "Dist: {distance} {unit}"
+
+msgid "map_altitude"
+msgstr "Altitude:"
+
+msgid "map_alt"
+msgstr "Alt: {altitude} {unit}"
+
+msgid "map_horizontal_speed"
+msgstr "H Speed:"
+
+msgid "map_hs"
+msgstr "HS: {speed} {unit}"
+
+msgid "map_vertical_speed"
+msgstr "V Speed:"
+
+msgid "map_vs"
+msgstr "VS: {speed} {unit}"
+
+msgid "map_distance_flown"
+msgstr "Dist Flown:"
+
+msgid "map_sats"
+msgstr "Sats: {satellites}"
+
+msgid "map_date"
+msgstr "Date:"
+
+msgid "map_maximum_distance"
+msgstr "Max Dist:"
+
+msgid "map_maximum_altitude"
+msgstr "Max Alt:"
+
+msgid "map_maximum_horizontal_speed"
+msgstr "Max H Spd:"
+
+msgid "map_total_distance"
+msgstr "Total Dist:"
+
+msgid "map_duration"
+msgstr "Duration:"
+
+msgid "map_flight_number"
+msgstr "Flight #:"
+
+msgid "flight_flight"
+msgstr "Flight"
+
+msgid "flight_duration"
+msgstr "Duration"
+
+msgid "flight_distance_flown"
+msgstr "Dist Flown"
+
+msgid "flight_maximum_distance"
+msgstr "Max Distance"
+
+msgid "flight_maximum_altitude"
+msgstr "Max Altitude"
+
+msgid "flight_maximum_horizontal_speed"
+msgstr "Max H Speed"
+
+msgid "flight_maximum_vertical_speed"
+msgstr "Max V Speed"
+
+msgid "flight_flight_number"
+msgstr "Flight #{flight_number}"
+
+msgid "flight_overall"
+msgstr "Overall"
+
+msgid "preference_unit_of_measure"
+msgstr "Unit of Measure:"
+
+msgid "preference_home_marker"
+msgstr "Home Marker:"
+
+msgid "preference_playback_rate"
+msgstr "Playback Rate:"
+
+msgid "preference_controller_marker"
+msgstr "Controller Marker:"
+
+msgid "preference_map_tile_server"
+msgstr "Map Tile Server:"
+
+msgid "preference_rounded_values"
+msgstr "Rounded Values:"
+
+msgid "preference_flight_path_width"
+msgstr "Flight Path Width:"
+
+msgid "preference_language"
+msgstr "Language:"
+
+msgid "preference_flight_path_color"
+msgstr "Flight Path Colour:"
+
+msgid "preference_controller_color"
+msgstr "Controller Colour:"
+
+msgid "preference_drone_color"
+msgstr "Drone Colour:"
+
+msgid "preference_home_color"
+msgstr "Home Colour:"
+
+msgid "preference_app_version"
+msgstr "App Version:"
+
+msgid "no_data_in_zip_file"
+msgstr "No flight data in zip file."
+
+msgid "no_valid_file_specified"
+msgstr "Not a valid file specified: {filename}"
+
+msgid "file_already_imported_on"
+msgstr "This file is already imported on: {timestamp}"
+
+msgid "log_import_completed"
+msgstr "Log file import completed."
+
+msgid "nothing_to_import"
+msgstr "Nothing to import."
+
+msgid "drone_not_supported"
+msgstr "This drone model may not be supported in this software: {modelname}"
+
+msgid "ios_nothing_to_import"
+msgstr "Nothing to import. Place the log zip file in the flightlogviewer Documents directory, then try again."
+
+msgid "select_log_zip_file"
+msgstr "Select a log zip file."
+
+msgid "zip_files"
+msgstr "Zip files"
+
+msgid "data_exported_to"
+msgstr "Data has been exported to {filename}"
+
+msgid "save_export_csv_file"
+msgstr "Save CSV log file."
+
+msgid "export_csv_file_saved"
+msgstr "{filename} has been exported to the flightlogviewer Documents directory."
+
+msgid "error_saving_export_csv"
+msgstr "Error saving CSV file {filename}: {error}"
+
+msgid "no_data_to_play_back"
+msgstr "No data to play back."
+
+msgid "no_flight_selected"
+msgstr "No flight selected."
+
+msgid "no_previous_flight"
+msgstr "No previous flight."
+
+msgid "no_next_flight"
+msgstr "No next flight."
+
+msgid "select_flight_to_play_back"
+msgstr "Select a flight to play back."
+
+msgid "reopen_log_for_changes_to_take_effect"
+msgstr "Re-open the log file for the changes to take effect."
+
+msgid "reopen_app_for_changes_to_take_effect"
+msgstr "Re-open the application for the changes to take effect."
+
+msgid "delete"
+msgstr "Delete"
+
+msgid "cancel"
+msgstr "Cancel"
+
+msgid "backup"
+msgstr "Backup"
+
+msgid "restore"
+msgstr "Restore"
+
+msgid "delete_file"
+msgstr "Delete {filename}?"
+
+msgid "backup_system_data"
+msgstr "Backup your system data?"
+
+msgid "error_saving_backup_zip"
+msgstr "Error saving zip file {filename}: {error}"
+
+msgid "not_valid_backup_file_specified"
+msgstr "Not a valid backup file specified: {filename}"
+
+msgid "not_valid_backup_zip_file_specified"
+msgstr "Not a valid backup zip file specified: {filename}"
+
+msgid "save_backup_file"
+msgstr "Save backup file."
+
+msgid "restore_system_data"
+msgstr "Restore your system data?"
+
+msgid "restored_from"
+msgstr "Restored from: {filename}."
+
+msgid "select_backup_zip_file"
+msgstr "Select a backup zip file."
+
+msgid "parsing_log_file"
+msgstr "Parsing Log File..."

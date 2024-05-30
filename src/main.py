@@ -10,6 +10,7 @@ import re
 import threading
 import locale
 import sqlite3
+import gettext
 
 from enum import Enum
 
@@ -71,7 +72,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.1.2"
+    appVersion = "v2.2.0"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -82,6 +83,16 @@ class MainApp(MDApp):
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
+    languages = {
+        'en_GB': 'English (GB)',
+        'en_US': 'English (US)',
+        'fr_FR': 'Français',
+        'es_ES': 'Español (ES)',
+        'es_MX': 'Español (MX)',
+        'it_IT': 'Italiano',
+        'nl_NL': 'Nederlands',
+        'id_ID': 'Indonesia'
+    }
 
 
     '''
@@ -122,6 +133,11 @@ class MainApp(MDApp):
         for fileRef in binFiles:
             file = fileRef[0]
             timestampMarkers.append(datetime.datetime.strptime(re.sub("-.*", "", file), '%Y%m%d%H%M%S'))
+
+        if len(timestampMarkers) == 0:
+            # Code should not get here, unless empty files were imported in older versions of this app.
+            self.show_warning_message(message=_('no_data_in_zip_file'))
+            return
 
         filenameTs = timestampMarkers[0]
         prevReadingTs = timestampMarkers[0]
@@ -411,16 +427,16 @@ class MainApp(MDApp):
 
 
     def show_flight_stats(self):
-        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Flight", bold=True, max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
-        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Duration", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Dist Flown", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Distance", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max Altitude", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max H Speed", bold=True, max_lines=1, halign="right", valign="center"))
-        self.root.ids.flight_stats_grid.add_widget(MDLabel(text="Max V Speed", bold=True, max_lines=1, halign="right", valign="center", padding=[0,0,dp(10),0]))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_flight'), bold=True, max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_duration'), bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_distance_flown'), bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_maximum_distance'), bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_maximum_altitude'), bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_maximum_horizontal_speed'), bold=True, max_lines=1, halign="right", valign="center"))
+        self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_maximum_vertical_speed'), bold=True, max_lines=1, halign="right", valign="center", padding=[0,0,dp(10),0]))
         rowcount = len(self.flightStats)
         for i in range(0 if rowcount > 2 else 1, rowcount):
-            self.root.ids.flight_stats_grid.add_widget(MDLabel(text=(f"Flight #{i}" if i > 0 else "Overall"), max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
+            self.root.ids.flight_stats_grid.add_widget(MDLabel(text=(_('flight_flight_number').format(flight_number=i) if i > 0 else _('flight_overall')), max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=str(self.flightStats[i][3]), max_lines=1, halign="right", valign="center"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.dist_val(self.flightStats[i][9]))} {self.dist_unit()}", max_lines=1, halign="right", valign="center"))
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.dist_val(self.flightStats[i][0]))} {self.dist_unit()}", max_lines=1, halign="right", valign="center"))
@@ -434,7 +450,7 @@ class MainApp(MDApp):
     '''
     def initiate_import_file(self, selectedFile):
         if not os.path.isfile(selectedFile):
-            self.show_error_message(message=f'Not a valid file specified: {selectedFile}')
+            self.show_error_message(message=_('no_valid_file_specified').format(filename=selectedFile))
             return
         zipBaseName = os.path.basename(selectedFile)
         droneModel = re.sub(r"[0-9]*-(.*)-Drone.*", r"\1", zipBaseName) # Pull drone model from zip filename.
@@ -447,13 +463,14 @@ class MainApp(MDApp):
                 threading.Thread(target=self.import_file, args=(droneModel, zipBaseName, selectedFile)).start()
             else:
                 self.post_import_cleanup(selectedFile)
-                self.show_warning_message(message=f'This file is already imported on: {already_imported[0][0]}')
+                self.show_warning_message(message=_('file_already_imported_on').format(timestamp=already_imported[0][0]))
                 return
 
 
     def import_file(self, droneModel, zipBaseName, selectedFile):
-        isNewZip = True
+        hasFc = False
         lcDM = droneModel.lower()
+        fpvList = []
         # Extract the bin files and copy to the app data directory, then update the DB references.
         binLog = os.path.join(tempfile.gettempdir(), "flightdata")
         shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
@@ -465,37 +482,49 @@ class MainApp(MDApp):
                 "BIN" if binBaseName.endswith("-FC.bin") else (
                 "FC" if binBaseName.endswith("-FC.fc") else None))
             if binType is not None:
-                if isNewZip:
-                    logDate = re.sub(r"-.*", r"", zipBaseName) # Extract date section from zip filename.
-                    self.execute_db("INSERT OR IGNORE INTO models(modelref) VALUES(?)", (droneModel,))
+                if binType == 'FPV':
+                    fpvList.append(binFile)
+                else:
+                    if not hasFc:
+                        logDate = re.sub(r"-.*", r"", zipBaseName) # Extract date section from zip filename.
+                        self.execute_db("INSERT OR IGNORE INTO models(modelref) VALUES(?)", (droneModel,))
+                        self.execute_db(
+                            "INSERT OR IGNORE INTO imports(importref, modelref, dateref, importedon) VALUES(?,?,?,?)",
+                            (zipBaseName, droneModel, logDate, datetime.datetime.now().isoformat())
+                        )
+                        hasFc = True
+                    shutil.copyfile(binFile, os.path.join(self.logfileDir, binBaseName))
                     self.execute_db(
-                        "INSERT OR IGNORE INTO imports(importref, modelref, dateref, importedon) VALUES(?,?,?,?)",
-                        (zipBaseName, droneModel, logDate, datetime.datetime.now().isoformat())
+                        "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
+                        (binBaseName, zipBaseName, binType)
                     )
-                    isNewZip = False
-                shutil.copyfile(binFile, os.path.join(self.logfileDir, binBaseName))
+        if hasFc:
+            # Once we have FC bin/fc files, we will also import FVP files as well.
+            for fpvFile in fpvList:
+                fpvBaseName = os.path.basename(fpvFile)
+                shutil.copyfile(fpvFile, os.path.join(self.logfileDir, fpvBaseName))
                 self.execute_db(
                     "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
-                    (binBaseName, zipBaseName, binType)
+                    (fpvBaseName, zipBaseName, "FPV")
                 )
         shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
-        if isNewZip:
-            self.show_warning_message(message=f'Nothing to import.')
-        else:
-            self.show_info_message(message=f'Log file import completed.')
+        if hasFc:
+            self.show_info_message(message=_('log_import_completed'))
             self.map_rebuild_required = False
             mainthread(self.open_view)("Screen_Map")
             if ('p1a' in lcDM):
                 self.parse_dreamer_logs(zipBaseName) # TODO - port over from app version 1.4.2
             else:
                 if (not 'atom' in lcDM):
-                    self.show_warning_message(message=f'This drone model may not be supported in this software: {droneModel}')
+                    self.show_warning_message(message=_('drone_not_supported').format(modelname=droneModel))
                 self.parse_atom_logs(zipBaseName)
             mainthread(self.set_default_flight)()
             mainthread(self.generate_map_layers)()
             mainthread(self.select_flight)()
             mainthread(self.select_drone_model)(droneModel)
             mainthread(self.list_log_files)()
+        else:
+            self.show_warning_message(message=_('nothing_to_import'))
         self.post_import_cleanup(selectedFile)
         self.dialog_wait.dismiss()
 
@@ -516,7 +545,7 @@ class MainApp(MDApp):
     Open a file import dialog (import zip file).
     '''
     def open_file_import_dialog(self):
-        if platform == 'android':
+        if self.is_android:
             # Open Android Shared Storage. This opens in a separate thread so we wait here
             # until that dialog has closed. Otherwise the map drawing will be triggered from
             # a thread other than the main Kivy one and it will complain about that.
@@ -529,7 +558,7 @@ class MainApp(MDApp):
                 time.sleep(0.2)
             if self.chosenFile is not None:
                 self.initiate_import_file(self.chosenFile)
-        elif platform == 'ios':
+        elif self.is_ios:
             # iOS File Dialog is currently not supported through the Kivy framework. Instead,
             # grab the zip file through the exposed app's Documents directory where users can
             # drop the file via the OS File Browser or through iTunes. Load oldest file first.
@@ -539,10 +568,10 @@ class MainApp(MDApp):
                     self.initiate_import_file(zipFile)
                     break
             if not gotFile:
-                self.show_warning_message(message=f'Nothing to import. Place the log zip file in the flightlogviewer Documents directory, then try again.')
+                self.show_warning_message(message=_('ios_nothing_to_import'))
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
-            myFiles = filechooser.open_file(title="Select a log zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
+            myFiles = filechooser.open_file(title=_('select_log_zip_file'), filters=[(_('zip_files'), "*.zip")], mime_type="zip")
             newwd = os.getcwd()
             if oldwd != newwd:
                 os.chdir(oldwd) # Change it back!
@@ -570,7 +599,6 @@ class MainApp(MDApp):
                     f.write('"' + str(col) + '"')
                     hasWritten = True
         f.close()
-        self.show_info_message(message=f"Data has been exported to {csvFilename}")
 
 
     '''
@@ -578,26 +606,29 @@ class MainApp(MDApp):
     '''
     def open_file_export_dialog(self):
         csvFilename = re.sub("\.zip$", "", self.zipFilename) + ".csv"
-        if platform == 'android':
+        if self.is_android:
             csvFile = os.path.join(self.shared_storage.get_cache_dir(), csvFilename)
             try:
                 self.save_csv_file(csvFile)
                 url = self.shared_storage.copy_to_shared(csvFile)
                 ShareSheet().share_file(url)
+                self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
             except Exception as e:
-                print(f"Error saving CSV file {csvFile}: {e}")
-                self.show_error_message(message=f'Error while saving file {csvFile}: {e}')
-        elif platform == 'ios':
+                msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
+                print(msg)
+                self.show_error_message(message=msg)
+        elif self.is_ios:
             csvFile = os.path.join(self.ios_doc_path(), csvFilename)
             try:
                 self.save_csv_file(csvFile)
-                self.show_info_message(message=f'{csvFile} has been exported to the flightlogviewer Documents directory.')
+                self.show_info_message(message=_('export_csv_file_saved').format(filename=csvFile))
             except Exception as e:
-                print(f"Error saving CSV file {csvFile}: {e}")
-                self.show_error_message(message=f'Error while saving file {csvFile}: {e}')
+                msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
+                print(msg)
+                self.show_error_message(message=msg)
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
-            myFiles = filechooser.choose_dir(title="Save CSV log file.")
+            myFiles = filechooser.choose_dir(title=_('save_export_csv_file'))
             newwd = os.getcwd()
             if oldwd != newwd:
                 os.chdir(oldwd) # Change it back!
@@ -605,9 +636,11 @@ class MainApp(MDApp):
                 csvFile = os.path.join(myFiles[0], csvFilename)
                 try:
                     self.save_csv_file(csvFile)
+                    self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
                 except Exception as e:
-                    print(f"Error saving CSV file {csvFile}: {e}")
-                    self.show_error_message(message=f'Error while saving file {csvFile}: {e}')
+                    msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
+                    print(msg)
+                    self.show_error_message(message=msg)
 
 
     '''
@@ -620,14 +653,6 @@ class MainApp(MDApp):
                 break # Only open the first file from the selection.
         except Exception as e:
             print(f"File Chooser Error: {e}")
-        self.chooser_open = False
-
-
-    '''
-    File Chooser, called when a file has been selected on the iOS device.
-    '''
-    def import_ios_chooser_callback(self, uri_list):
-        # TODO - iOS not supported yet.
         self.chooser_open = False
 
 
@@ -851,16 +876,17 @@ class MainApp(MDApp):
             return
         record = self.logdata[self.currentRowIdx]
         self.root.ids.value1_alt.text = f"{record[self.columns.index('altitude2')]} {self.dist_unit()}"
-        self.root.ids.value2_alt.text = f"Alt: {record[self.columns.index('altitude2')]} {self.dist_unit()}"
+        self.root.ids.value2_alt.text = _('map_alt').format(altitude=record[self.columns.index('altitude2')], unit=self.dist_unit())
         self.root.ids.value1_traveled.text = f"{record[self.columns.index('traveled')]} {self.dist_unit()}"
+        self.root.ids.value1_traveled_short.text = f"({self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()})"
         self.root.ids.value1_dist.text = f"{record[self.columns.index('distance3')]} {self.dist_unit()}"
         self.root.ids.value1_dist_short.text = f"({self.shorten_dist_val(record[self.columns.index('distance3')])} {self.dist_unit_km()})"
-        self.root.ids.value2_dist.text = f"Dist: {record[self.columns.index('distance3')]} {self.dist_unit()}"
+        self.root.ids.value2_dist.text = _('map_dist').format(distance=record[self.columns.index('distance3')], unit=self.dist_unit())
         self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
-        self.root.ids.value2_hspeed.text = f"HS: {record[self.columns.index('speed2')]} {self.speed_unit()}"
+        self.root.ids.value2_hspeed.text = _('map_hs').format(speed=record[self.columns.index('speed2')], unit=self.speed_unit())
         self.root.ids.value1_vspeed.text = f"{record[self.columns.index('speed2vert')]} {self.speed_unit()}"
-        self.root.ids.value2_vspeed.text = f"VS: {record[self.columns.index('speed2vert')]} {self.speed_unit()}"
-        self.root.ids.value2_sats.text = f"Sats: {record[self.columns.index('satellites')]}"
+        self.root.ids.value2_vspeed.text = _('map_vs').format(speed=record[self.columns.index('speed2vert')], unit=self.speed_unit())
+        self.root.ids.value2_sats.text = _('map_sats').format(satellites=record[self.columns.index('satellites')])
         elapsed = record[5]
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
         self.root.ids.value1_elapsed.text = str(elapsed)
@@ -974,10 +1000,10 @@ class MainApp(MDApp):
     '''
     def jump_prev_flight(self):
         if len(self.logdata) == 0:
-            self.show_warning_message(message="No data to play back.")
+            self.show_warning_message(message=_('no_data_to_play_back'))
             return
         if (self.root.ids.selected_path.text == '--'):
-            self.show_info_message(message="No flight selected.")
+            self.show_info_message(message=_('no_flight_selected'))
             return
         self.stop_flight(True)
         if self.currentRowIdx > self.currentStartIdx:
@@ -996,7 +1022,7 @@ class MainApp(MDApp):
             self.root.ids.flight_progress.value = 100
             self.root.ids.flight_progress.is_updating = False
         else:
-            self.show_info_message(message="No previous flight.")
+            self.show_info_message(message=_('no_previous_flight'))
 
 
     '''
@@ -1004,10 +1030,10 @@ class MainApp(MDApp):
     '''
     def jump_next_flight(self):
         if len(self.logdata) == 0:
-            self.show_warning_message(message="No data to play back.")
+            self.show_warning_message(message=_('no_data_to_play_back'))
             return
         if (self.root.ids.selected_path.text == '--'):
-            self.show_info_message(message="No flight selected.")
+            self.show_info_message(message=_('no_flight_selected'))
             return
         self.stop_flight(True)
         if self.currentRowIdx < self.currentEndIdx:
@@ -1026,7 +1052,7 @@ class MainApp(MDApp):
             self.root.ids.flight_progress.value = 0
             self.root.ids.flight_progress.is_updating = False
         else:
-            self.show_info_message(message="No next flight.")
+            self.show_info_message(message=_('no_next_flight'))
 
 
     '''
@@ -1038,10 +1064,10 @@ class MainApp(MDApp):
             self.stop_flight(True)
             return
         if len(self.logdata) == 0:
-            self.show_warning_message(message="No data to play back.")
+            self.show_warning_message(message=_('no_data_to_play_back'))
             return
         if (self.root.ids.selected_path.text == '--'):
-            self.show_info_message(message="Select a flight to play back.")
+            self.show_info_message(message=_('select_flight_to_play_back'))
             return
         if self.currentRowIdx == self.currentEndIdx:
             self.currentRowIdx = self.currentStartIdx
@@ -1161,6 +1187,7 @@ class MainApp(MDApp):
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
+            self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value1_dist_short.text = ""
             self.root.ids.value2_dist.text = ""
@@ -1205,7 +1232,7 @@ class MainApp(MDApp):
         self.uom_selection_menu.dismiss()
         Config.set('preferences', 'unit_of_measure', text_item)
         Config.write()
-        self.show_info_message(message="Re-open the log file for the changes to take effect.")
+        self.show_info_message(message=_('reopen_log_for_changes_to_take_effect'))
 
 
     '''
@@ -1253,7 +1280,7 @@ class MainApp(MDApp):
         Config.set('preferences', 'rounded_readings', item.active)
         Config.write()
         self.stop_flight(True)
-        self.show_info_message(message="Re-open the log file for the changes to take effect.")
+        self.show_info_message(message=_('reopen_log_for_changes_to_take_effect'))
 
 
     '''
@@ -1315,6 +1342,23 @@ class MainApp(MDApp):
 
 
     '''
+    Change Language (Preferences).
+    '''
+    def language_selection(self, item):
+        menu_items = []
+        for languageId in self.languages:
+            menu_items.append({"text": self.languages.get(languageId), "on_release": lambda x=languageId: self.language_selection_callback(x)})
+        self.language_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.language_selection_menu.open()
+    def language_selection_callback(self, lang_id):
+        self.root.ids.selected_language.text = self.languages.get(lang_id)
+        self.language_selection_menu.dismiss()
+        Config.set('preferences', 'language', lang_id)
+        Config.write()
+        self.show_info_message(message=_('reopen_app_for_changes_to_take_effect'))
+
+
+    '''
     Dropdown selection with different drone models determined from the imported log files.
     Model names are slightly inconsistent based on the version of the Potensic app they were generated in.
     '''
@@ -1351,14 +1395,14 @@ class MainApp(MDApp):
         role = "medium" if self.is_desktop else "small"
         iconsize = [dp(40), dp(40)] if self.is_desktop else [dp(30), dp(30)]
         self.root.ids.log_files.clear_widgets()
-        self.root.ids.log_files.add_widget(MDLabel(text="Date", bold=True, max_lines=1, halign="left", valign="top", role=role, padding=[dp(24),0,0,0]))
-        self.root.ids.log_files.add_widget(MDLabel(text="# flights", bold=True, max_lines=1, halign="right", valign="top", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Tot Flown", bold=True, max_lines=1, halign="right", valign="top", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Tot Time", bold=True, max_lines=1, halign="right", valign="top", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max Dist", bold=True, max_lines=1, halign="right", valign="top", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max Alt", bold=True, max_lines=1, halign="right", valign="top", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max H Sp", bold=True, max_lines=1, halign="right", valign="top", role=role))
-        self.root.ids.log_files.add_widget(MDLabel(text="Max V Sp", bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text=_('logs_date'), bold=True, max_lines=1, halign="left", valign="top", role=role, padding=[dp(24),0,0,0]))
+        self.root.ids.log_files.add_widget(MDLabel(text=_('logs_number_flights'), bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text=_('logs_total_flown'), bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text=_('logs_total_time'), bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text=_('logs_maximum_distance'), bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text=_('logs_maximum_altitude'), bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text=_('logs_maximum_horizontal_speed'), bold=True, max_lines=1, halign="right", valign="top", role=role))
+        self.root.ids.log_files.add_widget(MDLabel(text=_('logs_maximum_vertical_speed'), bold=True, max_lines=1, halign="right", valign="top", role=role))
         self.root.ids.log_files.add_widget(MDLabel(text="", bold=True))
         for importRef in imports:
             dt = datetime.date.fromisoformat(importRef[1]).strftime("%x")
@@ -1407,16 +1451,16 @@ class MainApp(MDApp):
 
 
     def open_delete_log_dialog(self, buttonObj):
-        okBtn = MDButton(MDButtonText(text="Delete"), style="text", on_release=self.delete_log_file)
+        okBtn = MDButton(MDButtonText(text=_('delete')), style="text", on_release=self.delete_log_file)
         okBtn.value = buttonObj.value
         self.dialog_delete = MDDialog(
             MDDialogHeadlineText(
-                text = f"Delete {buttonObj.value}?",
+                text = _('delete_file').format(filename=buttonObj.value),
                 halign="left",
             ),
             MDDialogButtonContainer(
                 Widget(),
-                MDButton(MDButtonText(text="Cancel"), style="text", on_release=self.close_delete_log_dialog),
+                MDButton(MDButtonText(text=_('cancel')), style="text", on_release=self.close_delete_log_dialog),
                 okBtn,
                 spacing="8dp",
             ),
@@ -1450,13 +1494,13 @@ class MainApp(MDApp):
     def open_backup_dialog(self):
         self.dialog_backup = MDDialog(
             MDDialogHeadlineText(
-                text = f"Backup your system data?",
+                text = _('backup_system_data'),
                 halign="left",
             ),
             MDDialogButtonContainer(
                 Widget(),
-                MDButton(MDButtonText(text="Cancel"), style="text", on_release=self.close_backup_dialog),
-                MDButton(MDButtonText(text="Backup"), style="text", on_release=self.backup_data),
+                MDButton(MDButtonText(text=_('cancel')), style="text", on_release=self.close_backup_dialog),
+                MDButton(MDButtonText(text=_('backup')), style="text", on_release=self.backup_data),
                 spacing="8dp",
             ),
         )
@@ -1472,7 +1516,7 @@ class MainApp(MDApp):
         self.close_backup_dialog(None)
         dtpart = re.sub("[^0-9]", "", datetime.datetime.now().isoformat())
         backupName = f"{self.appPathName}_{self.appVersion}_Backup_{dtpart}.zip"
-        if platform == 'android':
+        if self.is_android:
             cache_dir = user_cache_dir(self.appPathName, self.appPathName)
             zipFile = os.path.join(cache_dir, backupName)
             try:
@@ -1484,9 +1528,10 @@ class MainApp(MDApp):
                 url = self.shared_storage.copy_to_shared(zipFile)
                 ShareSheet().share_file(url)
             except Exception as e:
-                print(f"Error saving zip file {zipFile}: {e}")
-                self.show_error_message(message=f'Error while saving file {zipFile}: {e}')
-        elif platform == 'ios':
+                msg = _('error_saving_backup_zip').format(filename=zipFile, error=e)
+                print(msg)
+                self.show_error_message(message=msg)
+        elif self.is_ios:
             zipFile = os.path.join(self.ios_doc_path(), backupName)
             try:
                 with ZipFile(zipFile, 'w') as zip:
@@ -1495,11 +1540,12 @@ class MainApp(MDApp):
                     for bin_file in self.get_dir_content(self.logfileDir):
                         zip.write(bin_file, os.path.basename(bin_file))
             except Exception as e:
-                print(f"Error saving zip file {zipFile}: {e}")
-                self.show_error_message(message=f'Error while saving file {zipFile}: {e}')
+                msg = _('error_saving_backup_zip').format(filename=zipFile, error=e)
+                print(msg)
+                self.show_error_message(message=msg)
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
-            myFiles = filechooser.choose_dir(title="Save backup file.")
+            myFiles = filechooser.choose_dir(title=_('save_backup_file'))
             newwd = os.getcwd()
             if oldwd != newwd:
                 os.chdir(oldwd) # Change it back!
@@ -1512,8 +1558,9 @@ class MainApp(MDApp):
                         for bin_file in self.get_dir_content(self.logfileDir):
                             zip.write(bin_file, os.path.basename(bin_file))
                 except Exception as e:
-                    print(f"Error saving zip file {zipFile}: {e}")
-                    self.show_error_message(message=f'Error while saving file {zipFile}: {e}')
+                    msg = _('error_saving_backup_zip').format(filename=zipFile, error=e)
+                    print(msg)
+                    self.show_error_message(message=msg)
 
 
     def get_dir_content(self, directory):
@@ -1528,13 +1575,13 @@ class MainApp(MDApp):
     def open_restore_dialog(self):
         self.dialog_restore = MDDialog(
             MDDialogHeadlineText(
-                text = f"Restore your system data?",
+                text = _('restore_system_data'),
                 halign="left",
             ),
             MDDialogButtonContainer(
                 Widget(),
-                MDButton(MDButtonText(text="Cancel"), style="text", on_release=self.close_restore_dialog),
-                MDButton(MDButtonText(text="Restore"), style="text", on_release=self.open_restore_file_dialog),
+                MDButton(MDButtonText(text=_('cancel')), style="text", on_release=self.close_restore_dialog),
+                MDButton(MDButtonText(text=_('restore')), style="text", on_release=self.open_restore_file_dialog),
                 spacing="8dp",
             ),
         )
@@ -1548,7 +1595,7 @@ class MainApp(MDApp):
 
     def open_restore_file_dialog(self, buttonObj):
         self.close_restore_dialog(None)
-        if platform == 'android':
+        if self.is_android:
             # Open Android Shared Storage.
             self.chosenFile = None
             self.chooser.choose_content("application/zip")
@@ -1557,7 +1604,7 @@ class MainApp(MDApp):
                 time.sleep(0.2)
             if self.chosenFile is not None:
                 self.restore_data(self.chosenFile)
-        elif platform == 'ios':
+        elif self.is_ios:
             gotFile = False
             # Restore from the most recent backup file, if there are multiple.
             for zipFile in sorted(glob.glob(os.path.join(self.ios_doc_path(), '*.zip'), recursive=False), reverse=True):
@@ -1566,10 +1613,10 @@ class MainApp(MDApp):
                     gotFile = True
                     break
             if not gotFile:
-                self.show_warning_message(message=f'Nothing to import. Place the backup zip file in the flightlogviewer Documents directory, then try again.')
+                self.show_warning_message(message=_('nothing_to_import'))
         else:
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
-            myFiles = filechooser.open_file(title="Select a backup zip file.", filters=[("Zip files", "*.zip")], mime_type="zip")
+            myFiles = filechooser.open_file(title=_('select_backup_zip_file'), filters=[(_('zip_files'), "*.zip")], mime_type="zip")
             newwd = os.getcwd()
             if oldwd != newwd:
                 os.chdir(oldwd) # Change it back!
@@ -1579,7 +1626,7 @@ class MainApp(MDApp):
 
     def restore_data(self, selectedFile):
         if not os.path.isfile(selectedFile):
-            self.show_error_message(message=f'Not a valid backup file specified: {selectedFile}')
+            self.show_error_message(message=_('not_valid_backup_file_specified').format(filename=selectedFile))
             return
         resDir = os.path.join(tempfile.gettempdir(), "restoredata")
         shutil.rmtree(resDir, ignore_errors=True) # Delete old temp files if they were missed before.
@@ -1596,10 +1643,12 @@ class MainApp(MDApp):
                     shutil.copy(binFile, self.configFile)
                 else:
                     shutil.copy(binFile, os.path.join(self.logfileDir, binBaseName))
-            self.show_info_message(message=f'Restored from: {selectedFile}.')
+            self.show_info_message(message=_('restored_from').format(filename=selectedFile))
+            Config.read(self.configFile)
+            self.init_prefs()
             self.reset()
         else:
-            self.show_error_message(message=f'Not a valid backup zip file specified: {selectedFile}')
+            self.show_error_message(message=_('not_valid_backup_zip_file_specified').format(filename=selectedFile))
         shutil.rmtree(resDir, ignore_errors=True) # Delete temp files.
 
 
@@ -1673,6 +1722,22 @@ class MainApp(MDApp):
         self.execute_db("CREATE INDEX IF NOT EXISTS flight_stats_index ON flight_stats(importref)")
 
 
+    def init_prefs(self):
+        self.root.ids.selected_uom.text = Config.get('preferences', 'unit_of_measure')
+        self.root.ids.selected_home_marker.active = Config.getboolean('preferences', 'show_marker_home')
+        self.root.ids.selected_ctrl_marker.active = Config.getboolean('preferences', 'show_marker_ctrl')
+        self.root.ids.selected_flight_path_width.value = Config.get('preferences', 'flight_path_width')
+        self.root.ids.selected_flight_path_color.value = Config.getint('preferences', 'flight_path_color')
+        self.root.ids.selected_marker_drone_color.value = Config.getint('preferences', 'marker_drone_color')
+        self.root.ids.selected_marker_ctrl_color.value = Config.getint('preferences', 'marker_ctrl_color')
+        self.root.ids.selected_marker_home_color.value = Config.getint('preferences', 'marker_home_color')
+        self.root.ids.selected_rounding.active = Config.getboolean('preferences', 'rounded_readings')
+        self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
+        self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
+        self.root.ids.selected_model.text = Config.get('preferences', 'selected_model')
+        self.root.ids.selected_language.text = self.languages.get(Config.get('preferences', 'language'))
+
+
     '''
     Reset the application as it were before opening a file.
     '''
@@ -1696,6 +1761,7 @@ class MainApp(MDApp):
             self.root.ids.value1_alt.text = ""
             self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
+            self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value1_dist_short.text = ""
             self.root.ids.value2_dist.text = ""
@@ -1724,6 +1790,44 @@ class MainApp(MDApp):
         if self.root:
             self.root.ids.screen_manager.current = "Screen_Log_Files"
             self.center_map()
+
+
+    def cleanup_orphaned_refs(self):
+        importedFiles = []
+        for fileRef in self.execute_db("SELECT filename FROM log_files"):
+            importedFiles.append(fileRef[0])
+        filesOnDisk = []
+        for binFile in glob.glob(os.path.join(self.logfileDir, '*'), recursive=False):
+            binBasename = os.path.basename(binFile)
+            if binBasename in importedFiles:
+                filesOnDisk.append(binBasename)
+            else:
+                print(f"Deleting unreferenced file {binBasename}")
+                os.remove(binFile)
+        for importedFile in importedFiles:
+            if importedFile not in filesOnDisk:
+                print(f"Deleting orphaned reference to {importedFile}")
+                importRefRecs = self.execute_db("SELECT importref FROM log_files WHERE filename = ?", (importedFile,))
+                importRef = importRefRecs[0][0] if importRefRecs is not None and len(importRefRecs) > 0 else None
+                if importRef is not None:
+                    logFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ?", (importRef,))
+                    for fileRef in logFiles:
+                        file = fileRef[0]
+                        try:
+                            os.remove(os.path.join(self.logfileDir, file))
+                        except:
+                            # Do nothing.
+                            ...
+                    modelRef = self.execute_db("SELECT modelref FROM imports WHERE importref = ?", (importRef,))
+                    self.execute_db("DELETE FROM flight_stats WHERE importref = ?", (importRef,))
+                    self.execute_db("DELETE FROM log_files WHERE importref = ?", (importRef,))
+                    self.execute_db("DELETE FROM imports WHERE importref = ?", (importRef,))
+                    if modelRef is not None and len(modelRef) > 0:
+                        importRef = self.execute_db("SELECT count (1) FROM imports WHERE modelref = ?", (modelRef[0][0],))
+                        if importRef is None or len(importRef) == 0 or importRef[0][0] == 0:
+                            self.execute_db("DELETE FROM models WHERE modelref = ?", (modelRef[0][0],))
+                else:
+                    self.execute_db("DELETE FROM log_files WHERE filename = ?", (importedFile,))
 
 
     '''
@@ -1755,9 +1859,9 @@ class MainApp(MDApp):
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        locale.setlocale(locale.LC_ALL, '')
         self.is_desktop = platform in ('linux', 'win', 'macosx')
         self.is_ios = platform == 'ios'
+        self.is_android = platform == 'android'
         self.title = self.appTitle
         self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
@@ -1769,7 +1873,7 @@ class MainApp(MDApp):
         if not os.path.exists(configDir):
             Path(configDir).mkdir(parents=True, exist_ok=True)
         self.configFile = os.path.join(configDir, self.configFilename) # ini config file.
-        if platform == 'android':
+        if self.is_android:
             request_permissions([Permission.INTERNET, Permission.WRITE_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE])
             self.shared_storage = SharedStorage()
             self.chosenFile = None
@@ -1790,8 +1894,18 @@ class MainApp(MDApp):
             'show_marker_home': True,
             'show_marker_ctrl': False,
             'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
-            'selected_model': '--'
+            'selected_model': '--',
+            'language': 'en_US'
         })
+        langcode = Config.get('preferences', 'language')
+        langpath = os.path.join(os.path.dirname(__file__), 'languages')
+        lang = gettext.translation('messages', localedir=langpath, languages=[langcode])
+        try:
+            locale.setlocale(locale.LC_ALL, langcode)
+        except:
+            print(f"Using fallback locale. Unsupported: {langcode}")
+            locale.setlocale(locale.LC_ALL, '') # Fallback
+        lang.install()
         Window.bind(on_keyboard=self.events)
         self.flightPaths = None
         self.pathCoords = None
@@ -1809,7 +1923,7 @@ class MainApp(MDApp):
         self.playback_speed = 1
         self.dialog_wait = MDDialog(
             MDDialogHeadlineText(
-                text="Parsing Log File..."
+                text=_('parsing_log_file')
             ),
             MDDialogContentContainer(
                 MDCircularProgressIndicator(
@@ -1821,26 +1935,14 @@ class MainApp(MDApp):
             )
         )
         self.dialog_wait.auto_dismiss = False
-        # TODO - delete bin files not in DB
-        # TODO - delete DB records not in files
+        self.cleanup_orphaned_refs()
         # TODO - https://github.com/kivy-garden/graph
         # TODO - add graphs: total duration per date/log, max distance per log, # flights per day, avg duration per flight per log, etc.
 
 
     def build(self):
         self.icon = 'assets/app-icon256.png'
-        self.root.ids.selected_uom.text = Config.get('preferences', 'unit_of_measure')
-        self.root.ids.selected_home_marker.active = Config.getboolean('preferences', 'show_marker_home')
-        self.root.ids.selected_ctrl_marker.active = Config.getboolean('preferences', 'show_marker_ctrl')
-        self.root.ids.selected_flight_path_width.value = Config.get('preferences', 'flight_path_width')
-        self.root.ids.selected_flight_path_color.value = Config.getint('preferences', 'flight_path_color')
-        self.root.ids.selected_marker_drone_color.value = Config.getint('preferences', 'marker_drone_color')
-        self.root.ids.selected_marker_ctrl_color.value = Config.getint('preferences', 'marker_ctrl_color')
-        self.root.ids.selected_marker_home_color.value = Config.getint('preferences', 'marker_home_color')
-        self.root.ids.selected_rounding.active = Config.getboolean('preferences', 'rounded_readings')
-        self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
-        self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
-        self.root.ids.selected_model.text = Config.get('preferences', 'selected_model')
+        self.init_prefs()
 
 
     def on_start(self):
