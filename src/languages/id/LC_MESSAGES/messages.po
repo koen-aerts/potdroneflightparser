@@ -84,6 +84,9 @@ msgstr "KV: {speed} {unit}"
 msgid "map_distance_flown"
 msgstr "Jarak Penerbangan:"
 
+msgid "map_battery_level"
+msgstr "Aki:"
+
 msgid "map_sats"
 msgstr "Sat: {satellites}"
 

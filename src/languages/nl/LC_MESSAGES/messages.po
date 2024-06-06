@@ -84,6 +84,9 @@ msgstr "VS: {speed} {unit}"
 msgid "map_distance_flown"
 msgstr "Verplaatsing:"
 
+msgid "map_battery_level"
+msgstr "Batterij:"
+
 msgid "map_sats"
 msgstr "Sats: {satellites}"
 
