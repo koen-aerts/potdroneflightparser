@@ -168,9 +168,11 @@ class MainApp(MDApp):
                     isLegacyLog = struct.unpack('<B', fcRecord[509:510])[0] == 0 and struct.unpack('<B', fcRecord[510:511])[0] == 0 and struct.unpack('<B', fcRecord[511:512])[0] == 0
                     offset1 = 0
                     offset2 = 0
+                    offset3 = 0
                     if not isLegacyLog: # 0,0,0 = legacy, 3,3,0 = new
                         offset1 = -6
                         offset2 = -10
+                        offset3 = -14
                     satellites = struct.unpack('<B', fcRecord[46:47])[0] # Number of satellites.
                     dronelat = struct.unpack('<i', fcRecord[53+offset1:57+offset1])[0]/10000000 # Drone coords.
                     dronelon = struct.unpack('<i', fcRecord[57+offset1:61+offset1])[0]/10000000
@@ -200,7 +202,7 @@ class MainApp(MDApp):
                     motor3Stat = struct.unpack('<B', fcRecord[316+offset2:317+offset2])[0] # Motor 3 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     motor4Stat = struct.unpack('<B', fcRecord[318+offset2:319+offset2])[0] # Motor 4 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     droneInUse = struct.unpack('<B', fcRecord[295+offset2:296+offset2])[0] # Drone is detected "in action" (0 = flying or in use, 1 = not in use).
-                    batteryLevel = struct.unpack('<B', fcRecord[481+offset2:482+offset2])[0] # Battery level.
+                    batteryLevel = struct.unpack('<B', fcRecord[481+offset3:482+offset3])[0] # Battery level.
                     inUse = 'Yes' if droneInUse == 0 else 'No'
 
                     alt1 = round(self.dist_val(-struct.unpack('f', fcRecord[243+offset2:247+offset2])[0]), 2) # Relative height from controller vs distance to ground??
@@ -212,9 +214,10 @@ class MainApp(MDApp):
                     speed2lat = self.speed_val(speed2latmetric)
                     speed2lonmetric = struct.unpack('f', fcRecord[331+offset2:335+offset2])[0]
                     speed2lon = self.speed_val(speed2lonmetric)
-                    # Offset 335 + 339
-                    # Offset 351 + 355
-                    # Offset 371 + 375
+                    # Offset 335 + 339 (float)
+                    # Offset 351 + 355 (float)
+                    # Offset 371 + 375 (float)
+                    # Offset 485 (byte, values 0, 1, 2)
                     speed1 = round(math.sqrt(math.pow(speed1lat, 2) + math.pow(speed1lon, 2)), 2) # Pythagoras to calculate real speed.
                     speed2metric = round(math.sqrt(math.pow(speed2latmetric, 2) + math.pow(speed2lonmetric, 2)), 2)
                     speed2 = round(math.sqrt(math.pow(speed2lat, 2) + math.pow(speed2lon, 2)), 2) # Pythagoras to calculate real speed.
