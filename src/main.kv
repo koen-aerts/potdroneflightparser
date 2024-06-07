@@ -284,6 +284,17 @@ MDGridLayout:
                                 width: dp(90) if app.is_desktop else dp(70)
                                 role: "large" if app.is_desktop else "small"
                             StatLabel:
+                                text: _('map_flight_mode')
+                                height: dp(22) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(80)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value1_flightmode
+                                text: ""
+                                height: dp(22) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(70)
+                                role: "large" if app.is_desktop else "small"
+                            StatLabel:
                                 text: ""
                                 height: dp(11) if app.is_desktop else dp(5)
                                 width: dp(105) if app.is_desktop else dp(80)

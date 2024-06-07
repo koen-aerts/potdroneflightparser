@@ -86,6 +86,18 @@ msgstr "Dist Flown:"
 msgid "map_battery_level"
 msgstr "Battery:"
 
+msgid "map_flight_mode"
+msgstr "Flight Mode:"
+
+msgid "map_flight_mode_normal"
+msgstr "Normal"
+
+msgid "map_flight_mode_video"
+msgstr "Video"
+
+msgid "map_flight_mode_sport"
+msgstr "Sport"
+
 msgid "map_sats"
 msgstr "Sats: {satellites}"
 
