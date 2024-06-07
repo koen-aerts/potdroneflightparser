@@ -634,8 +634,22 @@ class MainApp(MDApp):
                 msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
                 print(msg)
                 self.show_error_message(message=msg)
-        else:
+        elif self.is_windows: # For windows, use "save_file" interface in plyer filechooser.
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
+            myFiles = filechooser.save_file(title=_('save_export_csv_file'), filters=["*.csv"], path=csvFilename)
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
+            if myFiles and len(myFiles) > 0:
+                try:
+                    self.save_csv_file(myFiles[0])
+                    self.show_info_message(message=_('data_exported_to').format(filename=myFiles[0]))
+                except Exception as e:
+                    msg = _('error_saving_export_csv').format(filename=myFiles[0], error=e)
+                    print(msg)
+                    self.show_error_message(message=msg)
+        else: # For non-windows, use "choose_dir" interface in plyer filechooser because plyer does currently not set the desired filename.
+            oldwd = os.getcwd() # Remember current workdir in case the OS File browser changes it, causing all sorts of mapview issues.
             myFiles = filechooser.choose_dir(title=_('save_export_csv_file'))
             newwd = os.getcwd()
             if oldwd != newwd:
@@ -649,7 +663,6 @@ class MainApp(MDApp):
                     msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
                     print(msg)
                     self.show_error_message(message=msg)
-
 
     '''
     File Chooser, called when a file has been selected on the Android device.
@@ -1875,9 +1888,10 @@ class MainApp(MDApp):
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.is_desktop = platform in ('linux', 'win', 'macosx')
         self.is_ios = platform == 'ios'
         self.is_android = platform == 'android'
+        self.is_windows = platform == 'win'
+        self.is_desktop = self.is_windows or platform in ('linux', 'macosx')
         self.title = self.appTitle
         self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
