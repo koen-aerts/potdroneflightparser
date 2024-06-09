@@ -4,9 +4,6 @@
 <MapButton@MDIconButton>
     style: "filled"
 
-<ValLabel@MDLabel>
-    role: "small"
-
 <StatLabel@MDLabel>
     halign: "right"
     valign: "top"
@@ -526,29 +523,19 @@ MDGridLayout:
                             size_hint: (None, None)
                             pos_hint: {"right": .99, "top": 1}
                             size_hint: (.7, None)
-                            height: 0 if theapp.show_nav_section else dp(16)
-                            opacity: 0 if theapp.show_nav_section else .8
+                            height: 0 if theapp.show_nav_section and not app.is_desktop else dp(32)
+                            opacity: 0 if theapp.show_nav_section and not app.is_desktop else .8
                             adaptive_height: True
-                            rows: 1
+                            rows: 2
                             md_bg_color: self.theme_cls.backgroundColor
-                            ValLabel:
-                                id: value2_dist
+                            MDLabel:
+                                id: map_metrics1
                                 text: ""
-                            ValLabel:
-                                id: value2_alt
+                                role: "medium" if app.is_desktop else "small"
+                            MDLabel:
+                                id: map_metrics2
                                 text: ""
-                            ValLabel:
-                                id: value2_hspeed
-                                text: ""
-                            ValLabel:
-                                id: value2_vspeed
-                                text: ""
-                            ValLabel:
-                                id: value2_sats
-                                text: ""
-                            ValLabel:
-                                id: value2_elapsed
-                                text: ""
+                                role: "medium" if app.is_desktop else "small"
         BaseScreen:
             name: "Screen_Day_Summary"
             on_enter: app.entered_screen_summary()
@@ -560,15 +547,15 @@ MDGridLayout:
                     height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
-                            icon: "content-save"
-                            on_release: app.open_file_export_dialog()
+                            icon: "close"
+                            on_release: root.ids.screen_manager.current = "Screen_Map"
                     MDTopAppBarTitle:
                         text: f"{app.appName} - {_('title_flights')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
                         MDActionTopAppBarButton:
-                            icon: "map-outline"
-                            on_release: root.ids.screen_manager.current = "Screen_Map"
+                            icon: "microsoft-excel"
+                            on_release: app.open_file_export_dialog()
                         MDActionTopAppBarButton:
                             icon: "wrench-cog-outline"
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"

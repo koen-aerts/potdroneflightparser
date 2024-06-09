@@ -60,25 +60,25 @@ msgid "map_distance"
 msgstr "Distance:"
 
 msgid "map_dist"
-msgstr "Dist: {distance} {unit}"
+msgstr "Dist:"
 
 msgid "map_altitude"
 msgstr "Altitude:"
 
 msgid "map_alt"
-msgstr "Alt: {altitude} {unit}"
+msgstr "Alt:"
 
 msgid "map_horizontal_speed"
 msgstr "H Speed:"
 
 msgid "map_hs"
-msgstr "HS: {speed} {unit}"
+msgstr "HS:"
 
 msgid "map_vertical_speed"
 msgstr "V Speed:"
 
 msgid "map_vs"
-msgstr "VS: {speed} {unit}"
+msgstr "VS:"
 
 msgid "map_distance_flown"
 msgstr "Dist Flown:"
@@ -99,7 +99,7 @@ msgid "map_flight_mode_sport"
 msgstr "Sport"
 
 msgid "map_sats"
-msgstr "Sats: {satellites}"
+msgstr "Sats:"
 
 msgid "map_date"
 msgstr "Date:"
