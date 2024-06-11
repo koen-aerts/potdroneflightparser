@@ -88,7 +88,7 @@ class MainApp(MDApp):
     defaultMapZoom = 3
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
-    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','other2','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
+    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
@@ -174,11 +174,11 @@ class MainApp(MDApp):
                     elapsed = struct.unpack('<Q', fcRecord[5:13])[0] # Microseconds elapsed since previous reading.
                     if (elapsed == 0):
                         continue # handle rare case of invalid record
-                    isLegacyLog = struct.unpack('<B', fcRecord[509:510])[0] == 0 and struct.unpack('<B', fcRecord[510:511])[0] == 0 and struct.unpack('<B', fcRecord[511:512])[0] == 0
+                    isLegacyLog = struct.unpack('<B', fcRecord[511:512])[0] == 0
                     offset1 = 0
                     offset2 = 0
                     offset3 = 0
-                    if not isLegacyLog: # 0,0,0 = legacy, 3,3,0 = new
+                    if not isLegacyLog: # 0 = legacy
                         offset1 = -6
                         offset2 = -10
                         offset3 = -14
@@ -212,11 +212,15 @@ class MainApp(MDApp):
                     motor3Stat = struct.unpack('<B', fcRecord[316+offset2:317+offset2])[0] # Motor 3 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     motor4Stat = struct.unpack('<B', fcRecord[318+offset2:319+offset2])[0] # Motor 4 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     droneInUse = struct.unpack('<B', fcRecord[295+offset2:296+offset2])[0] # Drone is detected "in action" (0 = flying or in use, 1 = not in use).
+                    droneConnected = struct.unpack('<B', fcRecord[469+offset3:470+offset3])[0] # Drone connected to controller, 1 = Yes, 0 = No.
                     batteryLevel = struct.unpack('<B', fcRecord[481+offset3:482+offset3])[0] # Battery level.
-                    flightMode = struct.unpack('<B', fcRecord[485+offset3:486+offset3])[0] # Flight mode: normal, video, sports.
-                    droneAction = struct.unpack('<B', fcRecord[486+offset3:487+offset3])[0] # Drone action: 0 = motors off, 1 = grounded or taking off, 2 = flying, 3 = landing
-                    other2 = struct.unpack('<B', fcRecord[487+offset3:488+offset3])[0] # Unidentified - GPS/ATTI mode?
+                    flightMode = struct.unpack('<B', fcRecord[448+offset2:449+offset2])[0] # Flight mode: normal, video, sports.
+                    flightModeDesc = _('map_flight_mode_video') if flightMode == 7 else _('map_flight_mode_normal') if flightMode == 8 else _('map_flight_mode_sport') if flightMode == 9 else ''
+                    droneAction = struct.unpack('<B', fcRecord[486+offset3:487+offset3])[0] # Drone action: 0 = motors off, 1 = grounded or taking off, 2 = flying, 3 = landing. # Field @ offset 443 looks the same?
+                    rth = 0 if droneAction != 2 else struct.unpack('<B', fcRecord[444+offset2:445+offset2])[0] # Home or Return to Home, 1 = Yes, 0 = No.
+                    positionMode = struct.unpack('<B', fcRecord[487+offset3:488+offset3])[0] # Unidentified - GPS/ATTI mode? Almost the same @ offset 445
                     inUse = 'Yes' if droneInUse == 0 else 'No'
+                    posModeDesc = "GPS" if positionMode == 3 else "OPTI" if positionMode == 2 else positionMode
 
                     alt1 = round(self.dist_val(-struct.unpack('f', fcRecord[243+offset2:247+offset2])[0]), 2) # Relative height from controller vs distance to ground??
                     alt2metric = -struct.unpack('f', fcRecord[343+offset2:347+offset2])[0] # Relative height from controller vs distance to ground??
@@ -401,7 +405,7 @@ class MainApp(MDApp):
                         isNewPath = False
                     if pathNum > 0:
                         self.flightEnds[flightDesc] = tableLen
-                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, other2, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, flightMode, flightCounter])
+                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, flightModeDesc, flightCounter])
                     tableLen = tableLen + 1
 
             flightFile.close()
@@ -926,9 +930,7 @@ class MainApp(MDApp):
         self.root.ids.value1_traveled_short.text = f"({self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()})"
         self.root.ids.value1_batterylevel.text = f"{record[self.columns.index('batterylevel')]}%"
         flightMode = record[self.columns.index('flightmode')]
-        #modeDesc = _('map_flight_mode_normal') if flightMode == 0 else _('map_flight_mode_video') if flightMode == 1 else _('map_flight_mode_sport') if flightMode == 2 else ''
-        modeDesc = f"{flightMode}"
-        self.root.ids.value1_flightmode.text = modeDesc
+        self.root.ids.value1_flightmode.text = flightMode
         self.root.ids.value1_dist.text = f"{record[self.columns.index('distance3')]} {self.dist_unit()}"
         self.root.ids.value1_dist_short.text = f"({self.shorten_dist_val(record[self.columns.index('distance3')])} {self.dist_unit_km()})"
         self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
@@ -936,7 +938,12 @@ class MainApp(MDApp):
         elapsed = record[5]
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
         self.root.ids.value1_elapsed.text = str(elapsed)
-        self.root.ids.map_metrics2.text = f" {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} / {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} / {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} / {_('map_vs')} {'{:>6}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} / {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} / {_('map_time')} {'{:>8}'.format(str(elapsed))} / {_('map_battery_level')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% / Signal: {record[self.columns.index('rssi')]}%"
+        droneConnected = 'Connected' if record[self.columns.index('droneconnected')] == 1 else 'DISCONNECTED'
+        rthDesc = "RTH" if record[self.columns.index('rth')] == 1 else ''
+        dronestatus = record[self.columns.index('dronestatus')]
+        positionMode = record[self.columns.index('positionmode')]
+        # koen
+        self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>8}'.format(str(elapsed))} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>6}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_battery_level')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | RecId: {record[self.columns.index('recnum')]} | {droneConnected} | {rthDesc} | {dronestatus} | {positionMode} | {flightMode}"
         if updateSlider:
             if self.root.ids.value_duration.text != "":
                 durstr = self.root.ids.value_duration.text.split(":")
