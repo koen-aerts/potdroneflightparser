@@ -270,28 +270,6 @@ MDGridLayout:
                                 width: dp(90) if app.is_desktop else dp(70)
                                 role: "large" if app.is_desktop else "small"
                             StatLabel:
-                                text: _('map_battery_level')
-                                height: dp(22) if app.is_desktop else dp(10)
-                                width: dp(105) if app.is_desktop else dp(80)
-                                role: "large" if app.is_desktop else "small"
-                            StatValue:
-                                id: value1_batterylevel
-                                text: ""
-                                height: dp(22) if app.is_desktop else dp(10)
-                                width: dp(90) if app.is_desktop else dp(70)
-                                role: "large" if app.is_desktop else "small"
-                            StatLabel:
-                                text: _('map_flight_mode')
-                                height: dp(22) if app.is_desktop else dp(10)
-                                width: dp(105) if app.is_desktop else dp(80)
-                                role: "large" if app.is_desktop else "small"
-                            StatValue:
-                                id: value1_flightmode
-                                text: ""
-                                height: dp(22) if app.is_desktop else dp(10)
-                                width: dp(90) if app.is_desktop else dp(70)
-                                role: "large" if app.is_desktop else "small"
-                            StatLabel:
                                 text: ""
                                 height: dp(11) if app.is_desktop else dp(5)
                                 width: dp(105) if app.is_desktop else dp(80)
@@ -520,22 +498,35 @@ MDGridLayout:
                                 icon: "minus"
                                 on_release: app.map_zoom(False)
                         MDGridLayout:
-                            size_hint: (None, None)
                             pos_hint: {"right": .99, "top": 1}
-                            size_hint: (.7, None)
-                            height: 0 if theapp.show_nav_section and not app.is_desktop else dp(32)
-                            opacity: 0 if theapp.show_nav_section and not app.is_desktop else .8
+                            size_hint: (.7, None) if app.is_desktop else (1, None)
+                            #height: 0 if theapp.show_nav_section and not app.is_desktop else dp(32)
+                            #opacity: 0 if theapp.show_nav_section and not app.is_desktop else .8
+                            height: dp(32)
+                            opacity: .8
                             adaptive_height: True
-                            rows: 2
+                            rows: 1
                             md_bg_color: self.theme_cls.backgroundColor
-                            MDLabel:
-                                id: map_metrics1
-                                text: ""
-                                role: "medium" if app.is_desktop else "small"
                             MDLabel:
                                 id: map_metrics2
                                 text: ""
                                 role: "medium" if app.is_desktop else "small"
+                                bold: True
+                            MapButton:
+                                id: battery_level
+                                icon: "battery"
+                            MapButton:
+                                id: flight_mode
+                                icon: "wifi"
+                            MapButton:
+                                id: drone_connection
+                                icon: "signal-off"
+                            MapButton:
+                                id: drone_action
+                                icon: "airplane"
+                            MapButton:
+                                id: position_mode
+                                icon: "satellite-uplink"
         BaseScreen:
             name: "Screen_Day_Summary"
             on_enter: app.entered_screen_summary()
