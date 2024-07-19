@@ -512,21 +512,41 @@ MDGridLayout:
                                 text: ""
                                 role: "medium" if app.is_desktop else "small"
                                 bold: True
-                            MapButton:
-                                id: battery_level
+                            MDIcon:
+                                id: battery_level_icon
                                 icon: "battery"
-                            MapButton:
-                                id: flight_mode
+                                padding: [0, 0, dp(16), 0]
+                                MDBadge:
+                                    id: battery_level_value
+                                    text: ""
+                            MDIcon:
+                                id: flight_mode_icon
                                 icon: "wifi"
-                            MapButton:
-                                id: drone_connection
+                                padding: [0, 0, dp(16), 0]
+                                MDBadge:
+                                    id: flight_mode_value
+                                    text: ""
+                            MDIcon:
+                                id: drone_connection_icon
                                 icon: "signal-off"
-                            MapButton:
-                                id: drone_action
+                                padding: [0, 0, dp(16), 0]
+                                MDBadge:
+                                    id: drone_connection_value
+                                    text: ""
+                            MDIcon:
+                                id: drone_action_icon
                                 icon: "airplane"
-                            MapButton:
-                                id: position_mode
+                                padding: [0, 0, dp(16), 0]
+                                MDBadge:
+                                    id: drone_action_value
+                                    text: ""
+                            MDIcon:
+                                id: position_mode_icon
                                 icon: "satellite-uplink"
+                                padding: [0, 0, dp(16), 0]
+                                MDBadge:
+                                    id: position_mode_value
+                                    text: ""
         BaseScreen:
             name: "Screen_Day_Summary"
             on_enter: app.entered_screen_summary()

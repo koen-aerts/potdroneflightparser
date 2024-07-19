@@ -102,7 +102,7 @@ class MainApp(MDApp):
     defaultMapZoom = 3
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
-    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
+    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
@@ -255,6 +255,7 @@ class MainApp(MDApp):
                     speed2vertmetric = -struct.unpack('f', fcRecord[347+offset2:351+offset2])[0] # Vertical speed
                     speed2vertmetricabs = abs(speed2vertmetric)
                     speed2vert = self.speed_val(speed2vertmetric)
+                    orientation = struct.unpack('f', fcRecord[391+offset2:395+offset2])[0] # Drone orientation in radians.
 
                     # Some checks to handle cases with bad or incomplete GPS data.
                     hasDroneCoords = dronelat != 0.0 and dronelon != 0.0
@@ -419,7 +420,7 @@ class MainApp(MDApp):
                         isNewPath = False
                     if pathNum > 0:
                         self.flightEnds[flightDesc] = tableLen
-                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, flightModeDesc, flightCounter])
+                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, flightModeDesc, flightCounter])
                     tableLen = tableLen + 1
 
             flightFile.close()
@@ -953,17 +954,22 @@ class MainApp(MDApp):
         #droneConnected = 'Connected' if record[self.columns.index('droneconnected')] == 1 else 'DISCONNECTED'
         #rthDesc = "RTH" if record[self.columns.index('rth')] == 1 else ''
         batteryLevel = record[self.columns.index('batterylevel')]
-        batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10
+        batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10 # round to nearest 10.
         flightMode = record[self.columns.index('flightmode')]
         dronestatus = record[self.columns.index('dronestatus')]
         positionMode = record[self.columns.index('positionmode')]
+        orientation = math.degrees(record[self.columns.index('orientation')]) # Drone orientation in degrees.
         # koen
-        self.root.ids.battery_level.icon = "battery" if batLevelRnd == 100 else f"battery-{batLevelRnd}"
-        self.root.ids.flight_mode.icon = "human-walker" if flightMode == FlightMode.VIDEO.value else "run" if flightMode == FlightMode.SPORT.value else "walk" if flightMode == FlightMode.NORMAL.value else ""
-        self.root.ids.drone_connection.icon = "signal" if record[self.columns.index('droneconnected')] == 1 else "signal-off"
-        self.root.ids.drone_action.icon = "airplane-marker" if record[self.columns.index('rth')] == 1 else "airplane-takeoff" if dronestatus == DroneStatus.LIFT.value else "airplane-landing" if dronestatus == DroneStatus.LANDING.value else "airplane" if dronestatus == DroneStatus.FLYING.value else "car-break-parking" if dronestatus == DroneStatus.IDLE.value else ""
-        self.root.ids.position_mode.icon = "satellite-uplink" if positionMode == PositionMode.GPS.value else "eye" if positionMode == PositionMode.OPTI.value else "panorama-fisheye" if positionMode == PositionMode.ATTI.value else ""
-        self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>8}'.format(str(elapsed))} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>6}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | RecId: {record[self.columns.index('recnum')]}"
+        self.root.ids.battery_level_icon.icon = "battery" if batLevelRnd == 100 else "battery-outline" if batLevelRnd == 0 else f"battery-{batLevelRnd}"
+        self.root.ids.battery_level_value.text = f"{batteryLevel}%"
+        self.root.ids.flight_mode_icon.icon = "human-walker" if flightMode == FlightMode.VIDEO.value else "run" if flightMode == FlightMode.SPORT.value else "walk" if flightMode == FlightMode.NORMAL.value else ""
+        self.root.ids.flight_mode_value.text = flightMode
+        self.root.ids.drone_connection_icon.icon = "signal" if record[self.columns.index('droneconnected')] == 1 else "signal-off"
+        self.root.ids.drone_action_icon.icon = "airplane-marker" if record[self.columns.index('rth')] == 1 else "airplane-takeoff" if dronestatus == DroneStatus.LIFT.value else "airplane-landing" if dronestatus == DroneStatus.LANDING.value else "airplane" if dronestatus == DroneStatus.FLYING.value else "car-break-parking" if dronestatus == DroneStatus.IDLE.value else ""
+        self.root.ids.drone_action_value.text = dronestatus
+        self.root.ids.position_mode_icon.icon = "satellite-uplink" if positionMode == PositionMode.GPS.value else "eye" if positionMode == PositionMode.OPTI.value else "panorama-fisheye" if positionMode == PositionMode.ATTI.value else ""
+        self.root.ids.position_mode_value.text = positionMode
+        self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>8}'.format(str(elapsed))} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>6}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | RecId: {record[self.columns.index('recnum')]} | Dir: {orientation}"
         if updateSlider:
             if self.root.ids.value_duration.text != "":
                 durstr = self.root.ids.value_duration.text.split(":")
