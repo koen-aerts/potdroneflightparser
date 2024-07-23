@@ -13,6 +13,7 @@ import sqlite3
 import gettext
 
 from enum import Enum
+from PIL import Image
 
 from kivy.core.window import Window
 Window.allow_screensaver = False
@@ -95,7 +96,7 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.2.1"
+    appVersion = "v2.3.0"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -958,7 +959,7 @@ class MainApp(MDApp):
         flightMode = record[self.columns.index('flightmode')]
         dronestatus = record[self.columns.index('dronestatus')]
         positionMode = record[self.columns.index('positionmode')]
-        orientation = math.degrees(record[self.columns.index('orientation')]) # Drone orientation in degrees.
+        orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees.
         # koen
         self.root.ids.battery_level_icon.icon = "battery" if batLevelRnd == 100 else "battery-outline" if batLevelRnd == 0 else f"battery-{batLevelRnd}"
         self.root.ids.battery_level_value.text = f"{batteryLevel}%"
@@ -1000,6 +1001,7 @@ class MainApp(MDApp):
             dronelon = float(record[self.columns.index('dronelon')])
             self.dronemarker.lat = dronelat
             self.dronemarker.lon = dronelon
+            self.dronemarker.source = self.get_drone_icon_source()
         except:
             ... # Do nothing
         self.root.ids.map.trigger_update(False)
@@ -1187,6 +1189,25 @@ class MainApp(MDApp):
 
 
     '''
+    Return reference to the drone icon image. If it needs to be rotated, it will be generated from the base icon image.
+    '''
+    def get_drone_icon_source(self):
+        base_filename = f"Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}"
+        if not self.currentRowIdx:
+            # Return base image if there is no current rotation (orientation).
+            return f"assets/{base_filename}.png"
+        record = self.logdata[self.currentRowIdx]
+        orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees, -180 to 180.
+        rotation = abs(orientation) if orientation <= 0 else 360 - orientation # Convert to 0 - 359 range.
+        rotated_filename = os.path.join(self.root.ids.map.cache_dir, f"{base_filename}-{rotation}.png")
+        if not os.path.exists(rotated_filename):
+            drone_base_icon = Image.open(f"assets/{base_filename}.png")
+            drone_rotated_icon = drone_base_icon.rotate(rotation, expand=True)
+            drone_rotated_icon.save(rotated_filename)
+        return rotated_filename
+
+
+    '''
     Drone Marker Colour functions.
     '''
     def marker_drone_color_selection(self, slider, coords):
@@ -1196,7 +1217,7 @@ class MainApp(MDApp):
         Config.set('preferences', 'marker_drone_color', colorIdx)
         Config.write()
         if self.dronemarker:
-            self.dronemarker.source=f"assets/Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}.png"
+            self.dronemarker.source = self.get_drone_icon_source()
             self.set_markers()
 
 
