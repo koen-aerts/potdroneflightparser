@@ -14,7 +14,7 @@ if not exist kivy_garden\ (
   copy ..\builders\mapview_constants.py .\kivy_garden\mapview\constants.py
 )
 
-rem Run pyinstaller using the spec file.
+rem Run pyinstaller using the spec file. Install version 5 since as of version 6 and up, assets are not correctly included in the build.
 pyinstaller FlightLogViewer.spec
 
 del /f /q FlightLogViewer.spec
