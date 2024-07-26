@@ -2,13 +2,13 @@
 # Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-05-13 16:11-0600\n"
-"PO-Revision-Date: 2024-05-17 07:32-0600\n"
+"PO-Revision-Date: 2024-07-26 15:32-0400\n"
 "Last-Translator: LINARDO BENTHARA HANGGA <den.lio5050@gmail.com>\n"
 "Language: id\n"
 "Language-Team: id <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.15.0\n"
+"X-Generator: PO File Editor https://pofile.net/free-po-editor\n"
 
 msgid "title_logs"
 msgstr "Pencatatan"
@@ -83,9 +84,6 @@ msgstr "KV: {speed} {unit}"
 
 msgid "map_distance_flown"
 msgstr "Jarak Penerbangan:"
-
-msgid "map_battery_level"
-msgstr "Aki:"
 
 msgid "map_sats"
 msgstr "Sat: {satellites}"
@@ -196,7 +194,9 @@ msgid "drone_not_supported"
 msgstr "Model Drone tdk didukung perangkat lunak: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr "Tdk ada pemuatan. Letakkan berkas catatan zip ke direktori dokumen penampil-catatan-penerbangan, kemudian coba lagi."
+msgstr ""
+"Tdk ada pemuatan. Letakkan berkas catatan zip ke direktori dokumen "
+"penampil-catatan-penerbangan, kemudian coba lagi."
 
 msgid "select_log_zip_file"
 msgstr "Pilih berkas catatan zip."
@@ -278,3 +278,18 @@ msgstr "Pilih berkas zip cadangan."
 
 msgid "parsing_log_file"
 msgstr "Mengurai Berkas Catatan..."
+
+msgid "gauges"
+msgstr "Pengukur"
+
+msgid "map_battery_level"
+msgstr "Tingkat Baterai:"
+
+msgid "map_rthDesc"
+msgstr "RTH Status:"
+
+msgid "map_flightmode"
+msgstr "Kecepatan:"
+
+msgid "circle_icons"
+msgstr "Ikon Melingkar"

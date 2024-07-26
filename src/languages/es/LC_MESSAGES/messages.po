@@ -2,13 +2,13 @@
 # Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-05-13 16:11-0600\n"
-"PO-Revision-Date: 2024-05-16 15:47-0600\n"
+"PO-Revision-Date: 2024-07-26 15:29-0400\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
 "Language-Team: es <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.15.0\n"
+"X-Generator: PO File Editor https://pofile.net/free-po-editor\n"
 
 msgid "title_logs"
 msgstr "Registros"
@@ -83,9 +84,6 @@ msgstr "VS: {speed} {unit}"
 
 msgid "map_distance_flown"
 msgstr "Dist. vuelo:"
-
-msgid "map_battery_level"
-msgstr "Bateria:"
 
 msgid "map_sats"
 msgstr "Sats: {satellites}"
@@ -278,3 +276,18 @@ msgstr "Seleccione zip de respaldo."
 
 msgid "parsing_log_file"
 msgstr "Analizando registro..."
+
+msgid "gauges"
+msgstr "Medidores"
+
+msgid "map_battery_level"
+msgstr "Nivel de bateria:"
+
+msgid "map_rthDesc"
+msgstr "RTH Estado:"
+
+msgid "map_flightmode"
+msgstr "Velocidad:"
+
+msgid "circle_icons"
+msgstr "Iconos circulares"

@@ -60,46 +60,31 @@ msgid "map_distance"
 msgstr "Distance:"
 
 msgid "map_dist"
-msgstr "Dist:"
+msgstr "Dist: {distance} {unit}"
 
 msgid "map_altitude"
 msgstr "Altitude:"
 
 msgid "map_alt"
-msgstr "Alt:"
+msgstr "Alt: {altitude} {unit}"
 
 msgid "map_horizontal_speed"
 msgstr "H Speed:"
 
 msgid "map_hs"
-msgstr "HS:"
+msgstr "HS: {speed} {unit}"
 
 msgid "map_vertical_speed"
 msgstr "V Speed:"
 
 msgid "map_vs"
-msgstr "VS:"
+msgstr "VS: {speed} {unit}"
 
 msgid "map_distance_flown"
 msgstr "Dist Flown:"
 
-msgid "map_battery_level"
-msgstr "Battery:"
-
-msgid "map_flight_mode"
-msgstr "Flight Mode:"
-
-msgid "map_flight_mode_normal"
-msgstr "Normal"
-
-msgid "map_flight_mode_video"
-msgstr "Video"
-
-msgid "map_flight_mode_sport"
-msgstr "Sport"
-
 msgid "map_sats"
-msgstr "Sats:"
+msgstr "Sats: {satellites}"
 
 msgid "map_date"
 msgstr "Date:"

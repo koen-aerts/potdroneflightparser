@@ -85,6 +85,10 @@ MDGridLayout:
                         MDActionTopAppBarButton:
                             icon: "database-import-outline"
                             on_release: app.open_restore_dialog()
+                        #Chris - Intial help addition
+                        MDActionTopAppBarButton:
+                            icon: "help-circle-outline"
+                            on_release: app.show_help()                              
                     MDTopAppBarTitle:
                         text: f"{app.appName} - {_('title_logs')}"
                         pos_hint: {"center_x": .5}
@@ -92,6 +96,7 @@ MDGridLayout:
                         MDActionTopAppBarButton:
                             icon: "wrench-cog-outline"
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"
+                       
                 MDGridLayout:
                     rows: 1
                     row_default_height: dp(18) if app.is_desktop else dp(14)
@@ -171,7 +176,7 @@ MDGridLayout:
                             pos_hint: {"top": 1, "right": 1}
                             md_bg_color: self.theme_cls.backgroundColor
                             StatLabel:
-                                text: ""
+                                text: ""    #left column stuff
                                 height: dp(11) if app.is_desktop else dp(5)
                                 width: dp(105) if app.is_desktop else dp(80)
                                 role: "large" if app.is_desktop else "small"
@@ -226,7 +231,7 @@ MDGridLayout:
                                 width: dp(90) if app.is_desktop else dp(70)
                                 role: "large" if app.is_desktop else "small"
                             StatLabel:
-                                text: _('map_horizontal_speed')
+                                text:  _('map_horizontal_speed')
                                 height: dp(22) if app.is_desktop else dp(10)
                                 width: dp(105) if app.is_desktop else dp(80)
                                 role: "large" if app.is_desktop else "small"
@@ -269,6 +274,42 @@ MDGridLayout:
                                 height: dp(22) if app.is_desktop else dp(10)
                                 width: dp(90) if app.is_desktop else dp(70)
                                 role: "large" if app.is_desktop else "small"
+
+                                #Chris ROB 2_2_1
+                            StatLabel:
+                                text: _('map_flightmode') # Speed
+                                height: dp(22) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(80)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value1_flightmode
+                                text: ""
+                                height: dp(22) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(70)
+                                role: "large" if app.is_desktop else "small"
+                            StatLabel:
+                                text: _('map_battery_level')
+                                height: dp(22) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(80)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value1_batterylevel
+                                text: ""
+                                height: dp(22) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(70)
+                                role: "large" if app.is_desktop else "small"
+                            StatLabel:
+                                text: _('map_rthDesc')  #RTH STATUS?
+                                height: dp(22) if app.is_desktop else dp(10)
+                                width: dp(105) if app.is_desktop else dp(80)
+                                role: "large" if app.is_desktop else "small"
+                            StatValue:
+                                id: value1_rthDesc
+                                text: ""
+                                height: dp(22) if app.is_desktop else dp(10)
+                                width: dp(90) if app.is_desktop else dp(70)
+                                role: "large" if app.is_desktop else "small"
+                                # ROB 2_2_1 END
                             StatLabel:
                                 text: ""
                                 height: dp(11) if app.is_desktop else dp(5)
@@ -471,10 +512,79 @@ MDGridLayout:
                                 icon: "crosshairs-gps"
                                 on_release: app.center_map()
                                 size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
-                        MDSlider:
+#Chris
+
+                        DistGauge:
+                            id: DSgauge
+                            display_unit: "Meters"
+                            value: 1
+                            size_gauge: 256
+                            size_text: 50
+                            md_bg_color: "black"
+                            size_hint: (None, None)
+                            pos_hint: {"x":.89,"top": 0.78} 
+                            width: 200
+                            height: 10 
+                        AltGauge:
+                            id: ALgauge
+                            display_unit: "Meters"
+                            value: 1
+                            size_gauge: 256
+                            size_text: 50
+                            md_bg_color: "black"
+                            size_hint: (None, None)
+                            pos_hint: {"x":.89,"top": 0.605}
+                            width: 200
+                            height: 10
+                        HGauge:
+                            id: HSPDgauge
+                            display_unit: "MPH"
+                            value: 1
+                            size_gauge: 256
+                            size_text: 50
+                            md_bg_color: "black"
+                            size_hint: (None, None)
+                            pos_hint: {"x":.89,"top": 0.43}
+                            width: 200
+                            height: 10
+                        VGauge:
+                            id: VSPDgauge
+                            display_unit: "MPH"
+                            value: 1
+                            size_gauge: 256
+                            size_text: 50
+                            md_bg_color: "black"
+                            size_hint: (None, None)
+                            pos_hint: {"x":.89,"top": 0.255}
+                            width: 200
+                            height: 10
+                        HeadingGauge:
+                            id: HDgauge
+                            value: 0
+                            drotation: 0     # Provision to rotate the drone image in the gauge itself
+                            size_gauge: 256
+                            size_text: 50
+                            md_bg_color: "black"
+                            size_hint: (None, None)
+                            pos_hint: {"x":.89,"top": 0.08}
+                            width: 200
+                            height: 10 
+                           
+
+
+
+
+
+
+
+                        # Chris:  Replaced MDSlider with a customer slider widget class so that the slider has better visiblity.
+                        #         Also updated the related code which will now pause the playback upon slider adjustment.
+                        #         The slider handle itself is an image stored in assets.
+                        CustomSlider:
                             id: flight_progress
-                            size_hint: (.9, None)
-                            pos_hint: {"center_x": .5}
+                            size_hint: (.5, None)  # Chris  Made smaller so as not to overlap gauge old value: size_hint: (.9, None) MDSlider
+                            #pos_hint: {"center_x": .5}
+                            pos_hint: {'x': 0.0} 
                             y: dp(55) if app.is_desktop else dp(45)
                             is_updating: True
                             opacity: 0 if selected_path.text == "--" else 1
@@ -485,7 +595,8 @@ MDGridLayout:
                             max: 100.
                             step: 0
                             value: 0.
-                            MDSliderHandle:
+                            hint: True
+                            #MDSliderHandle:
                         MDGridLayout:
                             id: mapnav
                             pos_hint: {"x": 0.01, "top": 0.99} if app.is_desktop else {"x": 1, "top": 0}
@@ -503,7 +614,8 @@ MDGridLayout:
                             #height: 0 if theapp.show_nav_section and not app.is_desktop else dp(32)
                             #opacity: 0 if theapp.show_nav_section and not app.is_desktop else .8
                             height: dp(32)
-                            opacity: .8
+                            #opacity: .8
+                            opacity: 0 if theapp.show_nav_section and app.is_desktop else .8
                             adaptive_height: True
                             rows: 1
                             md_bg_color: self.theme_cls.backgroundColor
@@ -512,41 +624,21 @@ MDGridLayout:
                                 text: ""
                                 role: "medium" if app.is_desktop else "small"
                                 bold: True
-                            MDIcon:
-                                id: battery_level_icon
+                            MapButton:
+                                id: battery_level
                                 icon: "battery"
-                                padding: [0, 0, dp(16), 0]
-                                MDBadge:
-                                    id: battery_level_value
-                                    text: ""
-                            MDIcon:
-                                id: flight_mode_icon
+                            MapButton:
+                                id: flight_mode
                                 icon: "wifi"
-                                padding: [0, 0, dp(16), 0]
-                                MDBadge:
-                                    id: flight_mode_value
-                                    text: ""
-                            MDIcon:
-                                id: drone_connection_icon
+                            MapButton:
+                                id: drone_connection
                                 icon: "signal-off"
-                                padding: [0, 0, dp(16), 0]
-                                MDBadge:
-                                    id: drone_connection_value
-                                    text: ""
-                            MDIcon:
-                                id: drone_action_icon
+                            MapButton:
+                                id: drone_action
                                 icon: "airplane"
-                                padding: [0, 0, dp(16), 0]
-                                MDBadge:
-                                    id: drone_action_value
-                                    text: ""
-                            MDIcon:
-                                id: position_mode_icon
+                            MapButton:
+                                id: position_mode
                                 icon: "satellite-uplink"
-                                padding: [0, 0, dp(16), 0]
-                                MDBadge:
-                                    id: position_mode_value
-                                    text: ""
         BaseScreen:
             name: "Screen_Day_Summary"
             on_enter: app.entered_screen_summary()
@@ -648,6 +740,7 @@ MDGridLayout:
                         id: selected_rounding
                         active: True
                         height: dp(34)
+
                     PrefLabel:
                         text: _('preference_flight_path_width')
                     PrefSlider:
@@ -663,6 +756,15 @@ MDGridLayout:
                         size_hint: (None, None)
                         width: dp(160)
                         PrefSliderHandle:
+                   #Chris
+                    PrefLabel:
+                        text: _('gauges')
+                    PrefCheck:
+                        on_release: app.gauges_selection(*args)
+                        id: selected_gauges
+                        active: True
+                        height: dp(34)
+
                     PrefLabel:
                         text: _('preference_language')
                     PrefSelect:
@@ -672,6 +774,15 @@ MDGridLayout:
                             role: "medium"
                             id: selected_language
                             text: ""
+                    #Chris - chkbox for circular icons show/hide
+                    PrefLabel:
+                        text: _('circle_icons')
+                    PrefCheck:
+                        on_release: app.circleicons_selection(*args)
+                        id: selected_icons
+                        active: True
+                        height: dp(34)
+
                     PrefLabel:
                         text: _('preference_flight_path_color')
                     PrefSlider:

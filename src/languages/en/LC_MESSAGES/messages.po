@@ -2,13 +2,13 @@
 # Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-05-13 16:11-0600\n"
-"PO-Revision-Date: 2024-05-13 16:34-0600\n"
+"PO-Revision-Date: 2024-07-26 15:27-0400\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
 "Language-Team: en <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.15.0\n"
+"X-Generator: PO File Editor https://pofile.net/free-po-editor\n"
 
 msgid "title_logs"
 msgstr "Logs"
@@ -61,46 +62,31 @@ msgid "map_distance"
 msgstr "Distance:"
 
 msgid "map_dist"
-msgstr "Dist:"
+msgstr "Dist: {distance} {unit}"
 
 msgid "map_altitude"
 msgstr "Altitude:"
 
 msgid "map_alt"
-msgstr "Alt:"
+msgstr "Alt: {altitude} {unit}"
 
 msgid "map_horizontal_speed"
 msgstr "H Speed:"
 
 msgid "map_hs"
-msgstr "HS:"
+msgstr "HS: {speed} {unit}"
 
 msgid "map_vertical_speed"
 msgstr "V Speed:"
 
 msgid "map_vs"
-msgstr "VS:"
+msgstr "VS: {speed} {unit}"
 
 msgid "map_distance_flown"
 msgstr "Dist Flown:"
 
-msgid "map_battery_level"
-msgstr "Battery:"
-
-msgid "map_flight_mode"
-msgstr "Flight Mode:"
-
-msgid "map_flight_mode_normal"
-msgstr "Normal"
-
-msgid "map_flight_mode_video"
-msgstr "Video"
-
-msgid "map_flight_mode_sport"
-msgstr "Sport"
-
 msgid "map_sats"
-msgstr "Sats:"
+msgstr "Sats: {satellites}"
 
 msgid "map_date"
 msgstr "Date:"
@@ -208,7 +194,9 @@ msgid "drone_not_supported"
 msgstr "This drone model may not be supported in this software: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr "Nothing to import. Place the log zip file in the flightlogviewer Documents directory, then try again."
+msgstr ""
+"Nothing to import. Place the log zip file in the flightlogviewer Documents "
+"directory, then try again."
 
 msgid "select_log_zip_file"
 msgstr "Select a log zip file."
@@ -290,3 +278,18 @@ msgstr "Select a backup zip file."
 
 msgid "parsing_log_file"
 msgstr "Parsing Log File..."
+
+msgid "gauges"
+msgstr "Gauges"
+
+msgid "map_battery_level"
+msgstr "Battery Level:"
+
+msgid "map_rthDesc"
+msgstr "RTH Status:"
+
+msgid "map_flightmode"
+msgstr "Speed:"
+
+msgid "circle_icons"
+msgstr "Circular Icons"
