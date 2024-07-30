@@ -2070,7 +2070,8 @@ class MainApp(MDApp):
     Open help page on the project home page and for the matching version of the app.
     '''
     def show_help(self):
-        webbrowser.open(f"https://github.com/koen-aerts/potdroneflightparser/tree/{self.appVersion}")
+        #webbrowser.open(f"https://github.com/koen-aerts/potdroneflightparser/tree/{self.appVersion}")
+        webbrowser.open("https://github.com/koen-aerts/potdroneflightparser/blob/Chris_2_2_3/help/guide.md")
 
 
     '''
