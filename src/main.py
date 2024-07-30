@@ -2063,6 +2063,7 @@ class MainApp(MDApp):
     '''
     def remove_splash_image(self, dt):
         self.root_window.remove_widget(self.splash_img)
+        self.root_window.remove_widget(self.splash_ver)
 
 
     '''
@@ -2125,7 +2126,7 @@ class MainApp(MDApp):
             'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
             'selected_model': '--',
             'language': 'en_US',
-            'gauges': True ,
+            'gauges': True,
             'statusicons': True
         })
         langcode = Config.get('preferences', 'language')
@@ -2176,8 +2177,10 @@ class MainApp(MDApp):
 
     def on_start(self):
         if self.is_desktop:
-            self.splash_img = Image(source="assets/splash1.png", fit_mode="scale-down")
+            self.splash_img = Image(source="assets/splash1_alt1.png", fit_mode="scale-down")
+            self.splash_ver = Label(text=f"{self.appVersion}", pos_hint={"center_x": .5, "center_y": .25}, font_size=dp(50))
             self.root_window.add_widget(self.splash_img)
+            self.root_window.add_widget(self.splash_ver)
             Clock.schedule_once(self.remove_splash_image, 5)
         self.root.ids.selected_path.text = '--'
         self.reset()
@@ -2595,7 +2598,6 @@ class ProgressSlider(BoxLayout):
             self.slider.value = self.slider.max
         else:
             self.slider.value = new_value
-      
 
 
 """  
