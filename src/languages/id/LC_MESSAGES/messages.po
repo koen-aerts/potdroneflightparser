@@ -109,6 +109,18 @@ msgstr "Durasi:"
 msgid "map_flight_number"
 msgstr "Penerbangan #:"
 
+msgid "map_battery_level"
+msgstr "Tingkat Baterai:"
+
+msgid "map_battery"
+msgstr "Bat:"
+
+msgid "map_rth_desc"
+msgstr "Status:"
+
+msgid "map_flightmode"
+msgstr "Kecepatan:"
+
 msgid "flight_flight"
 msgstr "Penerbangan"
 
@@ -174,6 +186,12 @@ msgstr "Warna Rumah:"
 
 msgid "preference_app_version"
 msgstr "App Version:"
+
+msgid "preference_gauges"
+msgstr "Pengukur"
+
+msgid "preference_status_icons"
+msgstr "Ikon Melingkar"
 
 msgid "no_data_in_zip_file"
 msgstr "Tdk ada data penerbangan dlm file zip."
@@ -278,18 +296,3 @@ msgstr "Pilih berkas zip cadangan."
 
 msgid "parsing_log_file"
 msgstr "Mengurai Berkas Catatan..."
-
-msgid "gauges"
-msgstr "Pengukur"
-
-msgid "map_battery_level"
-msgstr "Tingkat Baterai:"
-
-msgid "map_rthDesc"
-msgstr "RTH Status:"
-
-msgid "map_flightmode"
-msgstr "Kecepatan:"
-
-msgid "circle_icons"
-msgstr "Ikon Melingkar"

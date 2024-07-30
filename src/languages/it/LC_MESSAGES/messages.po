@@ -109,6 +109,18 @@ msgstr "Durata:"
 msgid "map_flight_number"
 msgstr "Volo #:"
 
+msgid "map_battery_level"
+msgstr "Livello della batteria:"
+
+msgid "map_battery"
+msgstr "Bat:"
+
+msgid "map_rth_desc"
+msgstr "Stato:"
+
+msgid "map_flightmode"
+msgstr "Velocità:"
+
 msgid "flight_flight"
 msgstr "Volo"
 
@@ -174,6 +186,12 @@ msgstr "Colore della Home:"
 
 msgid "preference_app_version"
 msgstr "App Version:"
+
+msgid "preference_gauges"
+msgstr "Calibri"
+
+msgid "preference_status_icons"
+msgstr "Icone circolari"
 
 msgid "no_data_in_zip_file"
 msgstr "Il file non è in zip file."
@@ -280,18 +298,3 @@ msgstr "Seleziona un file zip di backup."
 
 msgid "parsing_log_file"
 msgstr "Analisi del file di Registro..."
-
-msgid "gauges"
-msgstr "Calibri"
-
-msgid "map_battery_level"
-msgstr "Livello della batteria:"
-
-msgid "map_rthDesc"
-msgstr "RTH Stato:"
-
-msgid "map_flightmode"
-msgstr "Velocità:"
-
-msgid "circle_icons"
-msgstr "Icone circolari"

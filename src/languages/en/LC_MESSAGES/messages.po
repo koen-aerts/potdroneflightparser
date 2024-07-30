@@ -109,6 +109,18 @@ msgstr "Duration:"
 msgid "map_flight_number"
 msgstr "Flight #:"
 
+msgid "map_battery_level"
+msgstr "Battery:"
+
+msgid "map_battery"
+msgstr "Bat:"
+
+msgid "map_rth_desc"
+msgstr "Status:"
+
+msgid "map_flightmode"
+msgstr "Speed:"
+
 msgid "flight_flight"
 msgstr "Flight"
 
@@ -174,6 +186,12 @@ msgstr "Home Colour:"
 
 msgid "preference_app_version"
 msgstr "App Version:"
+
+msgid "preference_gauges"
+msgstr "Gauges"
+
+msgid "preference_status_icons"
+msgstr "Status Icons"
 
 msgid "no_data_in_zip_file"
 msgstr "No flight data in zip file."
@@ -278,18 +296,3 @@ msgstr "Select a backup zip file."
 
 msgid "parsing_log_file"
 msgstr "Parsing Log File..."
-
-msgid "gauges"
-msgstr "Gauges"
-
-msgid "map_battery_level"
-msgstr "Battery Level:"
-
-msgid "map_rthDesc"
-msgstr "RTH Status:"
-
-msgid "map_flightmode"
-msgstr "Speed:"
-
-msgid "circle_icons"
-msgstr "Circular Icons"

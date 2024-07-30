@@ -109,6 +109,18 @@ msgstr "Duur:"
 msgid "map_flight_number"
 msgstr "Vlucht #:"
 
+msgid "map_battery_level"
+msgstr "Batterij:"
+
+msgid "map_battery"
+msgstr "Bat:"
+
+msgid "map_rth_desc"
+msgstr "Toestand:"
+
+msgid "map_flightmode"
+msgstr "Snelheid:"
+
 msgid "flight_flight"
 msgstr "Vlucht"
 
@@ -174,6 +186,12 @@ msgstr "Huis Kleur:"
 
 msgid "preference_app_version"
 msgstr "Toepassing Versie:"
+
+msgid "preference_gauges"
+msgstr "Meters"
+
+msgid "preference_status_icons"
+msgstr "Circulaire pictogrammen"
 
 msgid "no_data_in_zip_file"
 msgstr "Geen vlucht gegevens in zip bestand."
@@ -278,18 +296,3 @@ msgstr "Kies een back-up zip bestand."
 
 msgid "parsing_log_file"
 msgstr "Inlezen Log Bestand..."
-
-msgid "gauges"
-msgstr "Meters"
-
-msgid "map_battery_level"
-msgstr "Batterijniveau:"
-
-msgid "map_rthDesc"
-msgstr "RTH Toestand:"
-
-msgid "map_flightmode"
-msgstr "Snelheid:"
-
-msgid "circle_icons"
-msgstr "Circulaire pictogrammen"
