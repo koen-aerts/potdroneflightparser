@@ -13,10 +13,6 @@ import sqlite3
 import gettext
 import webbrowser 
 
-import pyproj
-geodesic = pyproj.Geod(ellps='WGS84')
-import numpy
-
 from enum import Enum
 from PIL import Image as PILImage
 
@@ -1016,8 +1012,8 @@ class MainApp(MDApp):
             dLon = (self.head_lon_2 - head_lon_1)
             x = math.cos(math.radians(self.head_lat_2)) * math.sin(math.radians(dLon))
             y = math.cos(math.radians(head_lat_1)) * math.sin(math.radians(self.head_lat_2)) - math.sin(math.radians(head_lat_1)) * math.cos(math.radians(self.head_lat_2)) * math.cos(math.radians(dLon))
-            brng = numpy.arctan2(x,y)
-            brng = numpy.degrees(brng)
+            brng = math.atan2(x,y)
+            brng = math.degrees(brng)
             if self.root.ids.HSPDgauge.value != 0:
                 if brng < 0:
                     brng = 360 + brng
