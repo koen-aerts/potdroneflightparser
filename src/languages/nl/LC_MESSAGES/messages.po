@@ -62,31 +62,31 @@ msgid "map_distance"
 msgstr "Afstand:"
 
 msgid "map_dist"
-msgstr "Afst: {distance} {unit}"
+msgstr "Afst:"
 
 msgid "map_altitude"
 msgstr "Hoogte:"
 
 msgid "map_alt"
-msgstr "Hoogte: {altitude} {unit}"
+msgstr "Hoogte:"
 
 msgid "map_horizontal_speed"
 msgstr "H Snelheid:"
 
 msgid "map_hs"
-msgstr "HS: {speed} {unit}"
+msgstr "HS:"
 
 msgid "map_vertical_speed"
 msgstr "V Snelheid:"
 
 msgid "map_vs"
-msgstr "VS: {speed} {unit}"
+msgstr "VS:"
 
 msgid "map_distance_flown"
 msgstr "Verplaatsing:"
 
 msgid "map_sats"
-msgstr "Sats: {satellites}"
+msgstr "Sats:"
 
 msgid "map_date"
 msgstr "Datum:"

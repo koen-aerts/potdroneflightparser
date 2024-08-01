@@ -967,6 +967,7 @@ class MainApp(MDApp):
             return
         record = self.logdata[self.currentRowIdx]
         rthDesc = "RTH" if record[self.columns.index('rth')] == 1 else ''
+        droneConnected = 'Connected' if record[self.columns.index('droneconnected')] == 1 else 'DISCONNECTED'
         batteryLevel = record[self.columns.index('batterylevel')]
         batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10 # round to nearest 10.
         flightMode = record[self.columns.index('flightmode')]
@@ -981,8 +982,8 @@ class MainApp(MDApp):
         self.root.ids.value1_dist_short.text = f"({self.shorten_dist_val(record[self.columns.index('distance3')])} {self.dist_unit_km()})"
         self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
         self.root.ids.value1_vspeed.text = f"{record[self.columns.index('speed2vert')]} {self.speed_unit()}"
-        self.root.ids.value1_batterylevel.text = f"{record[self.columns.index('batterylevel')]}%"  # rob
-        self.root.ids.value1_rth_desc.text = dronestatus if len(rthDesc) == 0 else rthDesc # rob
+        self.root.ids.value1_batterylevel.text = f"{record[self.columns.index('batterylevel')]}%"
+        self.root.ids.value1_rth_desc.text = dronestatus if len(rthDesc) == 0 else rthDesc
         elapsed = record[5]
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
         self.root.ids.value1_elapsed.text = str(elapsed)
@@ -1020,8 +1021,11 @@ class MainApp(MDApp):
                         brng = 360 + brng
                         self.root.ids.HDgauge.value = brng
 
-        rthFullDesc = "" if len(rthDesc) == 0 else f" | {rthDesc}"
-        self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>8}'.format(str(elapsed))} | {_('map_dist')[:5]} {(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')[:4]} {(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')[:3]} {(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')[:3]} {(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_flightmode')} {flightMode} | {_('map_battery')} {record[self.columns.index('batterylevel')]}% | {record[self.columns.index('dronestatus')]}{rthFullDesc} | {record[self.columns.index('positionmode')]} | {_('map_sats')[:5]} {(record[self.columns.index('satellites')])}"
+        dronestatus2 = rthDesc if rthDesc == "RTH" else dronestatus
+        if self.is_desktop:
+            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>7}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>5}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_flightmode')} {flightMode} | {_('map_battery_level')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | {dronestatus2} | {droneConnected} | {positionMode} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
+        else:
+            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>6}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>5}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>5}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {flightMode} | {_('map_battery')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | {dronestatus2} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
 
         if updateSlider:
             if self.root.ids.value_duration.text != "":
@@ -1368,9 +1372,9 @@ class MainApp(MDApp):
             self.root.ids.value1_alt.text = ""
             self.root.ids.value1_traveled.text = ""
             self.root.ids.value1_traveled_short.text = ""
-            self.root.ids.value1_rth_desc.text = "" # rob
-            self.root.ids.value1_batterylevel.text = "" # rob
-            self.root.ids.value1_flightmode.text = "" # rob
+            self.root.ids.value1_rth_desc.text = ""
+            self.root.ids.value1_batterylevel.text = ""
+            self.root.ids.value1_flightmode.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value1_dist_short.text = ""
             self.root.ids.value1_hspeed.text = ""
@@ -1970,9 +1974,9 @@ class MainApp(MDApp):
             self.root.ids.value1_alt.text = ""
             self.root.ids.value1_traveled.text = ""
             self.root.ids.value1_traveled_short.text = ""
-            self.root.ids.value1_rth_desc.text = "" # rob
-            self.root.ids.value1_batterylevel.text = "" # rob
-            self.root.ids.value1_flightmode.text = ""   # rob
+            self.root.ids.value1_rth_desc.text = ""
+            self.root.ids.value1_batterylevel.text = ""
+            self.root.ids.value1_flightmode.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value1_dist_short.text = ""
             self.root.ids.value1_hspeed.text = ""
