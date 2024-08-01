@@ -993,31 +993,32 @@ class MainApp(MDApp):
         self.root.ids.drone_action.icon = "airplane-marker" if record[self.columns.index('rth')] == 1 else "airplane-takeoff" if dronestatus == DroneStatus.LIFT.value else "airplane-landing" if dronestatus == DroneStatus.LANDING.value else "airplane" if dronestatus == DroneStatus.FLYING.value else "car-break-parking" if dronestatus == DroneStatus.IDLE.value else ""
         self.root.ids.position_mode.icon = "satellite-uplink" if positionMode == PositionMode.GPS.value else "eye" if positionMode == PositionMode.OPTI.value else "panorama-fisheye" if positionMode == PositionMode.ATTI.value else ""
 
-        # Set horizontal, vertical and altitude gauge values. Use rounded values.
-        self.root.ids.HSPDgauge.value = round(locale.atof(record[self.columns.index('speed2')]))
-        self.root.ids.VSPDgauge.value = round(locale.atof(record[self.columns.index('speed2vert')]))
-        self.root.ids.ALgauge.value = round(locale.atof(record[self.columns.index('altitude2')]))
-        self.root.ids.DSgauge.value = round(locale.atof(record[self.columns.index('traveled')]))
+        if self.is_desktop: # Gauges are turned off on mobile devices.
+            # Set horizontal, vertical and altitude gauge values. Use rounded values.
+            self.root.ids.HSPDgauge.value = round(locale.atof(record[self.columns.index('speed2')]))
+            self.root.ids.VSPDgauge.value = round(locale.atof(record[self.columns.index('speed2vert')]))
+            self.root.ids.ALgauge.value = round(locale.atof(record[self.columns.index('altitude2')]))
+            self.root.ids.DSgauge.value = round(locale.atof(record[self.columns.index('traveled')]))
 
-        # Set up vars for HDgauge calcs
-        if self.root.ids.value_duration.text == "":
-            self.head_lat_2 = float(record[self.columns.index('dronelat')])
-            self.head_lon_2 = float(record[self.columns.index('dronelon')])
-        else:
-            head_lat_1 = self.head_lat_2
-            head_lon_1 = self.head_lon_2
-            self.head_lat_2 = float(record[self.columns.index('dronelat')])
-            self.head_lon_2 = float(record[self.columns.index('dronelon')])
-            # determine bearing.
-            dLon = (self.head_lon_2 - head_lon_1)
-            x = math.cos(math.radians(self.head_lat_2)) * math.sin(math.radians(dLon))
-            y = math.cos(math.radians(head_lat_1)) * math.sin(math.radians(self.head_lat_2)) - math.sin(math.radians(head_lat_1)) * math.cos(math.radians(self.head_lat_2)) * math.cos(math.radians(dLon))
-            brng = math.atan2(x,y)
-            brng = math.degrees(brng)
-            if self.root.ids.HSPDgauge.value != 0:
-                if brng < 0:
-                    brng = 360 + brng
-                    self.root.ids.HDgauge.value = brng
+            # Set up vars for HDgauge calcs
+            if self.root.ids.value_duration.text == "":
+                self.head_lat_2 = float(record[self.columns.index('dronelat')])
+                self.head_lon_2 = float(record[self.columns.index('dronelon')])
+            else:
+                head_lat_1 = self.head_lat_2
+                head_lon_1 = self.head_lon_2
+                self.head_lat_2 = float(record[self.columns.index('dronelat')])
+                self.head_lon_2 = float(record[self.columns.index('dronelon')])
+                # determine bearing.
+                dLon = (self.head_lon_2 - head_lon_1)
+                x = math.cos(math.radians(self.head_lat_2)) * math.sin(math.radians(dLon))
+                y = math.cos(math.radians(head_lat_1)) * math.sin(math.radians(self.head_lat_2)) - math.sin(math.radians(head_lat_1)) * math.cos(math.radians(self.head_lat_2)) * math.cos(math.radians(dLon))
+                brng = math.atan2(x,y)
+                brng = math.degrees(brng)
+                if self.root.ids.HSPDgauge.value != 0:
+                    if brng < 0:
+                        brng = 360 + brng
+                        self.root.ids.HDgauge.value = brng
 
         rthFullDesc = "" if len(rthDesc) == 0 else f" | {rthDesc}"
         self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>8}'.format(str(elapsed))} | {_('map_dist')[:5]} {(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')[:4]} {(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')[:3]} {(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')[:3]} {(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_flightmode')} {flightMode} | {_('map_battery')} {record[self.columns.index('batterylevel')]}% | {record[self.columns.index('dronestatus')]}{rthFullDesc} | {record[self.columns.index('positionmode')]} | {_('map_sats')[:5]} {(record[self.columns.index('satellites')])}"
