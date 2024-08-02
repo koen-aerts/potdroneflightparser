@@ -1,8 +1,10 @@
 # Package script for nullsoft NSIS 3.08 or higher.
 
+!define PRODUCT_ID "FlightLogViewer"
 !define PRODUCT_NAME "Flight Log Viewer"
 !define PRODUCT_VERSION "2.3.0"
 !define EXECUTABLE "FlightLogViewer.exe"
+!define UNINSTALLER "uninstall.exe"
 
 # define installer name
 OutFile "install_flightlogviewer_v${PRODUCT_VERSION}.exe"
@@ -13,13 +15,20 @@ InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
 
 Section "install"
   SetOutPath $INSTDIR
-  File /r ..\..\src\dist\FlightLogViewer\*.*
-  WriteUninstaller $INSTDIR\uninstaller.exe
+  File /r .\venv\src\dist\${PRODUCT_ID}\*.*
+  WriteUninstaller $INSTDIR\${UNINSTALLER}
   CreateShortCut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\${EXECUTABLE}" ""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "DisplayName" "${PRODUCT_NAME}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "UninstallString" "$\"$INSTDIR\${UNINSTALLER}$\""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "QuietUninstallString" "$\"$INSTDIR\${UNINSTALLER}$\" /S"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "DisplayVersion" "${PRODUCT_VERSION}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "DisplayIcon" "$\"$INSTDIR\${EXECUTABLE}$\""
 SectionEnd
 
 
 Section "Uninstall"
   Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
   RMDir /r $INSTDIR
+  RMDir /r $LOCALAPPDATA\${PRODUCT_ID}\${PRODUCT_ID}\Cache\*.*
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}"
 SectionEnd
