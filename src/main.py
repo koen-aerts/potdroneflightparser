@@ -1,5 +1,6 @@
 import os
 import glob
+from pickletools import long1
 import shutil
 import struct
 import math
@@ -13,6 +14,7 @@ import sqlite3
 import gettext
 
 from enum import Enum
+import xml.etree.ElementTree as ET
 
 from kivy.core.window import Window
 Window.allow_screensaver = False
@@ -604,7 +606,7 @@ class MainApp(MDApp):
     '''
     Open a file export dialog (export csv file).
     '''
-    def open_file_export_dialog(self):
+    def open_csv_file_export_dialog(self):
         csvFilename = re.sub("\.zip$", "", self.zipFilename) + ".csv"
         if self.is_android:
             csvFile = os.path.join(self.shared_storage.get_cache_dir(), csvFilename)
@@ -639,6 +641,87 @@ class MainApp(MDApp):
                     self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
                 except Exception as e:
                     msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
+                    print(msg)
+                    self.show_error_message(message=msg)
+
+
+    '''
+    Save the flight data in a KML file.
+    '''
+    def save_kml_file(self, kmlFilename):
+        root = ET.Element("kml", xmlns="http://www.opengis.net/kml/2.2")
+        doc = ET.SubElement(root, "Document")
+        ET.SubElement(doc, "name").text = f"{self.root.ids.selected_model.text} logs of {self.root.ids.value_date.text}"
+        ET.SubElement(doc, "description").text = f"Logfile {self.zipFilename}"
+        #ET.SubElement(doc, "open").text = "1"
+        style = ET.SubElement(doc, "Style", id="pathStyle")
+        lineStyle = ET.SubElement(style, "LineStyle")
+        ET.SubElement(lineStyle, "color").text = self.assetColors[int(self.root.ids.selected_flight_path_color.value)]
+        ET.SubElement(lineStyle, "width").text = self.pathWidths[int(self.root.ids.selected_flight_path_width.value)]
+        flightNo = 1
+        while flightNo <= len(self.flightOptions):
+            coords = ''
+            self.currentStartIdx = self.flightStarts[f"{flightNo}"]
+            self.currentEndIdx = self.flightEnds[f"{flightNo}"]
+            for rowIdx in range(self.currentStartIdx, self.currentEndIdx+1):
+                row = self.logdata[rowIdx]
+                lon = row[self.columns.index('dronelon')]
+                lat = row[self.columns.index('dronelat')]
+                alt = row[self.columns.index('altitude2')]
+                if (len(coords) > 0):
+                    coords += '\n'
+                coords += f"{lon},{lat},{alt}"
+            #folder = ET.SubElement(doc, "Folder")
+            #ET.SubElement(folder, "name").text = f"Flight #{flightNo}"
+            placeMark = ET.SubElement(doc, "Placemark")
+            ET.SubElement(placeMark, "name").text = f"Flight Path {flightNo}"
+            ET.SubElement(placeMark, "styleUrl").text = "#pathStyle"
+            lineString = ET.SubElement(placeMark, "LineString")
+            ET.SubElement(lineString, "coordinates").text = coords
+            flightNo = flightNo + 1
+        xml = ET.ElementTree(root)
+        xml.write(kmlFilename, encoding='UTF-8', xml_declaration=True)
+        # koen
+
+
+    '''
+    Open a file export dialog (export KML file).
+    '''
+    def open_kml_file_export_dialog(self):
+        kmlFilename = re.sub("\.zip$", "", self.zipFilename) + ".kml"
+        if self.is_android:
+            kmlFile = os.path.join(self.shared_storage.get_cache_dir(), kmlFilename)
+            try:
+                self.save_kml_file(kmlFile)
+                url = self.shared_storage.copy_to_shared(kmlFile)
+                ShareSheet().share_file(url)
+                self.show_info_message(message=_('data_exported_to').format(filename=kmlFile))
+            except Exception as e:
+                msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
+                print(msg)
+                self.show_error_message(message=msg)
+        elif self.is_ios:
+            kmlFile = os.path.join(self.ios_doc_path(), kmlFilename)
+            try:
+                self.save_kml_file(kmlFile)
+                self.show_info_message(message=_('export_kml_file_saved').format(filename=kmlFile))
+            except Exception as e:
+                msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
+                print(msg)
+                self.show_error_message(message=msg)
+        else:
+            oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
+            myFiles = filechooser.choose_dir(title=_('save_export_kml_file'))
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
+            if myFiles and len(myFiles) > 0 and os.path.isdir(myFiles[0]):
+                kmlFile = os.path.join(myFiles[0], kmlFilename)
+                try:
+                    self.save_kml_file(kmlFile)
+                    self.show_info_message(message=_('data_exported_to').format(filename=kmlFile))
+                except Exception as e:
+                    msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
                     print(msg)
                     self.show_error_message(message=msg)
 

@@ -539,7 +539,10 @@ MDGridLayout:
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "content-save"
-                            on_release: app.open_file_export_dialog()
+                            on_release: app.open_csv_file_export_dialog()
+                        MDActionTopAppBarButton:
+                            icon: "content-save"
+                            on_release: app.open_kml_file_export_dialog()
                     MDTopAppBarTitle:
                         text: f"{app.appName} - {_('title_flights')}"
                         pos_hint: {"center_x": .5}
