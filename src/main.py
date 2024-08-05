@@ -656,25 +656,25 @@ class MainApp(MDApp):
         style = ET.SubElement(doc, "Style", id="pathStyle")
         lineStyle = ET.SubElement(style, "LineStyle")
         pathColor = self.assetColors[int(self.root.ids.selected_flight_path_color.value)]
-        ET.SubElement(lineStyle, "color").text = f"ff{pathColor[6:]}{pathColor[5:7]}{pathColor[3:5]}{pathColor[1:3]}"
+        ET.SubElement(lineStyle, "color").text = f"ff{pathColor[5:7]}{pathColor[3:5]}{pathColor[1:3]}"
         ET.SubElement(lineStyle, "width").text = self.pathWidths[int(self.root.ids.selected_flight_path_width.value)]
 
         style = ET.SubElement(doc, "Style", id="homeStyle")
         iconStyle = ET.SubElement(style, "IconStyle")
         icon = ET.SubElement(iconStyle, "Icon")
-        ET.SubElement(icon, "href").text = "https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Home-1.png"
+        ET.SubElement(icon, "href").text = f"https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Home-{str(int(self.root.ids.selected_marker_home_color.value)+1)}.png"
         ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
 
         style = ET.SubElement(doc, "Style", id="ctrlStyle")
         iconStyle = ET.SubElement(style, "IconStyle")
         icon = ET.SubElement(iconStyle, "Icon")
-        ET.SubElement(icon, "href").text = "https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Controller-1.png"
+        ET.SubElement(icon, "href").text = f"https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Controller-{str(int(self.root.ids.selected_marker_ctrl_color.value)+1)}.png"
         ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
 
         style = ET.SubElement(doc, "Style", id="droneStyle")
         iconStyle = ET.SubElement(style, "IconStyle")
         icon = ET.SubElement(iconStyle, "Icon")
-        ET.SubElement(icon, "href").text = "https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Drone-1.png"
+        ET.SubElement(icon, "href").text = f"https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}.png"
         ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
 
         style = ET.SubElement(doc, "Style", id="hidePoints")
