@@ -1,6 +1,5 @@
 import os
 import glob
-from pickletools import long1
 import shutil
 import struct
 import math
@@ -81,7 +80,7 @@ class MainApp(MDApp):
     defaultMapZoom = 3
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
-    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status','traveled')
+    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','altitude2metric','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status','traveled')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
@@ -372,7 +371,7 @@ class MainApp(MDApp):
                         isNewPath = False
                     if pathNum > 0:
                         self.flightEnds[flightDesc] = tableLen
-                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, droneMotorStatus.value, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, gpsStatus, inUse, motor1Stat, motor2Stat, motor3Stat, motor4Stat, f"{self.fmt_num(self.dist_val(distTraveled))}"])
+                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, droneMotorStatus.value, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", alt2metric, f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, gpsStatus, inUse, motor1Stat, motor2Stat, motor3Stat, motor4Stat, f"{self.fmt_num(self.dist_val(distTraveled))}"])
                     tableLen = tableLen + 1
 
             flightFile.close()
@@ -652,36 +651,103 @@ class MainApp(MDApp):
         root = ET.Element("kml", xmlns="http://www.opengis.net/kml/2.2")
         doc = ET.SubElement(root, "Document")
         ET.SubElement(doc, "name").text = f"{self.root.ids.selected_model.text} logs of {self.root.ids.value_date.text}"
-        ET.SubElement(doc, "description").text = f"Logfile {self.zipFilename}"
-        #ET.SubElement(doc, "open").text = "1"
+        ET.SubElement(doc, "description").append(ET.Comment(f' --><![CDATA[Logfile: {self.zipFilename}<br><br>Exported: {datetime.datetime.now().isoformat()}<br><br><a href="https://github.com/koen-aerts/potdroneflightparser">Flight Log Viewer</a>]]><!-- '))
+
         style = ET.SubElement(doc, "Style", id="pathStyle")
         lineStyle = ET.SubElement(style, "LineStyle")
-        ET.SubElement(lineStyle, "color").text = self.assetColors[int(self.root.ids.selected_flight_path_color.value)]
+        pathColor = self.assetColors[int(self.root.ids.selected_flight_path_color.value)]
+        ET.SubElement(lineStyle, "color").text = f"ff{pathColor[6:]}{pathColor[5:7]}{pathColor[3:5]}{pathColor[1:3]}"
         ET.SubElement(lineStyle, "width").text = self.pathWidths[int(self.root.ids.selected_flight_path_width.value)]
+
+        style = ET.SubElement(doc, "Style", id="homeStyle")
+        iconStyle = ET.SubElement(style, "IconStyle")
+        icon = ET.SubElement(iconStyle, "Icon")
+        ET.SubElement(icon, "href").text = "https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Home-1.png"
+        ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
+
+        style = ET.SubElement(doc, "Style", id="ctrlStyle")
+        iconStyle = ET.SubElement(style, "IconStyle")
+        icon = ET.SubElement(iconStyle, "Icon")
+        ET.SubElement(icon, "href").text = "https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Controller-1.png"
+        ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
+
+        style = ET.SubElement(doc, "Style", id="droneStyle")
+        iconStyle = ET.SubElement(style, "IconStyle")
+        icon = ET.SubElement(iconStyle, "Icon")
+        ET.SubElement(icon, "href").text = "https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Drone-1.png"
+        ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
+
+        style = ET.SubElement(doc, "Style", id="hidePoints")
+        listStyle = ET.SubElement(style, "ListStyle")
+        ET.SubElement(listStyle, "listItemType").text = "checkHideChildren"
+
         flightNo = 1
         while flightNo <= len(self.flightOptions):
             coords = ''
             self.currentStartIdx = self.flightStarts[f"{flightNo}"]
             self.currentEndIdx = self.flightEnds[f"{flightNo}"]
+            folder = ET.SubElement(doc, "Folder")
+            ET.SubElement(folder, "name").text = f"Flight #{flightNo}"
+            ET.SubElement(folder, "description").append(ET.Comment(f' --><![CDATA[Duration: {str(self.flightStats[flightNo][3])}<br>Distance flown: {self.fmt_num(self.dist_val(self.flightStats[flightNo][9]))} {self.dist_unit()}]]><!-- '))
+            ET.SubElement(folder, "styleUrl").text = "#hidePoints"
+            ET.SubElement(folder, "visibility").text = "0"
+            isfirstrow = True
             for rowIdx in range(self.currentStartIdx, self.currentEndIdx+1):
                 row = self.logdata[rowIdx]
-                lon = row[self.columns.index('dronelon')]
-                lat = row[self.columns.index('dronelat')]
-                alt = row[self.columns.index('altitude2')]
+                thistimestamp = f"{datetime.datetime.fromisoformat(row[self.columns.index('timestamp')]).isoformat(sep='T', timespec='milliseconds')}Z"
+                dronelon = row[self.columns.index('dronelon')]
+                dronelat = row[self.columns.index('dronelat')]
+                dronealt = row[self.columns.index('altitude2metric')]
+                if isfirstrow:
+                    lookAt = ET.SubElement(folder, "LookAt")
+                    ET.SubElement(lookAt, "longitude").text = dronelon
+                    ET.SubElement(lookAt, "latitude").text = dronelat
+                    ET.SubElement(lookAt, "altitude").text = "200" # Viewing altitude
+                    ET.SubElement(lookAt, "heading").text = "0"
+                    ET.SubElement(lookAt, "tilt").text = "45"
+                    ET.SubElement(lookAt, "range").text = str((self.flightStats[flightNo][0]*2)+500) # Determine potential good viewing distance.
+                    ET.SubElement(lookAt, "altitudeMode").text = "relativeToGround"
+                    isfirstrow = False
+                placeMark = ET.SubElement(folder, "Placemark")
+                timest = ET.SubElement(placeMark, "TimeStamp")
+                ET.SubElement(timest, "when").text = thistimestamp
+                ET.SubElement(placeMark, "styleUrl").text = "#droneStyle"
+                point = ET.SubElement(placeMark, "Point")
+                ET.SubElement(point, "altitudeMode").text = "relativeToGround"
+                ET.SubElement(point, "coordinates").text = f"{dronelon},{dronelat},{dronealt}"
                 if (len(coords) > 0):
                     coords += '\n'
-                coords += f"{lon},{lat},{alt}"
-            #folder = ET.SubElement(doc, "Folder")
-            #ET.SubElement(folder, "name").text = f"Flight #{flightNo}"
-            placeMark = ET.SubElement(doc, "Placemark")
+                coords += f"{dronelon},{dronelat},{dronealt}"
+                homelon = row[self.columns.index('homelon')]
+                homelat = row[self.columns.index('homelat')]
+                if homelon != '0.0' and homelat != '0.0':
+                    placeMark = ET.SubElement(folder, "Placemark")
+                    timest = ET.SubElement(placeMark, "TimeStamp")
+                    ET.SubElement(timest, "when").text = thistimestamp
+                    ET.SubElement(placeMark, "styleUrl").text = "#homeStyle"
+                    point = ET.SubElement(placeMark, "Point")
+                    ET.SubElement(point, "altitudeMode").text = "relativeToGround"
+                    ET.SubElement(point, "coordinates").text = f"{homelon},{homelat},0"
+                ctrllon = row[self.columns.index('ctrllon')]
+                ctrllat = row[self.columns.index('ctrllat')]
+                if ctrllon != '0.0' and ctrllat != '0.0':
+                    placeMark = ET.SubElement(folder, "Placemark")
+                    timest = ET.SubElement(placeMark, "TimeStamp")
+                    ET.SubElement(timest, "when").text = thistimestamp
+                    ET.SubElement(placeMark, "styleUrl").text = "#ctrlStyle"
+                    point = ET.SubElement(placeMark, "Point")
+                    ET.SubElement(point, "altitudeMode").text = "relativeToGround"
+                    ET.SubElement(point, "coordinates").text = f"{ctrllon},{ctrllat},1.5" # Assume average human holds controller 1.5 meters from ground.
+            placeMark = ET.SubElement(folder, "Placemark")
             ET.SubElement(placeMark, "name").text = f"Flight Path {flightNo}"
             ET.SubElement(placeMark, "styleUrl").text = "#pathStyle"
             lineString = ET.SubElement(placeMark, "LineString")
+            ET.SubElement(lineString, "tessellate").text = "1"
+            ET.SubElement(lineString, "altitudeMode").text = "relativeToGround"
             ET.SubElement(lineString, "coordinates").text = coords
             flightNo = flightNo + 1
         xml = ET.ElementTree(root)
         xml.write(kmlFilename, encoding='UTF-8', xml_declaration=True)
-        # koen
 
 
     '''
