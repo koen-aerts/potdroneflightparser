@@ -866,11 +866,12 @@ class MainApp(MDApp):
 
 
     def init_gauges(self):
-        print("INIT GAUGES")
         self.root.ids.HSPDgauge.display_unit = self.speed_unit()
         self.root.ids.VSPDgauge.display_unit = self.speed_unit()
         self.root.ids.ALgauge.display_unit = self.dist_unit()
         self.root.ids.DSgauge.display_unit = self.dist_unit()
+        
+
 
 
     '''
@@ -997,9 +998,15 @@ class MainApp(MDApp):
         if self.is_desktop: # Gauges are turned off on mobile devices.
             # Set horizontal, vertical and altitude gauge values. Use rounded values.
             self.root.ids.HSPDgauge.value = round(locale.atof(record[self.columns.index('speed2')]))
-            self.root.ids.VSPDgauge.value = round(locale.atof(record[self.columns.index('speed2vert')]))
+            # Chris
+            # Added conditional to simply "peg out" the gauge one way or the other if beyond the vertical limits
+            if round(locale.atof(record[self.columns.index('speed2vert')])) > 10 or round(locale.atof(record[self.columns.index('speed2vert')])) < -10:
+                self.root.ids.VSPDgauge.value = 10
+            else: 
+                self.root.ids.VSPDgauge.value = round(locale.atof(record[self.columns.index('speed2vert')]))
+
             self.root.ids.ALgauge.value = round(locale.atof(record[self.columns.index('altitude2')]))
-            self.root.ids.DSgauge.value = round(locale.atof(record[self.columns.index('traveled')]))
+            self.root.ids.DSgauge.value = round(locale.atof(record[self.columns.index('distance3')]))   #traveled Chris
 
             # Set up vars for HDgauge calcs
             if self.root.ids.value_duration.text == "":
@@ -1016,10 +1023,15 @@ class MainApp(MDApp):
                 y = math.cos(math.radians(head_lat_1)) * math.sin(math.radians(self.head_lat_2)) - math.sin(math.radians(head_lat_1)) * math.cos(math.radians(self.head_lat_2)) * math.cos(math.radians(dLon))
                 brng = math.atan2(x,y)
                 brng = math.degrees(brng)
-                if self.root.ids.HSPDgauge.value != 0:
-                    if brng < 0:
-                        brng = 360 + brng
-                        self.root.ids.HDgauge.value = brng
+                #Chris Altered code to simply use orientation rather than calculated bearing as most of the time users will be be
+                #      going in the direction they are pointed.
+                # if self.root.ids.HSPDgauge.value != 0:
+                #     if brng < 0:
+                #         brng = 360 + brng
+                #         self.root.ids.HDgauge.value = brng
+                G_orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees, -180 to 180.
+                G_rotation = abs(G_orientation) if G_orientation <= 0 else 360 - G_orientation # Convert to 0 - 359 range.
+                self.root.ids.HDgauge.value = G_rotation
 
         dronestatus2 = rthDesc if rthDesc == "RTH" else dronestatus
         if self.is_desktop:
@@ -1032,10 +1044,11 @@ class MainApp(MDApp):
                 durstr = self.root.ids.value_duration.text.split(":")
                 durval = datetime.timedelta(hours=int(durstr[0]), minutes=int(durstr[1]), seconds=int(durstr[2]))
                 if durval != 0: # Prevent division by zero
-                    self.root.ids.flight_progress.value = elapsed / durval * 100
-                    self.root.ids.flight_progress.slider.value = elapsed / durval * 100
+                    #self.root.ids.flight_progress.value = elapsed / durval * 100  
+                    self.root.ids.flight_progress.slider.value = elapsed / durval * 100   # Chris -fixed missing parameter for slider object
                 else:
-                    self.root.ids.flight_progress.value = 0
+                    #self.root.ids.flight_progress.value = 0
+                    self.root.ids.flight_progress.slider.value = 0   # Chris -fixed missing parameter for slider object
         # Controller Marker.
         try:
             ctrllat = float(record[self.columns.index('ctrllat')])
@@ -1177,7 +1190,7 @@ class MainApp(MDApp):
             self.currentRowIdx = self.currentStartIdx
             self.root.ids.flight_progress.is_updating = True
             self.set_markers(False)
-            self.root.ids.flight_progress.value = 0
+            self.root.ids.flight_progress.slider.value = 0    # Chris  - fixed missing parameter for slider object.
             self.root.ids.flight_progress.is_updating = False
             return
         flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
@@ -1186,7 +1199,8 @@ class MainApp(MDApp):
             self.root.ids.flight_progress.is_updating = True
             self.select_flight(True)
             self.set_markers(False)
-            self.root.ids.flight_progress.value = 100
+            #self.root.ids.flight_progress.value = 100
+            self.root.ids.flight_progress.slider.value = 100    # Chris -fixed missing parameter for slider object
             self.root.ids.flight_progress.is_updating = False
         else:
             self.show_info_message(message=_('no_previous_flight'))
@@ -1207,7 +1221,8 @@ class MainApp(MDApp):
             self.currentRowIdx = self.currentEndIdx
             self.root.ids.flight_progress.is_updating = True
             self.set_markers(False)
-            self.root.ids.flight_progress.value = 100
+            #self.root.ids.flight_progress.value = 100       
+            self.root.ids.flight_progress.slider.value = 100    # Chris - fixed missing parameter for slider object
             self.root.ids.flight_progress.is_updating = False
             return
         flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
@@ -1216,7 +1231,8 @@ class MainApp(MDApp):
             self.root.ids.flight_progress.is_updating = True
             self.select_flight()
             self.set_markers(False)
-            self.root.ids.flight_progress.value = 0
+            #self.root.ids.flight_progress.value = 0
+            self.root.ids.flight_progress.slider.value = 0      # Chris - fixed missing parameter for slider object
             self.root.ids.flight_progress.is_updating = False
         else:
             self.show_info_message(message=_('no_next_flight'))
@@ -1366,7 +1382,8 @@ class MainApp(MDApp):
         flightNum = 0 if (self.root.ids.selected_path.text == '--') else int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
         if (flightNum == 0):
             self.root.ids.flight_progress.is_updating = True
-            self.root.ids.flight_progress.value = 0
+            #self.root.ids.flight_progress.value = 0
+            self.root.ids.flight_progress.slider.value = 0    # Chris  - fixed missing parameter for slider object
             self.root.ids.flight_progress.is_updating = False
             self.root.ids.value1_elapsed.text = ""
             self.root.ids.value1_alt.text = ""
@@ -1985,7 +2002,8 @@ class MainApp(MDApp):
             #self.root.ids.map_metrics1.text = ""
             self.root.ids.map_metrics2.text = ""
             self.root.ids.flight_progress.is_updating = True
-            self.root.ids.flight_progress.value = 0
+            #self.root.ids.flight_progress.value = 0
+            self.root.ids.flight_progress.slider.value = 0   # Chris - fixed missing parameter for slider object
             self.root.ids.flight_progress.is_updating = False
             self.root.ids.flight_stats_grid.clear_widgets()
             self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box"
@@ -2215,7 +2233,7 @@ class DistGauge(Widget):
     file_gauge = StringProperty("assets/Distance_Background.png")
     file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
     file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
-    size_gauge = dp(180)
+    size_gauge = dp(150) #180
 
     def __init__(self, **kwargs):
         super(DistGauge, self).__init__(**kwargs)
@@ -2295,7 +2313,7 @@ class AltGauge(Widget):
     file_gauge = StringProperty("assets/Altimeter_Background2.png")
     file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
     file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
-    size_gauge = dp(180)
+    size_gauge = dp(150) #180
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
@@ -2376,7 +2394,7 @@ class HGauge(Widget):
     value = BoundedNumericProperty(0, min=-400, max=400, errorvalue=0)
     file_gauge = StringProperty("assets/AirSpeedIndicator_Background_H.png")
     file_needle = StringProperty("assets/needle.png")
-    size_gauge = dp(180)
+    size_gauge = dp(150)  #180
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
@@ -2434,10 +2452,10 @@ Vertical Speed Gauge
 class VGauge(Widget):
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
-    value = BoundedNumericProperty(0, min=-10, max=400, errorvalue=0)
+    value = BoundedNumericProperty(0, min=-10, max=10, errorvalue=0) # Changed Max to 10   Chris
     file_gauge = StringProperty("assets/AirSpeedIndicator_Background_V.png")
     file_needle = StringProperty("assets/needle.png")
-    size_gauge = dp(180)
+    size_gauge = dp(150) #180
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
@@ -2500,7 +2518,7 @@ class HeadingGauge(Widget):
     file_gauge = StringProperty("assets/HeadingIndicator_Background1.png")
     file_heading_ring = StringProperty("assets/HeadingRing.png")
     file_heading_aircraft = StringProperty("assets/Heading_drone3a.png")  #HeadingIndicator_Aircraft1c.png
-    size_gauge = dp(180)
+    size_gauge = dp(150) #180
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
@@ -2554,7 +2572,7 @@ class HeadingGauge(Widget):
     def _turn(self, *args): # Turn
         self._headingR.center_x = self._gauge.center_x
         self._headingR.center_y = self._gauge.center_y
-        self._headingR.rotation = (1 * self.unit) + (self.value * 1)
+        self._headingR.rotation = (1 * self.unit) - (self.value * 1)  # Chris change math mistake + to -
         self._aircrafT.center_y = self._gauge.center_y
         self._aircrafT.rotation = (1 * self.unit) + (self.drotation * 1)
 
@@ -2573,6 +2591,10 @@ class ProgressSlider(BoxLayout):
         self.slider.background_normal = ''
         self.slider.cursor_color = (1, 0, 0, 1)
         self.add_widget(self.slider)
+
+    def reset_slider(self,value):
+        self.slider.value = 0
+        printer("slider reset")
 
     def on_progress_slider_value_change(self, instance, value):
         MDApp.get_running_app().on_progress_slider_value_change(instance, value)  
@@ -2595,11 +2617,16 @@ class ProgressSlider(BoxLayout):
 
     def update_value(self, new_value):
         if new_value < self.slider.min:
-            self.value = self.min
+            #self.value = self.min
+            self.slider.value = self.slider.min
         elif new_value > self.slider.max:
             self.slider.value = self.slider.max
         else:
             self.slider.value = new_value
+        self.slider.invalidate()  
+        self.slider.canvas.ask_update()  
+        Clock.schedule_once(self.slider._do_layout, 0)  
+        self.slider._update_graphics()
 
 
 """  

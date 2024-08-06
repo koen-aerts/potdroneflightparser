@@ -513,7 +513,7 @@ MDGridLayout:
                             size_hint: (None, None)
                             size: self.minimum_size
                             #width: dp(180)
-                            pos_hint: {"right": 1, "top": .96}
+                            pos_hint: {"right": 1, "top": .95} #Chris
                             #adaptive_size: True
                             cols: 1
                             padding: 0
@@ -526,40 +526,40 @@ MDGridLayout:
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(180)
-                                height: dp(176)
+                                width: dp(150)     #Chris
+                                height: dp(146)    #Chris
                             AltGauge:
                                 id: ALgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(180)
-                                height: dp(176)
+                                width: dp(150)
+                                height: dp(146)
                             HGauge:
                                 id: HSPDgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(180)
-                                height: dp(176)
+                                width: dp(150)
+                                height: dp(146)
                             VGauge:
                                 id: VSPDgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(180)
-                                height: dp(176)
+                                width: dp(150)
+                                height: dp(146)
                             HeadingGauge:
                                 id: HDgauge
                                 value: 0
                                 drotation: 0 # Provision to rotate the drone image in the gauge itself
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(180)
-                                height: dp(176)
+                                width: dp(150)
+                                height: dp(146)
                         ProgressSlider:
                             id: flight_progress
                             size_hint: (.5, None)  # Made smaller so as not to overlap gauge old value: size_hint: (.9, None) MDSlider
