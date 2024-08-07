@@ -28,6 +28,7 @@ Section "install"
   ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
   IntFmt $0 "0x%08X" $0
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "EstimatedSize" "$0"
+  RMDir /r $LOCALAPPDATA\${PRODUCT_ID}\${PRODUCT_ID}\Cache\*.*
 SectionEnd
 
 
