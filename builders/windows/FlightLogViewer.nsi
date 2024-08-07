@@ -6,6 +6,8 @@
 !define EXECUTABLE "FlightLogViewer.exe"
 !define UNINSTALLER "uninstall.exe"
 
+!include "FileFunc.nsh"
+
 # define installer name
 OutFile "install_flightlogviewer_v${PRODUCT_VERSION}.exe"
 
@@ -23,6 +25,9 @@ Section "install"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "QuietUninstallString" "$\"$INSTDIR\${UNINSTALLER}$\" /S"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "DisplayVersion" "${PRODUCT_VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "DisplayIcon" "$\"$INSTDIR\${EXECUTABLE}$\""
+  ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
+  IntFmt $0 "0x%08X" $0
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_ID}" "EstimatedSize" "$0"
 SectionEnd
 
 
