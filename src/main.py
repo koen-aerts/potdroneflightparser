@@ -1001,8 +1001,8 @@ class MainApp(MDApp):
             self.root.ids.HSPDgauge.value = round(locale.atof(record[self.columns.index('speed2')]))
             # Chris
             # Added conditional to simply "peg out" the gauge one way or the other if beyond the vertical limits
-            if round(locale.atof(record[self.columns.index('speed2vert')])) > 10 or round(locale.atof(record[self.columns.index('speed2vert')])) < -10:
-                self.root.ids.VSPDgauge.value = 10
+            if round(locale.atof(record[self.columns.index('speed2vert')])) > 14 or round(locale.atof(record[self.columns.index('speed2vert')])) < -14:
+                self.root.ids.VSPDgauge.value = 14
             else: 
                 self.root.ids.VSPDgauge.value = round(locale.atof(record[self.columns.index('speed2vert')]))
 
@@ -2249,24 +2249,28 @@ class DistGauge(Widget):
             size=(self.size_gauge, self.size_gauge)
         )
         self._needleL = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
         self._needleS = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
         _img_needle_short = Image(
             source=self.file_needle_short,
-            size=(self.size_gauge, self.size_gauge)
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
+            size=(dp(self.size_gauge), dp(self.size_gauge))
         )
         _img_needle_long = Image(
             source=self.file_needle_long,
-            size=(self.size_gauge, self.size_gauge)
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
+            size=(dp(self.size_gauge), dp(self.size_gauge))
         )
         self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
         self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
@@ -2330,24 +2334,28 @@ class AltGauge(Widget):
             size=(self.size_gauge, self.size_gauge)
         )
         self._needleL = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
         self._needleS = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )        
         _img_needle_short = Image(
             source=self.file_needle_short,
-            size=(self.size_gauge, self.size_gauge)
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
+            size=(dp(self.size_gauge), dp(self.size_gauge))
         )
         _img_needle_long = Image(
             source=self.file_needle_long,
-            size=(self.size_gauge, self.size_gauge)
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
+            size=(dp(self.size_gauge), dp(self.size_gauge))
         )
         self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
         self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
@@ -2453,7 +2461,7 @@ Vertical Speed Gauge
 class VGauge(Widget):
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
-    value = BoundedNumericProperty(0, min=-10, max=10, errorvalue=0) # Changed Max to 10   Chris
+    value = BoundedNumericProperty(0, min=-14, max=14, errorvalue=0) # Changed Max to 14   Chris
     file_gauge = StringProperty("assets/AirSpeedIndicator_Background_V.png")
     file_needle = StringProperty("assets/needle.png")
     size_gauge = dp(150) #180
@@ -2505,7 +2513,8 @@ class VGauge(Widget):
         self._needle.center_x = self._gauge.center_x
         self._needle.center_y = self._gauge.center_y
         #self._needle.rotation = (100 * self.unit) - (self.value * self.unit * 20)
-        self._needle.rotation = -(self.value * self.unit * 10)
+        #self._needle.rotation = -(self.value * self.unit * 10)
+        self._needle.rotation = -(self.value * self.unit * 5.5)    # Chris updated scale to max out at 14
         self._glab2.text = self.display_unit
 
 
@@ -2541,15 +2550,16 @@ class HeadingGauge(Widget):
             do_translation=False
         )
         self._aircrafT = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            #size=(self.size_gauge, self.size_gauge),
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
         _img_aircraft = Image(
             source=self.file_heading_aircraft,
-            size=(self.size_gauge, self.size_gauge)
-        )
+            size=(self.size_gauge, self.size_gauge)  
+         )
         _img_heading_ring = Image(
             source=self.file_heading_ring,
             size=(self.size_gauge, self.size_gauge)
@@ -2574,8 +2584,9 @@ class HeadingGauge(Widget):
         self._headingR.center_x = self._gauge.center_x
         self._headingR.center_y = self._gauge.center_y
         self._headingR.rotation = (1 * self.unit) - (self.value * 1)  # Chris change math mistake + to -
-        self._aircrafT.center_y = self._gauge.center_y
-        self._aircrafT.rotation = (1 * self.unit) + (self.drotation * 1)
+        # Chris removed code as it is not needed and was causing issues with dp placement
+        #self._aircrafT.center_y = self._gauge.center_y
+        #self._aircrafT.rotation = (1 * self.unit) + (self.drotation * 1)
 
 
 class ProgressSlider(BoxLayout):
@@ -2593,16 +2604,45 @@ class ProgressSlider(BoxLayout):
         self.slider.cursor_color = (1, 0, 0, 1)
         self.add_widget(self.slider)
 
-    def reset_slider(self,value):
-        self.slider.value = 0
-        printer("slider reset")
+    # def reset_slider(self,value):
+    #     self.slider.value = 0
+    #     printer("slider reset")
 
     def on_progress_slider_value_change(self, instance, value):
         MDApp.get_running_app().on_progress_slider_value_change(instance, value)  
 
+    # def on_touch_down(self, touch, instance):  
+    #   if self.collide_point(touch.x, touch.y):  
+    #     print("Touch down on the slider!")  
+    #     play_button = MDApp.get_running_app().root.ids['playbutton']
+    #     icon_name = play_button.icon
+    #     if icon_name == "play":
+    #         return
+    #     else:
+    #         play_button.trigger_action(duration=0.1)
+    #   else:
+    #     print("NOT THE SLIDER")
+    #     # touch.grab(self)  # grab the touch event to prevent other widgets from stealing it  
+    # #   #   return True
+    # #   return super(ProgressSlider, self).on_touch_down(touch)  
+      
+    # def on_touch_up(self, touch):  
+    #   if touch.grab_current is self:  
+    #     print("Touch up on the slider!")  
+    #     touch.ungrab(self)  # release the touch event  
+    #     return True  
+    #   return super(ProgressSlider, self).on_touch_up(touch)          
+
     def on_touch_move(self, touch):
         if self.collide_point(touch.x, touch.y):
-            #print("Touch down on the slider!")
+            print("Touch down on the slider!")
+            play_button = MDApp.get_running_app().root.ids['playbutton']
+            icon_name = play_button.icon
+            if icon_name == "play":
+                return
+            else:
+                play_button.trigger_action(duration=0.1)
+        else:
             play_button = MDApp.get_running_app().root.ids['playbutton']
             icon_name = play_button.icon
             if icon_name == "play":
@@ -2610,24 +2650,24 @@ class ProgressSlider(BoxLayout):
             else:
                 play_button.trigger_action(duration=0.1)
 
-    def on_value_throttled(self, instance, value):
-        print(f"Value throttled: {value}")
+    # def on_value_throttled(self, instance, value):
+    #     print(f"Value throttled: {value}")
 
-    def on_value(self, instance, value):
-        print(f"Slider value changed to {value}")
+    # def on_value(self, instance, value):
+    #     print(f"Slider value changed to {value}")
 
-    def update_value(self, new_value):
-        if new_value < self.slider.min:
-            #self.value = self.min
-            self.slider.value = self.slider.min
-        elif new_value > self.slider.max:
-            self.slider.value = self.slider.max
-        else:
-            self.slider.value = new_value
-        self.slider.invalidate()  
-        self.slider.canvas.ask_update()  
-        Clock.schedule_once(self.slider._do_layout, 0)  
-        self.slider._update_graphics()
+    # def update_value(self, new_value):
+    #     if new_value < self.slider.min:
+    #         #self.value = self.min
+    #         self.slider.value = self.slider.min
+    #     elif new_value > self.slider.max:
+    #         self.slider.value = self.slider.max
+    #     else:
+    #         self.slider.value = new_value
+    #     self.slider.invalidate()  
+    #     self.slider.canvas.ask_update()  
+    #     Clock.schedule_once(self.slider._do_layout, 0)  
+    #     self.slider._update_graphics()
 
 
 """  
