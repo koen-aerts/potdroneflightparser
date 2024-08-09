@@ -193,6 +193,9 @@ msgstr "Jauges"
 msgid "preference_status_icons"
 msgstr "Icônes circulaires"
 
+msgid "preference_splash"
+msgstr "Supprimer l'écran de démarrage"
+
 msgid "no_data_in_zip_file"
 msgstr "Aucune donnée de vol dans le fichier zip."
 
@@ -300,6 +303,3 @@ msgstr "Sélectionnez un fichier zip de sauvegarde."
 
 msgid "parsing_log_file"
 msgstr "Analyse du fichier journal..."
-
-msgid "preference_splash"
-msgstr "Supprimer l'écran de démarrage"

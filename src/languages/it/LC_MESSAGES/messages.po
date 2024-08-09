@@ -193,6 +193,9 @@ msgstr "Calibri"
 msgid "preference_status_icons"
 msgstr "Icone circolari"
 
+msgid "preference_splash"
+msgstr "Rimuovere la schermata iniziale"
+
 msgid "no_data_in_zip_file"
 msgstr "Il file non è in zip file."
 
@@ -298,6 +301,3 @@ msgstr "Seleziona un file zip di backup."
 
 msgid "parsing_log_file"
 msgstr "Analisi del file di Registro..."
-
-msgid "preference_splash"
-msgstr "Rimuovere la schermata iniziale"

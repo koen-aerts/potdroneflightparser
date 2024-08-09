@@ -193,6 +193,9 @@ msgstr "Gauges"
 msgid "preference_status_icons"
 msgstr "Status Icons"
 
+msgid "preference_splash"
+msgstr "Hide Splash Screen"
+
 msgid "no_data_in_zip_file"
 msgstr "No flight data in zip file."
 
@@ -296,6 +299,3 @@ msgstr "Select a backup zip file."
 
 msgid "parsing_log_file"
 msgstr "Parsing Log File..."
-
-msgid "preference_splash"
-msgstr "Remove splash screen"

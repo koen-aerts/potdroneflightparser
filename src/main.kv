@@ -96,7 +96,6 @@ MDGridLayout:
                         MDActionTopAppBarButton:
                             icon: "wrench-cog-outline"
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"
-                       
                 MDGridLayout:
                     rows: 1
                     row_default_height: dp(18) if app.is_desktop else dp(14)
@@ -513,7 +512,7 @@ MDGridLayout:
                             size_hint: (None, None)
                             size: self.minimum_size
                             #width: dp(180)
-                            pos_hint: {"right": 1, "top": .95} #Chris
+                            pos_hint: {"right": 1, "top": .95}
                             #adaptive_size: True
                             cols: 1
                             padding: 0
@@ -526,8 +525,8 @@ MDGridLayout:
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)     #Chris
-                                height: dp(146)    #Chris
+                                width: dp(150)
+                                height: dp(146)
                             AltGauge:
                                 id: ALgauge
                                 display_unit: ""
@@ -676,6 +675,7 @@ MDGridLayout:
                     md_bg_color: self.theme_cls.backgroundColor
                     row_default_height: dp(30)
                     adaptive_height: True
+                    # Row 1
                     PrefLabel:
                         text: _('preference_unit_of_measure')
                     PrefSelect:
@@ -692,6 +692,7 @@ MDGridLayout:
                         id: selected_home_marker
                         active: True
                         height: dp(34)
+                    # Row 2
                     PrefLabel:
                         text: _('preference_playback_rate')
                     PrefSelect:
@@ -708,6 +709,7 @@ MDGridLayout:
                         id: selected_ctrl_marker
                         active: True
                         height: dp(34)
+                    # Row 3
                     PrefLabel:
                         text: _('preference_map_tile_server')
                     PrefSelect:
@@ -724,6 +726,26 @@ MDGridLayout:
                         id: selected_rounding
                         active: True
                         height: dp(34)
+                    # Row 4
+                    PrefLabel:
+                        text: _('preference_language')
+                    PrefSelect:
+                        on_release: app.language_selection(*args)
+                        MDDropDownItemText:
+                            font_style: "Title"
+                            role: "medium"
+                            id: selected_language
+                            text: ""
+                    PrefLabel:
+                        text: _('preference_gauges')
+                        opacity: 1 if app.is_desktop else 0
+                    PrefCheck:
+                        on_release: app.gauges_selection(*args)
+                        id: selected_gauges
+                        active: True
+                        height: dp(34)
+                        opacity: 1 if app.is_desktop else 0
+                    # Row 5
                     PrefLabel:
                         text: _('preference_flight_path_width')
                     PrefSlider:
@@ -740,30 +762,13 @@ MDGridLayout:
                         width: dp(160)
                         PrefSliderHandle:
                     PrefLabel:
-                        text: _('preference_gauges')
-                        opacity: 1 if app.is_desktop else 0
-                    PrefCheck:
-                        on_release: app.gauges_selection(*args)
-                        id: selected_gauges
-                        active: True
-                        height: dp(34)
-                        opacity: 1 if app.is_desktop else 0
-                    PrefLabel:
-                        text: _('preference_language')
-                    PrefSelect:
-                        on_release: app.language_selection(*args)
-                        MDDropDownItemText:
-                            font_style: "Title"
-                            role: "medium"
-                            id: selected_language
-                            text: ""
-                    PrefLabel:
                         text: _('preference_status_icons')
                     PrefCheck:
                         on_release: app.statusicons_selection(*args)
                         id: selected_statusicons
                         active: True
                         height: dp(34)
+                    # Row 6
                     PrefLabel:
                         text: _('preference_flight_path_color')
                     PrefSlider:
@@ -780,16 +785,6 @@ MDGridLayout:
                         width: dp(160)
                         PrefSliderHandle:
                     PrefLabel:
-                        text: _('preference_splash')
-                        opacity: 1 if app.is_desktop else 0
-                    PrefCheck:
-                        on_release: app.splash_selection(*args)
-                        id: selected_splashscreen
-                        active: True
-                        height: dp(34)
-                        opacity: 1 if app.is_desktop else 0
-
-                    PrefLabel:
                         text: _('preference_controller_color')
                     PrefSlider:
                         id: selected_marker_ctrl_color
@@ -804,6 +799,7 @@ MDGridLayout:
                         size_hint: (None, None)
                         width: dp(160)
                         PrefSliderHandle:
+                    # Row 7
                     PrefLabel:
                         text: _('preference_drone_color')
                     PrefSlider:
@@ -834,11 +830,17 @@ MDGridLayout:
                         size_hint: (None, None)
                         width: dp(160)
                         PrefSliderHandle:
+                    # Row 8
                     PrefLabel:
                         text: _('preference_app_version')
                     PrefText:
                         text: f"{app.appVersion}"
                     PrefLabel:
-                        text: ""
-                    PrefLabel:
-                        text: ""
+                        text: _('preference_splash')
+                        opacity: 1 if app.is_desktop else 0
+                    PrefCheck:
+                        on_release: app.splash_selection(*args)
+                        id: selected_splashscreen
+                        active: True
+                        height: dp(34)
+                        opacity: 1 if app.is_desktop else 0

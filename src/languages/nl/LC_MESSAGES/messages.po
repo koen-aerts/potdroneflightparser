@@ -193,6 +193,9 @@ msgstr "Meters"
 msgid "preference_status_icons"
 msgstr "Circulaire pictogrammen"
 
+msgid "preference_splash"
+msgstr "Verberg welkomscherm"
+
 msgid "no_data_in_zip_file"
 msgstr "Geen vlucht gegevens in zip bestand."
 
@@ -296,6 +299,3 @@ msgstr "Kies een back-up zip bestand."
 
 msgid "parsing_log_file"
 msgstr "Inlezen Log Bestand..."
-
-msgid "preference_splash"
-msgstr "Verwijder het splash-scherm"

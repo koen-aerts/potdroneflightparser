@@ -193,6 +193,9 @@ msgstr "Pengukur"
 msgid "preference_status_icons"
 msgstr "Ikon Melingkar"
 
+msgid "preference_splash"
+msgstr "Hapus layar splash"
+
 msgid "no_data_in_zip_file"
 msgstr "Tdk ada data penerbangan dlm file zip."
 
@@ -296,6 +299,3 @@ msgstr "Pilih berkas zip cadangan."
 
 msgid "parsing_log_file"
 msgstr "Mengurai Berkas Catatan..."
-
-msgid "preference_splash"
-msgstr "Hapus layar splash"

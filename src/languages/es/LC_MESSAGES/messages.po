@@ -193,6 +193,9 @@ msgstr "Medidores"
 msgid "preference_status_icons"
 msgstr "Iconos circulares"
 
+msgid "preference_splash"
+msgstr "Quitar pantalla de bienvenida"
+
 msgid "no_data_in_zip_file"
 msgstr "No hay datos en zip."
 
@@ -294,6 +297,3 @@ msgstr "Seleccione zip de respaldo."
 
 msgid "parsing_log_file"
 msgstr "Analizando registro..."
-
-msgid "preference_splash"
-msgstr "Quitar pantalla de bienvenida"
