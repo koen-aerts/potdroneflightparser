@@ -15,6 +15,7 @@ import webbrowser
 
 from enum import Enum
 from PIL import Image as PILImage
+import xml.etree.ElementTree as ET
 
 from kivy.core.window import Window
 Window.allow_screensaver = False
@@ -43,7 +44,6 @@ from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
 from kivy.uix.slider import Slider
-
 
 
 if platform == 'android': # Android
@@ -674,7 +674,7 @@ class MainApp(MDApp):
     '''
     Open a file export dialog (export csv file).
     '''
-    def open_file_export_dialog(self):
+    def open_csv_file_export_dialog(self):
         csvFilename = re.sub("\.zip$", "", self.zipFilename) + ".csv"
         if self.is_android:
             csvFile = os.path.join(self.shared_storage.get_cache_dir(), csvFilename)
@@ -723,6 +723,154 @@ class MainApp(MDApp):
                     self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
                 except Exception as e:
                     msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
+                    print(msg)
+                    self.show_error_message(message=msg)
+
+
+    '''
+    Save the flight data in a KML file.
+    '''
+    def save_kml_file(self, kmlFilename):
+        root = ET.Element("kml", xmlns="http://www.opengis.net/kml/2.2")
+        doc = ET.SubElement(root, "Document")
+        ET.SubElement(doc, "name").text = f"{self.root.ids.selected_model.text} logs of {self.root.ids.value_date.text}"
+        ET.SubElement(doc, "description").append(ET.Comment(f' --><![CDATA[Logfile: {self.zipFilename}<br><br>Exported: {datetime.datetime.now().isoformat()}<br><br><a href="https://github.com/koen-aerts/potdroneflightparser">Flight Log Viewer</a>]]><!-- '))
+        style = ET.SubElement(doc, "Style", id="pathStyle")
+        lineStyle = ET.SubElement(style, "LineStyle")
+        pathColor = self.assetColors[int(self.root.ids.selected_flight_path_color.value)]
+        ET.SubElement(lineStyle, "color").text = f"ff{pathColor[5:7]}{pathColor[3:5]}{pathColor[1:3]}"
+        ET.SubElement(lineStyle, "width").text = self.pathWidths[int(self.root.ids.selected_flight_path_width.value)]
+        style = ET.SubElement(doc, "Style", id="homeStyle")
+        iconStyle = ET.SubElement(style, "IconStyle")
+        icon = ET.SubElement(iconStyle, "Icon")
+        ET.SubElement(icon, "href").text = f"https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Home-{str(int(self.root.ids.selected_marker_home_color.value)+1)}.png"
+        ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
+        style = ET.SubElement(doc, "Style", id="ctrlStyle")
+        iconStyle = ET.SubElement(style, "IconStyle")
+        icon = ET.SubElement(iconStyle, "Icon")
+        ET.SubElement(icon, "href").text = f"https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Controller-{str(int(self.root.ids.selected_marker_ctrl_color.value)+1)}.png"
+        ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
+        style = ET.SubElement(doc, "Style", id="droneStyle")
+        iconStyle = ET.SubElement(style, "IconStyle")
+        icon = ET.SubElement(iconStyle, "Icon")
+        ET.SubElement(icon, "href").text = f"https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}.png"
+        ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
+        style = ET.SubElement(doc, "Style", id="hidePoints")
+        listStyle = ET.SubElement(style, "ListStyle")
+        ET.SubElement(listStyle, "listItemType").text = "checkHideChildren"
+        flightNo = 1
+        while flightNo <= len(self.flightOptions):
+            coords = ''
+            self.currentStartIdx = self.flightStarts[f"{flightNo}"]
+            self.currentEndIdx = self.flightEnds[f"{flightNo}"]
+            folder = ET.SubElement(doc, "Folder")
+            ET.SubElement(folder, "name").text = f"Flight #{flightNo}"
+            ET.SubElement(folder, "description").append(ET.Comment(f' --><![CDATA[Duration: {str(self.flightStats[flightNo][3])}<br>Distance flown: {self.fmt_num(self.dist_val(self.flightStats[flightNo][9]))} {self.dist_unit()}]]><!-- '))
+            ET.SubElement(folder, "styleUrl").text = "#hidePoints"
+            ET.SubElement(folder, "visibility").text = "0"
+            prevtimestamp = None
+            maxelapsedms = d = datetime.timedelta(microseconds=500000)
+            isfirstrow = True
+            for rowIdx in range(self.currentStartIdx, self.currentEndIdx+1):
+                row = self.logdata[rowIdx]
+                thistimestamp = datetime.datetime.fromisoformat(row[self.columns.index('timestamp')])
+                elapsedFrame = None if prevtimestamp is None else thistimestamp - prevtimestamp # elasped microseconds since last frame.
+                if elapsedFrame is None or elapsedFrame > maxelapsedms: # Omit frames that are within maxelapsedms microseconds from each other.
+                    timestampstr = f"{thistimestamp.isoformat(sep='T', timespec='milliseconds')}Z"
+                    dronelon = row[self.columns.index('dronelon')]
+                    dronelat = row[self.columns.index('dronelat')]
+                    dronealt = row[self.columns.index('altitude2metric')] # KML uses metric units.
+                    if isfirstrow:
+                        lookAt = ET.SubElement(folder, "LookAt")
+                        ET.SubElement(lookAt, "longitude").text = dronelon
+                        ET.SubElement(lookAt, "latitude").text = dronelat
+                        ET.SubElement(lookAt, "altitude").text = "200" # Viewing altitude
+                        ET.SubElement(lookAt, "heading").text = "0" # Look North
+                        ET.SubElement(lookAt, "tilt").text = "45" # Look down 45 degrees
+                        ET.SubElement(lookAt, "range").text = str((self.flightStats[flightNo][0]*2)+500) # Determine potential good viewing distance.
+                        ET.SubElement(lookAt, "altitudeMode").text = "relativeToGround"
+                        isfirstrow = False
+                    placeMark = ET.SubElement(folder, "Placemark") # Drone marker.
+                    timest = ET.SubElement(placeMark, "TimeStamp")
+                    ET.SubElement(timest, "when").text = timestampstr
+                    ET.SubElement(placeMark, "styleUrl").text = "#droneStyle"
+                    point = ET.SubElement(placeMark, "Point")
+                    ET.SubElement(point, "altitudeMode").text = "relativeToGround"
+                    ET.SubElement(point, "coordinates").text = f"{dronelon},{dronelat},{dronealt}"
+                    if (len(coords) > 0):
+                        coords += '\n'
+                    coords += f"{dronelon},{dronelat},{dronealt}" # flight path coordinates and altitude.
+                    homelon = row[self.columns.index('homelon')]
+                    homelat = row[self.columns.index('homelat')]
+                    if homelon != '0.0' and homelat != '0.0': # Home marker.
+                        placeMark = ET.SubElement(folder, "Placemark")
+                        timest = ET.SubElement(placeMark, "TimeStamp")
+                        ET.SubElement(timest, "when").text = timestampstr
+                        ET.SubElement(placeMark, "styleUrl").text = "#homeStyle"
+                        point = ET.SubElement(placeMark, "Point")
+                        ET.SubElement(point, "altitudeMode").text = "relativeToGround"
+                        ET.SubElement(point, "coordinates").text = f"{homelon},{homelat},0"
+                    ctrllon = row[self.columns.index('ctrllon')]
+                    ctrllat = row[self.columns.index('ctrllat')]
+                    if ctrllon != '0.0' and ctrllat != '0.0': # Controller marker.
+                        placeMark = ET.SubElement(folder, "Placemark")
+                        timest = ET.SubElement(placeMark, "TimeStamp")
+                        ET.SubElement(timest, "when").text = timestampstr
+                        ET.SubElement(placeMark, "styleUrl").text = "#ctrlStyle"
+                        point = ET.SubElement(placeMark, "Point")
+                        ET.SubElement(point, "altitudeMode").text = "relativeToGround"
+                        ET.SubElement(point, "coordinates").text = f"{ctrllon},{ctrllat},1.5" # Assume average human holds controller 1.5 meters from ground.
+                    prevtimestamp = thistimestamp
+            placeMark = ET.SubElement(folder, "Placemark")
+            ET.SubElement(placeMark, "name").text = f"Flight Path {flightNo}"
+            ET.SubElement(placeMark, "styleUrl").text = "#pathStyle"
+            lineString = ET.SubElement(placeMark, "LineString")
+            ET.SubElement(lineString, "tessellate").text = "1"
+            ET.SubElement(lineString, "altitudeMode").text = "relativeToGround"
+            ET.SubElement(lineString, "coordinates").text = coords
+            flightNo = flightNo + 1
+        xml = ET.ElementTree(root)
+        xml.write(kmlFilename, encoding='UTF-8', xml_declaration=True)
+
+
+    '''
+    Open a file export dialog (export KML file).
+    '''
+    def open_kml_file_export_dialog(self):
+        kmlFilename = re.sub("\.zip$", "", self.zipFilename) + ".kml"
+        if self.is_android:
+            kmlFile = os.path.join(self.shared_storage.get_cache_dir(), kmlFilename)
+            try:
+                self.save_kml_file(kmlFile)
+                url = self.shared_storage.copy_to_shared(kmlFile)
+                ShareSheet().share_file(url)
+                self.show_info_message(message=_('data_exported_to').format(filename=kmlFile))
+            except Exception as e:
+                msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
+                print(msg)
+                self.show_error_message(message=msg)
+        elif self.is_ios:
+            kmlFile = os.path.join(self.ios_doc_path(), kmlFilename)
+            try:
+                self.save_kml_file(kmlFile)
+                self.show_info_message(message=_('export_kml_file_saved').format(filename=kmlFile))
+            except Exception as e:
+                msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
+                print(msg)
+                self.show_error_message(message=msg)
+        else:
+            oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
+            myFiles = filechooser.choose_dir(title=_('save_export_kml_file'))
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
+            if myFiles and len(myFiles) > 0 and os.path.isdir(myFiles[0]):
+                kmlFile = os.path.join(myFiles[0], kmlFilename)
+                try:
+                    self.save_kml_file(kmlFile)
+                    self.show_info_message(message=_('data_exported_to').format(filename=kmlFile))
+                except Exception as e:
+                    msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
                     print(msg)
                     self.show_error_message(message=msg)
 

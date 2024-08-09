@@ -639,7 +639,10 @@ MDGridLayout:
                     MDTopAppBarTrailingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "microsoft-excel"
-                            on_release: app.open_file_export_dialog()
+                            on_release: app.open_csv_file_export_dialog()
+                        MDActionTopAppBarButton:
+                            icon: "google-earth"
+                            on_release: app.open_kml_file_export_dialog()
                         MDActionTopAppBarButton:
                             icon: "wrench-cog-outline"
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"
