@@ -2,13 +2,13 @@
 # Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-05-13 16:11-0600\n"
-"PO-Revision-Date: 2024-05-16 15:47-0600\n"
+"PO-Revision-Date: 2024-08-09 11:10-0400\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
 "Language-Team: es <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.15.0\n"
+"X-Generator: PO File Editor https://pofile.net/free-po-editor\n"
 
 msgid "title_logs"
 msgstr "Registros"
@@ -61,31 +62,31 @@ msgid "map_distance"
 msgstr "Distancia:"
 
 msgid "map_dist"
-msgstr "Dist: {distance} {unit}"
+msgstr "Dist:"
 
 msgid "map_altitude"
 msgstr "Altitud:"
 
 msgid "map_alt"
-msgstr "Alt: {altitude} {unit}"
+msgstr "Alt:"
 
 msgid "map_horizontal_speed"
 msgstr "Vel. H:"
 
 msgid "map_hs"
-msgstr "HS: {speed} {unit}"
+msgstr "HS:"
 
 msgid "map_vertical_speed"
 msgstr "Vel. V:"
 
 msgid "map_vs"
-msgstr "VS: {speed} {unit}"
+msgstr "VS:"
 
 msgid "map_distance_flown"
 msgstr "Dist. vuelo:"
 
 msgid "map_sats"
-msgstr "Sats: {satellites}"
+msgstr "Sats:"
 
 msgid "map_date"
 msgstr "Fecha:"
@@ -107,6 +108,18 @@ msgstr "Duración:"
 
 msgid "map_flight_number"
 msgstr "Vuelo núm.:"
+
+msgid "map_battery_level"
+msgstr "Nivel de bateria:"
+
+msgid "map_battery"
+msgstr "Bat:"
+
+msgid "map_rth_desc"
+msgstr "Estado:"
+
+msgid "map_flightmode"
+msgstr "Velocidad:"
 
 msgid "flight_flight"
 msgstr "Vuelo"
@@ -173,6 +186,15 @@ msgstr "Color inicio:"
 
 msgid "preference_app_version"
 msgstr "App Version:"
+
+msgid "preference_gauges"
+msgstr "Medidores"
+
+msgid "preference_status_icons"
+msgstr "Iconos circulares"
+
+msgid "preference_splash"
+msgstr "Quitar pantalla de bienvenida"
 
 msgid "no_data_in_zip_file"
 msgstr "No hay datos en zip."

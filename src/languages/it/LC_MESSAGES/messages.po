@@ -2,13 +2,13 @@
 # Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-05-13 16:11-0600\n"
-"PO-Revision-Date: 2024-05-16 14:07-0600\n"
+"PO-Revision-Date: 2024-08-09 11:14-0400\n"
 "Last-Translator: Stefano Rapegno\n"
 "Language: it\n"
 "Language-Team: it <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.15.0\n"
+"X-Generator: PO File Editor https://pofile.net/free-po-editor\n"
 
 msgid "title_logs"
 msgstr "Registri"
@@ -61,31 +62,31 @@ msgid "map_distance"
 msgstr "Distanza:"
 
 msgid "map_dist"
-msgstr "Dist: {distance} {unit}"
+msgstr "Dist:"
 
 msgid "map_altitude"
 msgstr "Altitudine:"
 
 msgid "map_alt"
-msgstr "Alt: {altitude} {unit}"
+msgstr "Alt:"
 
 msgid "map_horizontal_speed"
 msgstr "Vel. Orizz.:"
 
 msgid "map_hs"
-msgstr "VO: {speed} {unit}"
+msgstr "VO:"
 
 msgid "map_vertical_speed"
 msgstr "Vel. Vert.:"
 
 msgid "map_vs"
-msgstr "VV: {speed} {unit}"
+msgstr "VV:"
 
 msgid "map_distance_flown"
 msgstr "Dist Percorsa:"
 
 msgid "map_sats"
-msgstr "Satelliti: {satellites}"
+msgstr "Satelliti:"
 
 msgid "map_date"
 msgstr "Data:"
@@ -107,6 +108,18 @@ msgstr "Durata:"
 
 msgid "map_flight_number"
 msgstr "Volo #:"
+
+msgid "map_battery_level"
+msgstr "Livello della batteria:"
+
+msgid "map_battery"
+msgstr "Bat:"
+
+msgid "map_rth_desc"
+msgstr "Stato:"
+
+msgid "map_flightmode"
+msgstr "Velocità:"
 
 msgid "flight_flight"
 msgstr "Volo"
@@ -174,6 +187,15 @@ msgstr "Colore della Home:"
 msgid "preference_app_version"
 msgstr "App Version:"
 
+msgid "preference_gauges"
+msgstr "Calibri"
+
+msgid "preference_status_icons"
+msgstr "Icone circolari"
+
+msgid "preference_splash"
+msgstr "Rimuovere la schermata iniziale"
+
 msgid "no_data_in_zip_file"
 msgstr "Il file non è in zip file."
 
@@ -190,10 +212,14 @@ msgid "nothing_to_import"
 msgstr "Importazione non riuscita."
 
 msgid "drone_not_supported"
-msgstr "Questo modello di drone potrebbe non essere supportato per questo software: {modelname}"
+msgstr ""
+"Questo modello di drone potrebbe non essere supportato per questo software: "
+"{modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr "Nessuna importazione.Inserisci il file zip di registro volo nella directory flightlogviewer, Riprova."
+msgstr ""
+"Nessuna importazione.Inserisci il file zip di registro volo nella directory "
+"flightlogviewer, Riprova."
 
 msgid "select_log_zip_file"
 msgstr "Seleziona il file Registro zip."
