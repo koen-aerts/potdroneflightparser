@@ -11,8 +11,10 @@ import threading
 import locale
 import sqlite3
 import gettext
+import webbrowser 
 
 from enum import Enum
+from PIL import Image as PILImage
 
 from kivy.core.window import Window
 Window.allow_screensaver = False
@@ -34,6 +36,16 @@ from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
 
+from kivy.properties import NumericProperty, BoundedNumericProperty, StringProperty
+from kivy.uix.scatter import Scatter
+from kivy.uix.image import Image
+from kivy.uix.label import Label
+from kivy.uix.boxlayout import BoxLayout
+from kivy.clock import Clock
+from kivy.uix.slider import Slider
+
+
+
 if platform == 'android': # Android
     from android.permissions import request_permissions, Permission
     from androidstorage4kivy import SharedStorage, Chooser, ShareSheet
@@ -52,8 +64,31 @@ from zipfile import ZipFile
 class MotorStatus(Enum):
   UNKNOWN = 'Unknown'
   OFF = 'Off'
-  IDLE = 'Idle'
-  LIFT = 'Flying'
+  IDLE = 'Idling'
+  LIFT = 'Running'
+
+
+class DroneStatus(Enum):
+  UNKNOWN = 'Unknown'
+  OFF = 'Motors Off'
+  IDLE = 'Idling'
+  LIFT = 'Taking Off'
+  LANDING = 'Landing'
+  FLYING = 'Flying'
+
+
+class FlightMode(Enum):
+  UNKNOWN = 'Unknown'
+  NORMAL = 'Normal'
+  VIDEO = 'Video'
+  SPORT = 'Sport'
+
+
+class PositionMode(Enum):
+  UNKNOWN = 'Unknown'
+  GPS = 'GPS'
+  OPTI = 'Vision'
+  ATTI = 'Attitude'
 
 
 class SelectableTileServer(Enum):
@@ -72,14 +107,15 @@ class MainApp(MDApp):
     '''
     Global variables and constants.
     '''
-    appVersion = "v2.2.0"
+    appVersion = "v2.3.0"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
     defaultMapZoom = 3
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
+    refreshRates = ['0.125s', '0.25s', '0.50s', '1.00s', '1.50s', '2.00s']
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
-    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','flightstatus','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','rssi','channel','flightctrlconnected','remoteconnected','gps','inuse','motor1status','motor2status','motor3status','motor4status','traveled')
+    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
@@ -93,6 +129,8 @@ class MainApp(MDApp):
         'nl_NL': 'Nederlands',
         'id_ID': 'Indonesia'
     }
+    head_lat_2 = 0
+    head_lon_2 = 0
 
 
     '''
@@ -168,9 +206,12 @@ class MainApp(MDApp):
                     isLegacyLog = struct.unpack('<B', fcRecord[509:510])[0] == 0 and struct.unpack('<B', fcRecord[510:511])[0] == 0 and struct.unpack('<B', fcRecord[511:512])[0] == 0
                     offset1 = 0
                     offset2 = 0
+                    offset3 = 0
                     if not isLegacyLog: # 0,0,0 = legacy, 3,3,0 = new
                         offset1 = -6
                         offset2 = -10
+                        offset3 = -14
+                    flightCounter = struct.unpack('<H', fcRecord[17:19])[0] # Drone's flight counter. Increments each time it initiates a new flight.
                     satellites = struct.unpack('<B', fcRecord[46:47])[0] # Number of satellites.
                     dronelat = struct.unpack('<i', fcRecord[53+offset1:57+offset1])[0]/10000000 # Drone coords.
                     dronelon = struct.unpack('<i', fcRecord[57+offset1:61+offset1])[0]/10000000
@@ -200,7 +241,15 @@ class MainApp(MDApp):
                     motor3Stat = struct.unpack('<B', fcRecord[316+offset2:317+offset2])[0] # Motor 3 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     motor4Stat = struct.unpack('<B', fcRecord[318+offset2:319+offset2])[0] # Motor 4 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     droneInUse = struct.unpack('<B', fcRecord[295+offset2:296+offset2])[0] # Drone is detected "in action" (0 = flying or in use, 1 = not in use).
+                    droneConnected = struct.unpack('<B', fcRecord[469+offset3:470+offset3])[0] # Drone connected to controller, 1 = Yes, 0 = No.
+                    batteryLevel = struct.unpack('<B', fcRecord[481+offset3:482+offset3])[0] # Battery level.
+                    flightMode = struct.unpack('<B', fcRecord[448+offset2:449+offset2])[0] # Flight mode: normal, video, sports.
+                    flightModeDesc = FlightMode.VIDEO.value if flightMode == 7 else FlightMode.NORMAL.value if flightMode == 8 else FlightMode.SPORT.value if flightMode == 9 else ''
+                    droneAction = struct.unpack('<B', fcRecord[486+offset3:487+offset3])[0] # Drone action: 0 = motors off, 1 = grounded or taking off, 2 = flying, 3 = landing. # Field @ offset 443 looks the same?
+                    rth = 0 if droneAction != 2 else struct.unpack('<B', fcRecord[444+offset2:445+offset2])[0] # Home or Return to Home, 1 = Yes, 0 = No.
+                    positionMode = struct.unpack('<B', fcRecord[487+offset3:488+offset3])[0] # Unidentified - GPS/ATTI mode? Almost the same @ offset 445
                     inUse = 'Yes' if droneInUse == 0 else 'No'
+                    posModeDesc = PositionMode.GPS.value if positionMode == 3 else PositionMode.OPTI.value if positionMode == 2 else positionMode # TODO - don't know value yet for ATTI, probably 1??
 
                     alt1 = round(self.dist_val(-struct.unpack('f', fcRecord[243+offset2:247+offset2])[0]), 2) # Relative height from controller vs distance to ground??
                     alt2metric = -struct.unpack('f', fcRecord[343+offset2:347+offset2])[0] # Relative height from controller vs distance to ground??
@@ -211,6 +260,9 @@ class MainApp(MDApp):
                     speed2lat = self.speed_val(speed2latmetric)
                     speed2lonmetric = struct.unpack('f', fcRecord[331+offset2:335+offset2])[0]
                     speed2lon = self.speed_val(speed2lonmetric)
+                    # Offset 335 + 339 (float)
+                    # Offset 351 + 355 (float)
+                    # Offset 371 + 375 (float)
                     speed1 = round(math.sqrt(math.pow(speed1lat, 2) + math.pow(speed1lon, 2)), 2) # Pythagoras to calculate real speed.
                     speed2metric = round(math.sqrt(math.pow(speed2latmetric, 2) + math.pow(speed2lonmetric, 2)), 2)
                     speed2 = round(math.sqrt(math.pow(speed2lat, 2) + math.pow(speed2lon, 2)), 2) # Pythagoras to calculate real speed.
@@ -218,6 +270,9 @@ class MainApp(MDApp):
                     speed2vertmetric = -struct.unpack('f', fcRecord[347+offset2:351+offset2])[0] # Vertical speed
                     speed2vertmetricabs = abs(speed2vertmetric)
                     speed2vert = self.speed_val(speed2vertmetric)
+                    if self.root.ids.selected_rounding.active and speed2vert < 0 and round(speed2vert) == 0:
+                        speed2vert = 0
+                    orientation = struct.unpack('f', fcRecord[391+offset2:395+offset2])[0] # Drone orientation in radians.
 
                     # Some checks to handle cases with bad or incomplete GPS data.
                     hasDroneCoords = dronelat != 0.0 and dronelon != 0.0
@@ -257,6 +312,18 @@ class MainApp(MDApp):
                     else:
                         firstTs = None
                         distTraveled = 0
+
+                    droneActionDesc = DroneStatus.UNKNOWN
+                    if droneAction == 0:
+                        droneActionDesc = DroneStatus.OFF
+                    elif droneAction == 1 and droneMotorStatus == MotorStatus.IDLE:
+                        droneActionDesc = DroneStatus.IDLE
+                    elif droneAction == 1 and droneMotorStatus == MotorStatus.LIFT:
+                        droneActionDesc = DroneStatus.LIFT
+                    elif droneAction == 2:
+                        droneActionDesc = DroneStatus.FLYING
+                    elif droneAction == 3:
+                        droneActionDesc = DroneStatus.LANDING
 
                     # Calculate timestamp for the record.
                     readingTs = filenameTs + datetime.timedelta(milliseconds=(elapsed/1000))
@@ -370,7 +437,7 @@ class MainApp(MDApp):
                         isNewPath = False
                     if pathNum > 0:
                         self.flightEnds[flightDesc] = tableLen
-                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, droneMotorStatus.value, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, gpsStatus, inUse, motor1Stat, motor2Stat, motor3Stat, motor4Stat, f"{self.fmt_num(self.dist_val(distTraveled))}"])
+                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, flightModeDesc, flightCounter])
                     tableLen = tableLen + 1
 
             flightFile.close()
@@ -419,14 +486,17 @@ class MainApp(MDApp):
 
         mainthread(self.show_flight_date)(importRef)
         mainthread(self.show_flight_stats)()
+        mainthread(self.init_gauges)()
 
 
     def show_flight_date(self, importRef):
         logDate = re.sub(r"-.*", r"", importRef) # Extract date section from log (zip) filename.
         self.root.ids.value_date.text = datetime.date.fromisoformat(logDate).strftime("%x")
+        #self.root.ids.map_metrics1.text = f" {importRef} / {_('map_date')} {self.root.ids.value_date.text}"
 
 
     def show_flight_stats(self):
+        self.title = self.appTitle + " - " + self.zipFilename
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_flight'), bold=True, max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_duration'), bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_distance_flown'), bold=True, max_lines=1, halign="right", valign="center"))
@@ -626,8 +696,22 @@ class MainApp(MDApp):
                 msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
                 print(msg)
                 self.show_error_message(message=msg)
-        else:
+        elif self.is_windows: # For windows, use "save_file" interface in plyer filechooser.
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
+            myFiles = filechooser.save_file(title=_('save_export_csv_file'), filters=["*.csv"], path=csvFilename)
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
+            if myFiles and len(myFiles) > 0:
+                try:
+                    self.save_csv_file(myFiles[0])
+                    self.show_info_message(message=_('data_exported_to').format(filename=myFiles[0]))
+                except Exception as e:
+                    msg = _('error_saving_export_csv').format(filename=myFiles[0], error=e)
+                    print(msg)
+                    self.show_error_message(message=msg)
+        else: # For non-windows, use "choose_dir" interface in plyer filechooser because plyer does currently not set the desired filename.
+            oldwd = os.getcwd() # Remember current workdir in case the OS File browser changes it, causing all sorts of mapview issues.
             myFiles = filechooser.choose_dir(title=_('save_export_csv_file'))
             newwd = os.getcwd()
             if oldwd != newwd:
@@ -782,6 +866,13 @@ class MainApp(MDApp):
         self.root.ids.map.add_marker(self.dronemarker, self.layer_drone)
 
 
+    def init_gauges(self):
+        self.root.ids.HSPDgauge.display_unit = self.speed_unit()
+        self.root.ids.VSPDgauge.display_unit = self.speed_unit()
+        self.root.ids.ALgauge.display_unit = self.dist_unit()
+        self.root.ids.DSgauge.display_unit = self.dist_unit()
+
+
     '''
     Zooms the map so that the entire flight path will fit.
     '''
@@ -875,28 +966,77 @@ class MainApp(MDApp):
         if not self.currentRowIdx:
             return
         record = self.logdata[self.currentRowIdx]
+        rthDesc = "RTH" if record[self.columns.index('rth')] == 1 else ''
+        droneConnected = 'Connected' if record[self.columns.index('droneconnected')] == 1 else 'DISCONNECTED'
+        batteryLevel = record[self.columns.index('batterylevel')]
+        batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10 # round to nearest 10.
+        flightMode = record[self.columns.index('flightmode')]
+        dronestatus = record[self.columns.index('dronestatus')]
+        positionMode = record[self.columns.index('positionmode')]
+
         self.root.ids.value1_alt.text = f"{record[self.columns.index('altitude2')]} {self.dist_unit()}"
-        self.root.ids.value2_alt.text = _('map_alt').format(altitude=record[self.columns.index('altitude2')], unit=self.dist_unit())
         self.root.ids.value1_traveled.text = f"{record[self.columns.index('traveled')]} {self.dist_unit()}"
         self.root.ids.value1_traveled_short.text = f"({self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()})"
+        self.root.ids.value1_flightmode.text = flightMode
         self.root.ids.value1_dist.text = f"{record[self.columns.index('distance3')]} {self.dist_unit()}"
         self.root.ids.value1_dist_short.text = f"({self.shorten_dist_val(record[self.columns.index('distance3')])} {self.dist_unit_km()})"
-        self.root.ids.value2_dist.text = _('map_dist').format(distance=record[self.columns.index('distance3')], unit=self.dist_unit())
         self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
-        self.root.ids.value2_hspeed.text = _('map_hs').format(speed=record[self.columns.index('speed2')], unit=self.speed_unit())
         self.root.ids.value1_vspeed.text = f"{record[self.columns.index('speed2vert')]} {self.speed_unit()}"
-        self.root.ids.value2_vspeed.text = _('map_vs').format(speed=record[self.columns.index('speed2vert')], unit=self.speed_unit())
-        self.root.ids.value2_sats.text = _('map_sats').format(satellites=record[self.columns.index('satellites')])
+        self.root.ids.value1_batterylevel.text = f"{record[self.columns.index('batterylevel')]}%"
+        self.root.ids.value1_rth_desc.text = dronestatus if len(rthDesc) == 0 else rthDesc
         elapsed = record[5]
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
         self.root.ids.value1_elapsed.text = str(elapsed)
-        self.root.ids.value2_elapsed.text = str(elapsed)
+
+        self.root.ids.battery_level.icon = "battery" if batLevelRnd == 100 else f"battery-{batLevelRnd}"
+        self.root.ids.flight_mode.icon = "alpha-v-box" if flightMode == FlightMode.VIDEO.value else "alpha-s-box" if flightMode == FlightMode.SPORT.value else "alpha-n-box" if flightMode == FlightMode.NORMAL.value else ""
+        self.root.ids.drone_connection.icon = "signal" if record[self.columns.index('droneconnected')] == 1 else "signal-off"
+        self.root.ids.drone_action.icon = "airplane-marker" if record[self.columns.index('rth')] == 1 else "airplane-takeoff" if dronestatus == DroneStatus.LIFT.value else "airplane-landing" if dronestatus == DroneStatus.LANDING.value else "airplane" if dronestatus == DroneStatus.FLYING.value else "car-break-parking" if dronestatus == DroneStatus.IDLE.value else ""
+        self.root.ids.position_mode.icon = "satellite-uplink" if positionMode == PositionMode.GPS.value else "eye" if positionMode == PositionMode.OPTI.value else "panorama-fisheye" if positionMode == PositionMode.ATTI.value else ""
+
+        if self.is_desktop: # Gauges are turned off on mobile devices.
+            # Set horizontal, vertical and altitude gauge values. Use rounded values.
+            self.root.ids.HSPDgauge.value = round(locale.atof(record[self.columns.index('speed2')]))
+            # "peg out" the gauge if beyond the vertical limits
+            if abs(round(locale.atof(record[self.columns.index('speed2vert')])) > 14):
+                self.root.ids.VSPDgauge.value = 14
+            else: 
+                self.root.ids.VSPDgauge.value = round(locale.atof(record[self.columns.index('speed2vert')]))
+
+            self.root.ids.ALgauge.value = round(locale.atof(record[self.columns.index('altitude2')]))
+            self.root.ids.DSgauge.value = round(locale.atof(record[self.columns.index('distance3')]))
+
+            # Set up vars for HDgauge calcs
+            if self.root.ids.value_duration.text == "":
+                self.head_lat_2 = float(record[self.columns.index('dronelat')])
+                self.head_lon_2 = float(record[self.columns.index('dronelon')])
+            else:
+                head_lat_1 = self.head_lat_2
+                head_lon_1 = self.head_lon_2
+                self.head_lat_2 = float(record[self.columns.index('dronelat')])
+                self.head_lon_2 = float(record[self.columns.index('dronelon')])
+                # determine bearing.
+                dLon = (self.head_lon_2 - head_lon_1)
+                x = math.cos(math.radians(self.head_lat_2)) * math.sin(math.radians(dLon))
+                y = math.cos(math.radians(head_lat_1)) * math.sin(math.radians(self.head_lat_2)) - math.sin(math.radians(head_lat_1)) * math.cos(math.radians(self.head_lat_2)) * math.cos(math.radians(dLon))
+                brng = math.atan2(x,y)
+                brng = math.degrees(brng)
+                G_orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees, -180 to 180.
+                G_rotation = abs(G_orientation) if G_orientation <= 0 else 360 - G_orientation # Convert to 0 - 359 range.
+                self.root.ids.HDgauge.value = G_rotation
+
+        dronestatus2 = rthDesc if rthDesc == "RTH" else dronestatus
+        if self.is_desktop:
+            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>7}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>5}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_flightmode')} {flightMode} | {_('map_battery_level')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | {dronestatus2} | {droneConnected} | {positionMode} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
+        else:
+            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>6}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>5}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>5}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {flightMode} | {_('map_battery')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | {dronestatus2} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
+
         if updateSlider:
             if self.root.ids.value_duration.text != "":
                 durstr = self.root.ids.value_duration.text.split(":")
                 durval = datetime.timedelta(hours=int(durstr[0]), minutes=int(durstr[1]), seconds=int(durstr[2]))
                 if durval != 0: # Prevent division by zero
-                    self.root.ids.flight_progress.value = elapsed / durval * 100
+                    self.root.ids.flight_progress.value = elapsed / durval * 100  
                 else:
                     self.root.ids.flight_progress.value = 0
         # Controller Marker.
@@ -921,6 +1061,7 @@ class MainApp(MDApp):
             dronelon = float(record[self.columns.index('dronelon')])
             self.dronemarker.lat = dronelat
             self.dronemarker.lon = dronelon
+            self.dronemarker.source = self.get_drone_icon_source()
         except:
             ... # Do nothing
         self.root.ids.map.trigger_update(False)
@@ -984,15 +1125,8 @@ class MainApp(MDApp):
 
 
     def change_playback_speed(self):
-        if self.playback_speed == 1:
-            self.playback_speed = 2
-        elif self.playback_speed == 2:
-            self.playback_speed = 4
-        elif self.playback_speed == 4:
-            self.playback_speed = 8
-        else:
-            self.playback_speed = 1
-        self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box"
+        self.playback_speed = self.playback_speed << 1 if self.playback_speed < 16 else 1
+        self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box" if self.playback_speed < 16 else f"rocket-launch"
 
 
     '''
@@ -1108,6 +1242,25 @@ class MainApp(MDApp):
 
 
     '''
+    Return reference to the drone icon image. If it needs to be rotated, it will be generated from the base icon image.
+    '''
+    def get_drone_icon_source(self):
+        base_filename = f"Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}"
+        if not self.currentRowIdx:
+            # Return base image if there is no current rotation (orientation).
+            return f"assets/{base_filename}.png"
+        record = self.logdata[self.currentRowIdx]
+        orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees, -180 to 180.
+        rotation = abs(orientation) if orientation <= 0 else 360 - orientation # Convert to 0 - 359 range.
+        rotated_filename = os.path.join(self.root.ids.map.cache_dir, f"{base_filename}-{rotation}.png")
+        if not os.path.exists(rotated_filename):
+            drone_base_icon = PILImage.open(f"assets/{base_filename}.png")
+            drone_rotated_icon = drone_base_icon.rotate(rotation, expand=True)
+            drone_rotated_icon.save(rotated_filename)
+        return rotated_filename
+
+
+    '''
     Drone Marker Colour functions.
     '''
     def marker_drone_color_selection(self, slider, coords):
@@ -1117,7 +1270,7 @@ class MainApp(MDApp):
         Config.set('preferences', 'marker_drone_color', colorIdx)
         Config.write()
         if self.dronemarker:
-            self.dronemarker.source=f"assets/Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}.png"
+            self.dronemarker.source = self.get_drone_icon_source()
             self.set_markers()
 
 
@@ -1183,19 +1336,18 @@ class MainApp(MDApp):
             self.root.ids.flight_progress.value = 0
             self.root.ids.flight_progress.is_updating = False
             self.root.ids.value1_elapsed.text = ""
-            self.root.ids.value2_elapsed.text = ""
             self.root.ids.value1_alt.text = ""
-            self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
             self.root.ids.value1_traveled_short.text = ""
+            self.root.ids.value1_rth_desc.text = ""
+            self.root.ids.value1_batterylevel.text = ""
+            self.root.ids.value1_flightmode.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value1_dist_short.text = ""
-            self.root.ids.value2_dist.text = ""
             self.root.ids.value1_hspeed.text = ""
-            self.root.ids.value2_hspeed.text = ""
             self.root.ids.value1_vspeed.text = ""
-            self.root.ids.value2_vspeed.text = ""
-            self.root.ids.value2_sats.text = ""
+            #self.root.ids.map_metrics1.text = ""
+            self.root.ids.map_metrics2.text = ""
         else:
             self.currentStartIdx = self.flightStarts[self.root.ids.selected_path.text]
             self.currentEndIdx = self.flightEnds[self.root.ids.selected_path.text]
@@ -1240,7 +1392,7 @@ class MainApp(MDApp):
     '''
     def refresh_rate_selection(self, item):
         menu_items = []
-        for refreshRate in ['0.50s', '1.00s', '1.50s', '2.00s']:
+        for refreshRate in self.refreshRates:
             menu_items.append({"text": refreshRate, "on_release": lambda x=refreshRate: self.refresh_rate_selection_callback(x)})
         self.refresh_rate_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
         self.refresh_rate_selection_menu.open()
@@ -1274,7 +1426,7 @@ class MainApp(MDApp):
 
 
     '''
-    Enabled or disable rounding of values (Preferences).
+    Enable or disable rounding of values (Preferences).
     '''
     def rounding_selection(self, item):
         Config.set('preferences', 'rounded_readings', item.active)
@@ -1284,6 +1436,29 @@ class MainApp(MDApp):
 
 
     '''
+    Enable or disable analog gauges (Preferences).
+    '''
+    def gauges_selection(self, item):
+        Config.set('preferences', 'gauges', item.active)
+        Config.write()
+
+
+    '''
+    Enable or disable splash (Preferences).
+    '''
+    def splash_selection(self, item):
+        Config.set('preferences', 'splash', item.active)
+        Config.write()
+
+    '''
+    Enable or disable circular gauges (Preferences).
+    '''
+    def statusicons_selection(self, item):
+        Config.set('preferences', 'statusicons', item.active)
+        Config.write()
+
+
+    '''    
     Return specified distance in the proper Unit (metric vs imperial).
     '''
     def dist_val(self, num):
@@ -1382,6 +1557,9 @@ class MainApp(MDApp):
         Config.write()
 
 
+    '''
+    Retrieve and display all flight logs imported to the app.
+    '''
     def list_log_files(self):
         imports = self.execute_db("""
             SELECT i.importref, i.dateref, count(s.flight_number), sum(duration), max(duration), max(max_distance), max(max_altitude), max(max_h_speed), max(max_v_speed), sum(traveled)
@@ -1624,6 +1802,9 @@ class MainApp(MDApp):
                 self.restore_data(myFiles[0])
 
 
+    '''
+    Restore data from a backup file.
+    '''
     def restore_data(self, selectedFile):
         if not os.path.isfile(selectedFile):
             self.show_error_message(message=_('not_valid_backup_file_specified').format(filename=selectedFile))
@@ -1722,6 +1903,9 @@ class MainApp(MDApp):
         self.execute_db("CREATE INDEX IF NOT EXISTS flight_stats_index ON flight_stats(importref)")
 
 
+    '''
+    Read from config (ini) file.
+    '''
     def init_prefs(self):
         self.root.ids.selected_uom.text = Config.get('preferences', 'unit_of_measure')
         self.root.ids.selected_home_marker.active = Config.getboolean('preferences', 'show_marker_home')
@@ -1732,6 +1916,9 @@ class MainApp(MDApp):
         self.root.ids.selected_marker_ctrl_color.value = Config.getint('preferences', 'marker_ctrl_color')
         self.root.ids.selected_marker_home_color.value = Config.getint('preferences', 'marker_home_color')
         self.root.ids.selected_rounding.active = Config.getboolean('preferences', 'rounded_readings')
+        self.root.ids.selected_gauges.active = Config.getboolean('preferences', 'gauges')
+        self.root.ids.selected_splashscreen.active = Config.getboolean('preferences', 'splash')
+        self.root.ids.selected_statusicons.active = Config.getboolean('preferences', 'statusicons')
         self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
         self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
         self.root.ids.selected_model.text = Config.get('preferences', 'selected_model')
@@ -1747,6 +1934,7 @@ class MainApp(MDApp):
         self.playback_speed = 1
         self.map_rebuild_required = True
         if self.root:
+            self.title = self.appTitle
             self.root.ids.selected_path.text = '--'
             self.zoom = self.defaultMapZoom
             self.clear_map()
@@ -1759,19 +1947,18 @@ class MainApp(MDApp):
             self.root.ids.value_tottraveled.text = ""
             self.root.ids.value_tottraveled_short.text = ""
             self.root.ids.value1_alt.text = ""
-            self.root.ids.value2_alt.text = ""
             self.root.ids.value1_traveled.text = ""
             self.root.ids.value1_traveled_short.text = ""
+            self.root.ids.value1_rth_desc.text = ""
+            self.root.ids.value1_batterylevel.text = ""
+            self.root.ids.value1_flightmode.text = ""
             self.root.ids.value1_dist.text = ""
             self.root.ids.value1_dist_short.text = ""
-            self.root.ids.value2_dist.text = ""
             self.root.ids.value1_hspeed.text = ""
-            self.root.ids.value2_hspeed.text = ""
             self.root.ids.value1_vspeed.text = ""
-            self.root.ids.value2_vspeed.text = ""
-            self.root.ids.value2_sats.text = ""
             self.root.ids.value1_elapsed.text = ""
-            self.root.ids.value2_elapsed.text = ""
+            #self.root.ids.map_metrics1.text = ""
+            self.root.ids.map_metrics2.text = ""
             self.root.ids.flight_progress.is_updating = True
             self.root.ids.flight_progress.value = 0
             self.root.ids.flight_progress.is_updating = False
@@ -1792,6 +1979,9 @@ class MainApp(MDApp):
             self.center_map()
 
 
+    '''
+    Delete unreferenced log files. Delete unreferenced DB records.
+    '''
     def cleanup_orphaned_refs(self):
         importedFiles = []
         for fileRef in self.execute_db("SELECT filename FROM log_files"):
@@ -1845,6 +2035,22 @@ class MainApp(MDApp):
 
 
     '''
+    Close the spash screen.
+    '''
+    def remove_splash_image(self, dt):
+        self.root_window.remove_widget(self.splash_img)
+        self.root_window.remove_widget(self.splash_ver)
+
+
+    '''
+    Open help page on the project home page and for the matching version of the app.
+    '''
+    def show_help(self):
+        #webbrowser.open(f"https://github.com/koen-aerts/potdroneflightparser/tree/{self.appVersion}")
+        webbrowser.open("https://github.com/koen-aerts/potdroneflightparser/blob/Chris_2_2_3/help/guide.md")
+
+
+    '''
     Capture keyboard input.
     '''
     def events(self, instance, keyboard, keycode, text, modifiers):
@@ -1859,9 +2065,10 @@ class MainApp(MDApp):
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.is_desktop = platform in ('linux', 'win', 'macosx')
         self.is_ios = platform == 'ios'
         self.is_android = platform == 'android'
+        self.is_windows = platform == 'win'
+        self.is_desktop = self.is_windows or platform in ('linux', 'macosx')
         self.title = self.appTitle
         self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
@@ -1895,7 +2102,10 @@ class MainApp(MDApp):
             'show_marker_ctrl': False,
             'map_tile_server': SelectableTileServer.OPENSTREETMAP.value,
             'selected_model': '--',
-            'language': 'en_US'
+            'language': 'en_US',
+            'gauges': True,
+            'splash': False,
+            'statusicons': True
         })
         langcode = Config.get('preferences', 'language')
         langpath = os.path.join(os.path.dirname(__file__), 'languages')
@@ -1936,8 +2146,6 @@ class MainApp(MDApp):
         )
         self.dialog_wait.auto_dismiss = False
         self.cleanup_orphaned_refs()
-        # TODO - https://github.com/kivy-garden/graph
-        # TODO - add graphs: total duration per date/log, max distance per log, # flights per day, avg duration per flight per log, etc.
 
 
     def build(self):
@@ -1946,6 +2154,13 @@ class MainApp(MDApp):
 
 
     def on_start(self):
+        if self.is_desktop:
+            if Config.getboolean('preferences', 'splash') == 0:
+                self.splash_img = Image(source="assets/splash1_alt1.png", fit_mode="scale-down")
+                self.splash_ver = Label(text=f"{self.appVersion}", pos_hint={"center_x": .5, "center_y": .25}, font_size=dp(50))
+                self.root_window.add_widget(self.splash_img)
+                self.root_window.add_widget(self.splash_ver)
+                Clock.schedule_once(self.remove_splash_image, 5)
         self.root.ids.selected_path.text = '--'
         self.reset()
         self.select_map_source()
@@ -1965,6 +2180,393 @@ class MainApp(MDApp):
     def on_stop(self):
         self.stop_flight(True)
         return super().on_stop()
+
+
+'''
+Distance Gauge
+'''    
+class DistGauge(Widget):
+    display_unit = StringProperty("")
+    unit = NumericProperty(1.8)
+    value = BoundedNumericProperty(0, min=0, max=99000, errorvalue=0)
+    file_gauge = StringProperty("assets/Distance_Background.png")
+    file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
+    file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
+    size_gauge = dp(150)
+
+    def __init__(self, **kwargs):
+        super(DistGauge, self).__init__(**kwargs)
+        self._gauge = Scatter(
+            size=(self.size_gauge, self.size_gauge),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        _img_gauge = Image(
+            source=self.file_gauge,
+            size=(self.size_gauge, self.size_gauge)
+        )
+        self._needleL = Scatter(
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        self._needleS = Scatter(
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        _img_needle_short = Image(
+            source=self.file_needle_short,
+            size=(dp(self.size_gauge), dp(self.size_gauge))
+        )
+        _img_needle_long = Image(
+            source=self.file_needle_long,
+            size=(dp(self.size_gauge), dp(self.size_gauge))
+        )
+        self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
+        self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
+        self._gauge.add_widget(_img_gauge)
+        self._needleS.add_widget(_img_needle_short)
+        self._needleL.add_widget(_img_needle_long)
+        self.add_widget(self._gauge)
+        self.add_widget(self._needleS)
+        self.add_widget(self._needleL)
+        self.add_widget(self._glab)
+        self.add_widget(self._glab2)
+        self.bind(pos=self._update)
+        self.bind(size=self._update)
+        self.bind(value=self._turn)
+
+    def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
+        self._gauge.pos = self.pos
+        self._needleL.pos = (self.x, self.y)
+        self._needleL.center = self._gauge.center
+        self._needleS.pos = (self.x, self.y)
+        self._needleS.center = self._gauge.center
+        self._glab.center_x = self._gauge.center_x - dp(28)
+        self._glab.center_y = self._gauge.center_y + dp(1)
+        self._glab2.center_x = self._gauge.center_x
+        self._glab2.center_y = self._gauge.center_y - dp(20)
+
+    def _turn(self, *args): # Turn needle
+        self._needleS.center_x = self._gauge.center_x
+        self._needleS.center_y = self._gauge.center_y
+        self._needleS.rotation = ((1 * self.unit) - (self.value * self.unit * 2)/10)
+        self._needleL.center_x = self._gauge.center_x
+        self._needleL.center_y = self._gauge.center_y
+        self._needleL.rotation = (1 * self.unit) - (self.value * self.unit * 2)        
+        self._glab.text = "[b]{0:04d}[/b]".format(self.value)
+        self._glab2.text = self.display_unit
+
+
+'''
+Altitude Gauge
+'''
+class AltGauge(Widget):
+    display_unit = StringProperty("")
+    unit = NumericProperty(1.8)
+    value = BoundedNumericProperty(0, min=0, max=8000, errorvalue=0)
+    file_gauge = StringProperty("assets/Altimeter_Background2.png")
+    file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
+    file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
+    size_gauge = dp(150)
+    size_text = NumericProperty(10)
+
+    def __init__(self, **kwargs):
+        super(AltGauge, self).__init__(**kwargs)
+        self._gauge = Scatter(
+            size=(self.size_gauge, self.size_gauge),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        _img_gauge = Image(
+            source=self.file_gauge,
+            size=(self.size_gauge, self.size_gauge)
+        )
+        self._needleL = Scatter(
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        self._needleS = Scatter(
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )        
+        _img_needle_short = Image(
+            source=self.file_needle_short,
+            size=(dp(self.size_gauge), dp(self.size_gauge))
+        )
+        _img_needle_long = Image(
+            source=self.file_needle_long,
+            size=(dp(self.size_gauge), dp(self.size_gauge))
+        )
+        self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
+        self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
+        self._gauge.add_widget(_img_gauge)
+        self._needleS.add_widget(_img_needle_short)
+        self._needleL.add_widget(_img_needle_long)
+        self.add_widget(self._gauge)
+        self.add_widget(self._needleS)
+        self.add_widget(self._needleL)
+        self.add_widget(self._glab)
+        self.add_widget(self._glab2)
+        self.bind(pos=self._update)
+        self.bind(size=self._update)
+        self.bind(value=self._turn)
+        self.bind(display_unit=self._turn)
+
+    def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
+        self._gauge.pos = self.pos
+        self._needleL.pos = (self.x, self.y)
+        self._needleL.center = self._gauge.center
+        self._needleS.pos = (self.x, self.y)
+        self._needleS.center = self._gauge.center
+        self._glab.center_x = self._gauge.center_x - dp(28)
+        self._glab.center_y = self._gauge.center_y + dp(1)
+        self._glab2.center_x = self._gauge.center_x
+        self._glab2.center_y = self._gauge.center_y - dp(20)
+
+    def _turn(self, *args): # Turn needle
+        self._needleS.center_x = self._gauge.center_x
+        self._needleS.center_y = self._gauge.center_y
+        self._needleS.rotation = ((1 * self.unit) - (self.value * self.unit * 2)/10)
+        self._needleL.center_x = self._gauge.center_x
+        self._needleL.center_y = self._gauge.center_y
+        self._needleL.rotation = (1 * self.unit) - (self.value * self.unit * 2)        
+        self._glab.text = "[b]{0:04d}[/b]".format(self.value)
+        self._glab2.text = self.display_unit
+
+
+'''
+Horizontal Speed Gauge
+'''
+class HGauge(Widget):
+    display_unit = StringProperty("")
+    unit = NumericProperty(1.8)
+    value = BoundedNumericProperty(0, min=-400, max=400, errorvalue=0)
+    file_gauge = StringProperty("assets/AirSpeedIndicator_Background_H.png")
+    file_needle = StringProperty("assets/needle.png")
+    size_gauge = dp(150)
+    size_text = NumericProperty(10)
+
+    def __init__(self, **kwargs):
+        super(HGauge, self).__init__(**kwargs)
+        self._gauge = Scatter(
+            size=(self.size_gauge, self.size_gauge),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        _img_gauge = Image(
+            source=self.file_gauge,
+            size=(self.size_gauge, self.size_gauge)
+        )
+        self._needle = Scatter(
+            size=(self.size_gauge, self.size_gauge),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        _img_needle = Image(
+            source=self.file_needle,
+            size=(self.size_gauge, self.size_gauge)
+        )
+        self._glab = Label(font_size=dp(14), markup=True)
+        self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
+        self._gauge.add_widget(_img_gauge)
+        self._needle.add_widget(_img_needle)
+        self.add_widget(self._gauge)
+        self.add_widget(self._needle)
+        self.add_widget(self._glab2)
+        self.bind(pos=self._update)
+        self.bind(size=self._update)
+        self.bind(value=self._turn)
+
+    def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
+        self._gauge.pos = self.pos
+        self._needle.pos = (self.x, self.y)
+        self._needle.center = self._gauge.center
+        self._glab.center_x = self._gauge.center_x
+        self._glab.center_y = self._gauge.center_y
+        self._glab2.center_x = self._gauge.center_x
+        self._glab2.center_y = self._gauge.center_y - dp(20)
+
+    def _turn(self, *args): # Turn needle
+        self._needle.center_x = self._gauge.center_x
+        self._needle.center_y = self._gauge.center_y
+        self._needle.rotation = (100 * self.unit) - (self.value * self.unit * 4)
+        self._glab2.text = self.display_unit
+
+
+'''
+Vertical Speed Gauge
+'''
+class VGauge(Widget):
+    display_unit = StringProperty("")
+    unit = NumericProperty(1.8)
+    value = BoundedNumericProperty(0, min=-14, max=14, errorvalue=0)
+    file_gauge = StringProperty("assets/AirSpeedIndicator_Background_V.png")
+    file_needle = StringProperty("assets/needle.png")
+    size_gauge = dp(150)
+    size_text = NumericProperty(10)
+
+    def __init__(self, **kwargs):
+        super(VGauge, self).__init__(**kwargs)
+        self._gauge = Scatter(
+            size=(self.size_gauge, self.size_gauge),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        _img_gauge = Image(
+            source=self.file_gauge,
+            size=(self.size_gauge, self.size_gauge)
+        )
+        self._needle = Scatter(
+            size=(self.size_gauge, self.size_gauge),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        _img_needle = Image(
+            source=self.file_needle,
+            size=(self.size_gauge, self.size_gauge)
+        )
+        self._glab = Label(font_size=dp(14), markup=True)
+        self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
+        self._gauge.add_widget(_img_gauge)
+        self._needle.add_widget(_img_needle)
+        self.add_widget(self._gauge)
+        self.add_widget(self._needle)
+        self.add_widget(self._glab2)
+        self.bind(pos=self._update)
+        self.bind(size=self._update)
+        self.bind(value=self._turn)
+
+    def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
+        self._gauge.pos = self.pos
+        self._needle.pos = (self.x, self.y)
+        self._needle.center = self._gauge.center
+        self._glab.center_x = self._gauge.center_x
+        self._glab.center_y = self._gauge.center_y
+        self._glab2.center_x = self._gauge.center_x
+        self._glab2.center_y = self._gauge.center_y - dp(20)
+
+    def _turn(self, *args): # Turn needle
+        self._needle.center_x = self._gauge.center_x
+        self._needle.center_y = self._gauge.center_y
+        self._needle.rotation = -(self.value * self.unit * 5.5)
+        self._glab2.text = self.display_unit
+
+
+'''
+Heading Gauge (direction drone is travelling as opposed to direction drone is looking)
+'''
+class HeadingGauge(Widget):
+    unit = NumericProperty(1.8)
+    value = BoundedNumericProperty(0, min=0, max=400, errorvalue=0)
+    drotation = BoundedNumericProperty(0, min=0, max=400, errorvalue=0) #Rotational position of drone
+    file_gauge = StringProperty("assets/HeadingIndicator_Background1.png")
+    file_heading_ring = StringProperty("assets/HeadingRing.png")
+    file_heading_aircraft = StringProperty("assets/Heading_drone3a.png")
+    size_gauge = dp(150)
+    size_text = NumericProperty(10)
+
+    def __init__(self, **kwargs):
+        super(HeadingGauge, self).__init__(**kwargs)
+        self._gauge = Scatter(
+            size=(self.size_gauge, self.size_gauge),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        _img_gauge = Image(
+            source=self.file_gauge,
+            size=(self.size_gauge, self.size_gauge)
+        )
+        self._headingR = Scatter(
+            size=(self.size_gauge, self.size_gauge),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        self._aircrafT = Scatter(
+            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            do_rotation=False,
+            do_scale=False,
+            do_translation=False
+        )
+        _img_aircraft = Image(
+            source=self.file_heading_aircraft,
+            size=(self.size_gauge, self.size_gauge)  
+         )
+        _img_heading_ring = Image(
+            source=self.file_heading_ring,
+            size=(self.size_gauge, self.size_gauge)
+        )
+        self._gauge.add_widget(_img_gauge)
+        self._headingR.add_widget(_img_heading_ring)
+        self._aircrafT.add_widget(_img_aircraft)
+        self.add_widget(self._gauge)
+        self.add_widget(self._headingR)
+        self.add_widget(self._aircrafT)        
+        self.bind(pos=self._update)
+        self.bind(size=self._update)
+        self.bind(value=self._turn)
+
+    def _update(self, *args): # Update positioning.
+        self._gauge.pos = self.pos
+        self._headingR.pos = (self.x, self.y)
+        self._headingR.center = self._gauge.center
+        self._aircrafT.pos = (self.x, self.y)
+
+    def _turn(self, *args): # Turn
+        self._headingR.center_x = self._gauge.center_x
+        self._headingR.center_y = self._gauge.center_y
+        self._headingR.rotation = (1 * self.unit) - (self.value * 1)
+
+
+class ProgressSlider(BoxLayout):
+    def __init__(self, **kwargs):
+        super(ProgressSlider, self).__init__(**kwargs)
+        self.orientation = 'vertical'  
+        self.slider = Slider(min=0, max=100, value=0, size_hint=(1.8, None))
+        self.slider.bind(value=self.on_progress_slider_value_change)
+        #self.slider.observe(self.on_value_change, names='value')
+        self.slider.cursor_image = 'assets/slider3.png'
+        self.slider.track_active_color = (1, 0, 0, 1)
+        self.slider.track_inactive_color: "#aaaaaa"
+        self.slider.track_active_color: "#444444"
+        self.slider.background_normal = ''
+        self.slider.cursor_color = (1, 0, 0, 1)
+        self.add_widget(self.slider)
+
+    def on_progress_slider_value_change(self, instance, value):
+        MDApp.get_running_app().on_progress_slider_value_change(instance, value)  
+
+    def on_touch_move(self, touch):
+        if self.collide_point(touch.x, touch.y):
+            print("Touch down on the slider!")
+            play_button = MDApp.get_running_app().root.ids['playbutton']
+            icon_name = play_button.icon
+            if icon_name == "play":
+                return
+            else:
+                play_button.trigger_action(duration=0.1)
+        else:
+            play_button = MDApp.get_running_app().root.ids['playbutton']
+            icon_name = play_button.icon
+            if icon_name == "play":
+                return
+            else:
+                play_button.trigger_action(duration=0.1)
 
 
 if __name__ == "__main__":

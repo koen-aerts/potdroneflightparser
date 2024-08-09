@@ -2,13 +2,13 @@
 # Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-05-13 16:11-0600\n"
-"PO-Revision-Date: 2024-05-15 09:33-0600\n"
+"PO-Revision-Date: 2024-08-09 11:15-0400\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: nl\n"
 "Language-Team: nl <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.15.0\n"
+"X-Generator: PO File Editor https://pofile.net/free-po-editor\n"
 
 msgid "title_logs"
 msgstr "Logs"
@@ -61,31 +62,31 @@ msgid "map_distance"
 msgstr "Afstand:"
 
 msgid "map_dist"
-msgstr "Afst: {distance} {unit}"
+msgstr "Afst:"
 
 msgid "map_altitude"
 msgstr "Hoogte:"
 
 msgid "map_alt"
-msgstr "Hoogte: {altitude} {unit}"
+msgstr "Hoogte:"
 
 msgid "map_horizontal_speed"
 msgstr "H Snelheid:"
 
 msgid "map_hs"
-msgstr "HS: {speed} {unit}"
+msgstr "HS:"
 
 msgid "map_vertical_speed"
 msgstr "V Snelheid:"
 
 msgid "map_vs"
-msgstr "VS: {speed} {unit}"
+msgstr "VS:"
 
 msgid "map_distance_flown"
 msgstr "Verplaatsing:"
 
 msgid "map_sats"
-msgstr "Sats: {satellites}"
+msgstr "Sats:"
 
 msgid "map_date"
 msgstr "Datum:"
@@ -107,6 +108,18 @@ msgstr "Duur:"
 
 msgid "map_flight_number"
 msgstr "Vlucht #:"
+
+msgid "map_battery_level"
+msgstr "Batterij:"
+
+msgid "map_battery"
+msgstr "Bat:"
+
+msgid "map_rth_desc"
+msgstr "Toestand:"
+
+msgid "map_flightmode"
+msgstr "Snelheid:"
 
 msgid "flight_flight"
 msgstr "Vlucht"
@@ -174,6 +187,15 @@ msgstr "Huis Kleur:"
 msgid "preference_app_version"
 msgstr "Toepassing Versie:"
 
+msgid "preference_gauges"
+msgstr "Meters"
+
+msgid "preference_status_icons"
+msgstr "Circulaire pictogrammen"
+
+msgid "preference_splash"
+msgstr "Verberg welkomscherm"
+
 msgid "no_data_in_zip_file"
 msgstr "Geen vlucht gegevens in zip bestand."
 
@@ -193,7 +215,9 @@ msgid "drone_not_supported"
 msgstr "Dit model van drone is niet ondersteund in deze toepassing: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr "Geen bestanden gevonden. Plaats de log zip bestanden in de flightlogviewer Documents map en probeer nogmaals."
+msgstr ""
+"Geen bestanden gevonden. Plaats de log zip bestanden in de flightlogviewer "
+"Documents map en probeer nogmaals."
 
 msgid "select_log_zip_file"
 msgstr "Kies een log zip bestand."
