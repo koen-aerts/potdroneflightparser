@@ -113,7 +113,6 @@ class MainApp(MDApp):
     appTitle = f"{appName} - {appVersion}"
     defaultMapZoom = 3
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
-    refreshRates = ['0.125s', '0.25s', '0.50s', '1.00s', '1.50s', '2.00s']
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
     columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
@@ -871,6 +870,8 @@ class MainApp(MDApp):
         self.root.ids.VSPDgauge.display_unit = self.speed_unit()
         self.root.ids.ALgauge.display_unit = self.dist_unit()
         self.root.ids.DSgauge.display_unit = self.dist_unit()
+        
+
 
 
     '''
@@ -997,14 +998,15 @@ class MainApp(MDApp):
         if self.is_desktop: # Gauges are turned off on mobile devices.
             # Set horizontal, vertical and altitude gauge values. Use rounded values.
             self.root.ids.HSPDgauge.value = round(locale.atof(record[self.columns.index('speed2')]))
-            # "peg out" the gauge if beyond the vertical limits
-            if abs(round(locale.atof(record[self.columns.index('speed2vert')])) > 14):
+            # Chris
+            # Added conditional to simply "peg out" the gauge one way or the other if beyond the vertical limits
+            if round(locale.atof(record[self.columns.index('speed2vert')])) > 14 or round(locale.atof(record[self.columns.index('speed2vert')])) < -14:
                 self.root.ids.VSPDgauge.value = 14
             else: 
                 self.root.ids.VSPDgauge.value = round(locale.atof(record[self.columns.index('speed2vert')]))
 
             self.root.ids.ALgauge.value = round(locale.atof(record[self.columns.index('altitude2')]))
-            self.root.ids.DSgauge.value = round(locale.atof(record[self.columns.index('distance3')]))
+            self.root.ids.DSgauge.value = round(locale.atof(record[self.columns.index('distance3')]))   #traveled Chris
 
             # Set up vars for HDgauge calcs
             if self.root.ids.value_duration.text == "":
@@ -1021,6 +1023,12 @@ class MainApp(MDApp):
                 y = math.cos(math.radians(head_lat_1)) * math.sin(math.radians(self.head_lat_2)) - math.sin(math.radians(head_lat_1)) * math.cos(math.radians(self.head_lat_2)) * math.cos(math.radians(dLon))
                 brng = math.atan2(x,y)
                 brng = math.degrees(brng)
+                #Chris Altered code to simply use orientation rather than calculated bearing as most of the time users will be be
+                #      going in the direction they are pointed.
+                # if self.root.ids.HSPDgauge.value != 0:
+                #     if brng < 0:
+                #         brng = 360 + brng
+                #         self.root.ids.HDgauge.value = brng
                 G_orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees, -180 to 180.
                 G_rotation = abs(G_orientation) if G_orientation <= 0 else 360 - G_orientation # Convert to 0 - 359 range.
                 self.root.ids.HDgauge.value = G_rotation
@@ -1036,11 +1044,11 @@ class MainApp(MDApp):
                 durstr = self.root.ids.value_duration.text.split(":")
                 durval = datetime.timedelta(hours=int(durstr[0]), minutes=int(durstr[1]), seconds=int(durstr[2]))
                 if durval != 0: # Prevent division by zero
-                    #self.root.ids.flight_progress.value = elapsed / durval * 100  
-                    self.root.ids.flight_progress.slider.value = elapsed / durval * 100
+                    self.root.ids.flight_progress.value = elapsed / durval * 100  
+                    #self.root.ids.flight_progress.slider.value = elapsed / durval * 100   # Chris -Roll back of old slider
                 else:
-                    #self.root.ids.flight_progress.value = 0
-                    self.root.ids.flight_progress.slider.value = 0
+                    self.root.ids.flight_progress.value = 0
+                    #self.root.ids.flight_progress.slider.value = 0   # Chris -Roll back of old slider
         # Controller Marker.
         try:
             ctrllat = float(record[self.columns.index('ctrllat')])
@@ -1126,36 +1134,19 @@ class MainApp(MDApp):
             self.set_markers(False)
 
 
-    def on_progress_slider_value_change(self, instance, value):
-        if len(self.logdata) == 0:
-            return # Do nothing
-        if (self.root.ids.selected_path.text == '--'):
-            return # Do nothing
-        # Determine approximate selected duration based on slider position
-        durstr = self.root.ids.value_duration.text.split(":")
-        durval = datetime.timedelta(hours=int(durstr[0]), minutes=int(durstr[1]), seconds=int(durstr[2]))
-        newdur = durval / 100 * self.root.ids.flight_progress.slider.value
-        minDiff = None
-        nearestIdx = -1
-        for idx in range(self.currentStartIdx, self.currentEndIdx+1):
-            dur = self.logdata[idx][self.columns.index('time')]
-            diff = abs(dur-newdur)
-            if not minDiff:
-                minDiff = diff
-                nearestIdx = idx
-            elif diff < minDiff:
-                minDiff = diff
-                nearestIdx = idx
-            elif diff > minDiff:
-                break
-        if nearestIdx >= 0:
-            self.currentRowIdx = nearestIdx
-            self.set_markers(False)            
+   
 
 
     def change_playback_speed(self):
-        self.playback_speed = self.playback_speed << 1 if self.playback_speed < 16 else 1
-        self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box" if self.playback_speed < 16 else f"rocket-launch"
+        if self.playback_speed == 1:
+            self.playback_speed = 2
+        elif self.playback_speed == 2:
+            self.playback_speed = 4
+        elif self.playback_speed == 4:
+            self.playback_speed = 8
+        else:
+            self.playback_speed = 1
+        self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box"
 
 
     '''
@@ -1173,7 +1164,7 @@ class MainApp(MDApp):
             self.currentRowIdx = self.currentStartIdx
             self.root.ids.flight_progress.is_updating = True
             self.set_markers(False)
-            self.root.ids.flight_progress.slider.value = 0
+            self.root.ids.flight_progress.value = 0    # Chris  - Roll back
             self.root.ids.flight_progress.is_updating = False
             return
         flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
@@ -1182,8 +1173,8 @@ class MainApp(MDApp):
             self.root.ids.flight_progress.is_updating = True
             self.select_flight(True)
             self.set_markers(False)
-            #self.root.ids.flight_progress.value = 100
-            self.root.ids.flight_progress.slider.value = 100
+            self.root.ids.flight_progress.value = 100
+            #self.root.ids.flight_progress.slider.value = 100    # Chris -Roll back
             self.root.ids.flight_progress.is_updating = False
         else:
             self.show_info_message(message=_('no_previous_flight'))
@@ -1204,8 +1195,8 @@ class MainApp(MDApp):
             self.currentRowIdx = self.currentEndIdx
             self.root.ids.flight_progress.is_updating = True
             self.set_markers(False)
-            #self.root.ids.flight_progress.value = 100       
-            self.root.ids.flight_progress.slider.value = 100
+            self.root.ids.flight_progress.value = 100       
+            #self.root.ids.flight_progress.slider.value = 100    # Chris - Roll back
             self.root.ids.flight_progress.is_updating = False
             return
         flightNum = int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
@@ -1214,8 +1205,8 @@ class MainApp(MDApp):
             self.root.ids.flight_progress.is_updating = True
             self.select_flight()
             self.set_markers(False)
-            #self.root.ids.flight_progress.value = 0
-            self.root.ids.flight_progress.slider.value = 0
+            self.root.ids.flight_progress.value = 0
+            #self.root.ids.flight_progress.slider.value = 0      # Chris - Roll back
             self.root.ids.flight_progress.is_updating = False
         else:
             self.show_info_message(message=_('no_next_flight'))
@@ -1365,8 +1356,8 @@ class MainApp(MDApp):
         flightNum = 0 if (self.root.ids.selected_path.text == '--') else int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
         if (flightNum == 0):
             self.root.ids.flight_progress.is_updating = True
-            #self.root.ids.flight_progress.value = 0
-            self.root.ids.flight_progress.slider.value = 0
+            self.root.ids.flight_progress.value = 0
+            #self.root.ids.flight_progress.slider.value = 0    # Chris  - roll back
             self.root.ids.flight_progress.is_updating = False
             self.root.ids.value1_elapsed.text = ""
             self.root.ids.value1_alt.text = ""
@@ -1425,7 +1416,7 @@ class MainApp(MDApp):
     '''
     def refresh_rate_selection(self, item):
         menu_items = []
-        for refreshRate in self.refreshRates:
+        for refreshRate in ['0.50s', '1.00s', '1.50s', '2.00s']:
             menu_items.append({"text": refreshRate, "on_release": lambda x=refreshRate: self.refresh_rate_selection_callback(x)})
         self.refresh_rate_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
         self.refresh_rate_selection_menu.open()
@@ -1993,8 +1984,8 @@ class MainApp(MDApp):
             #self.root.ids.map_metrics1.text = ""
             self.root.ids.map_metrics2.text = ""
             self.root.ids.flight_progress.is_updating = True
-            #self.root.ids.flight_progress.value = 0
-            self.root.ids.flight_progress.slider.value = 0
+            self.root.ids.flight_progress.value = 0
+            #self.root.ids.flight_progress.slider.value = 0   # Chris - rollback
             self.root.ids.flight_progress.is_updating = False
             self.root.ids.flight_stats_grid.clear_widgets()
             self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box"
@@ -2190,11 +2181,11 @@ class MainApp(MDApp):
     def on_start(self):
         if self.is_desktop:
             if Config.getboolean('preferences', 'splash') == 0:
-                self.splash_img = Image(source="assets/splash1_alt1.png", fit_mode="scale-down")
-                self.splash_ver = Label(text=f"{self.appVersion}", pos_hint={"center_x": .5, "center_y": .25}, font_size=dp(50))
-                self.root_window.add_widget(self.splash_img)
-                self.root_window.add_widget(self.splash_ver)
-                Clock.schedule_once(self.remove_splash_image, 5)
+             self.splash_img = Image(source="assets/splash1_alt1.png", fit_mode="scale-down")
+             self.splash_ver = Label(text=f"{self.appVersion}", pos_hint={"center_x": .5, "center_y": .25}, font_size=dp(50))
+             self.root_window.add_widget(self.splash_img)
+             self.root_window.add_widget(self.splash_ver)
+             Clock.schedule_once(self.remove_splash_image, 5)
         self.root.ids.selected_path.text = '--'
         self.reset()
         self.select_map_source()
@@ -2226,7 +2217,7 @@ class DistGauge(Widget):
     file_gauge = StringProperty("assets/Distance_Background.png")
     file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
     file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
-    size_gauge = dp(150)
+    size_gauge = dp(150) #180
 
     def __init__(self, **kwargs):
         super(DistGauge, self).__init__(**kwargs)
@@ -2241,12 +2232,14 @@ class DistGauge(Widget):
             size=(self.size_gauge, self.size_gauge)
         )
         self._needleL = Scatter(
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
             size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
         self._needleS = Scatter(
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
             size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
@@ -2254,10 +2247,12 @@ class DistGauge(Widget):
         )
         _img_needle_short = Image(
             source=self.file_needle_short,
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
             size=(dp(self.size_gauge), dp(self.size_gauge))
         )
         _img_needle_long = Image(
             source=self.file_needle_long,
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
             size=(dp(self.size_gauge), dp(self.size_gauge))
         )
         self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
@@ -2306,7 +2301,7 @@ class AltGauge(Widget):
     file_gauge = StringProperty("assets/Altimeter_Background2.png")
     file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
     file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
-    size_gauge = dp(150)
+    size_gauge = dp(150) #180
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
@@ -2322,12 +2317,14 @@ class AltGauge(Widget):
             size=(self.size_gauge, self.size_gauge)
         )
         self._needleL = Scatter(
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
             size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
         self._needleS = Scatter(
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
             size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
@@ -2335,10 +2332,12 @@ class AltGauge(Widget):
         )        
         _img_needle_short = Image(
             source=self.file_needle_short,
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
             size=(dp(self.size_gauge), dp(self.size_gauge))
         )
         _img_needle_long = Image(
             source=self.file_needle_long,
+            #size=(self.size_gauge, self.size_gauge)  # Chris added dp because size does not propagate to the children from parent.
             size=(dp(self.size_gauge), dp(self.size_gauge))
         )
         self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
@@ -2387,7 +2386,7 @@ class HGauge(Widget):
     value = BoundedNumericProperty(0, min=-400, max=400, errorvalue=0)
     file_gauge = StringProperty("assets/AirSpeedIndicator_Background_H.png")
     file_needle = StringProperty("assets/needle.png")
-    size_gauge = dp(150)
+    size_gauge = dp(150)  #180
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
@@ -2445,10 +2444,10 @@ Vertical Speed Gauge
 class VGauge(Widget):
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
-    value = BoundedNumericProperty(0, min=-14, max=14, errorvalue=0)
+    value = BoundedNumericProperty(0, min=-14, max=14, errorvalue=0) # Changed Max to 14   Chris
     file_gauge = StringProperty("assets/AirSpeedIndicator_Background_V.png")
     file_needle = StringProperty("assets/needle.png")
-    size_gauge = dp(150)
+    size_gauge = dp(150) #180
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
@@ -2496,7 +2495,9 @@ class VGauge(Widget):
     def _turn(self, *args): # Turn needle
         self._needle.center_x = self._gauge.center_x
         self._needle.center_y = self._gauge.center_y
-        self._needle.rotation = -(self.value * self.unit * 5.5)
+        #self._needle.rotation = (100 * self.unit) - (self.value * self.unit * 20)
+        #self._needle.rotation = -(self.value * self.unit * 10)
+        self._needle.rotation = -(self.value * self.unit * 5.5)    # Chris updated scale to max out at 14
         self._glab2.text = self.display_unit
 
 
@@ -2509,8 +2510,8 @@ class HeadingGauge(Widget):
     drotation = BoundedNumericProperty(0, min=0, max=400, errorvalue=0) #Rotational position of drone
     file_gauge = StringProperty("assets/HeadingIndicator_Background1.png")
     file_heading_ring = StringProperty("assets/HeadingRing.png")
-    file_heading_aircraft = StringProperty("assets/Heading_drone3a.png")
-    size_gauge = dp(150)
+    file_heading_aircraft = StringProperty("assets/Heading_drone3a.png")  #HeadingIndicator_Aircraft1c.png
+    size_gauge = dp(150) #180
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
@@ -2532,6 +2533,7 @@ class HeadingGauge(Widget):
             do_translation=False
         )
         self._aircrafT = Scatter(
+            #size=(self.size_gauge, self.size_gauge),
             size=(dp(self.size_gauge), dp(self.size_gauge)),
             do_rotation=False,
             do_scale=False,
@@ -2564,7 +2566,10 @@ class HeadingGauge(Widget):
     def _turn(self, *args): # Turn
         self._headingR.center_x = self._gauge.center_x
         self._headingR.center_y = self._gauge.center_y
-        self._headingR.rotation = (1 * self.unit) - (self.value * 1)
+        self._headingR.rotation = (1 * self.unit) - (self.value * 1)  # Chris change math mistake + to -
+        # Chris removed code as it is not needed and was causing issues with dp placement
+        #self._aircrafT.center_y = self._gauge.center_y
+        #self._aircrafT.rotation = (1 * self.unit) + (self.drotation * 1)
 
 
 class ProgressSlider(BoxLayout):
@@ -2582,8 +2587,34 @@ class ProgressSlider(BoxLayout):
         self.slider.cursor_color = (1, 0, 0, 1)
         self.add_widget(self.slider)
 
+    # def reset_slider(self,value):
+    #     self.slider.value = 0
+    #     printer("slider reset")
+
     def on_progress_slider_value_change(self, instance, value):
         MDApp.get_running_app().on_progress_slider_value_change(instance, value)  
+
+    # def on_touch_down(self, touch, instance):  
+    #   if self.collide_point(touch.x, touch.y):  
+    #     print("Touch down on the slider!")  
+    #     play_button = MDApp.get_running_app().root.ids['playbutton']
+    #     icon_name = play_button.icon
+    #     if icon_name == "play":
+    #         return
+    #     else:
+    #         play_button.trigger_action(duration=0.1)
+    #   else:
+    #     print("NOT THE SLIDER")
+    #     # touch.grab(self)  # grab the touch event to prevent other widgets from stealing it  
+    # #   #   return True
+    # #   return super(ProgressSlider, self).on_touch_down(touch)  
+      
+    # def on_touch_up(self, touch):  
+    #   if touch.grab_current is self:  
+    #     print("Touch up on the slider!")  
+    #     touch.ungrab(self)  # release the touch event  
+    #     return True  
+    #   return super(ProgressSlider, self).on_touch_up(touch)          
 
     def on_touch_move(self, touch):
         if self.collide_point(touch.x, touch.y):
@@ -2601,6 +2632,51 @@ class ProgressSlider(BoxLayout):
                 return
             else:
                 play_button.trigger_action(duration=0.1)
+
+    # def on_value_throttled(self, instance, value):
+    #     print(f"Value throttled: {value}")
+
+    # def on_value(self, instance, value):
+    #     print(f"Slider value changed to {value}")
+
+    # def update_value(self, new_value):
+    #     if new_value < self.slider.min:
+    #         #self.value = self.min
+    #         self.slider.value = self.slider.min
+    #     elif new_value > self.slider.max:
+    #         self.slider.value = self.slider.max
+    #     else:
+    #         self.slider.value = new_value
+    #     self.slider.invalidate()  
+    #     self.slider.canvas.ask_update()  
+    #     Clock.schedule_once(self.slider._do_layout, 0)  
+    #     self.slider._update_graphics()
+
+
+"""  
+Linearly interpolate between two points (x0, y0) and (x1, y1) to generate num_points values.  
+Future for smoothing operation of gauges based on capability of threading.
+
+Args:  
+    x0 (float): x-coordinate of the first point  
+    y0 (float): y-coordinate of the first point  
+    x1 (float): x-coordinate of the second point  
+    y1 (float): y-coordinate of the second point  
+    num_points (int): number of points to generate  
+
+Returns:  
+    list of tuples: [(x, y) for each interpolated point]  
+"""  
+def linear_interpolation(x0, y0, x1, y1, num_points):
+    x_values = []
+    y_values = []
+    for i in range(num_points):
+        t = i / (num_points - 1)  # interpolation parameter
+        x = x0 + t * (x1 - x0)
+        y = y0 + t * (y1 - y0)
+        x_values.append(x)
+        y_values.append(y)
+    return list(zip(x_values, y_values))
 
 
 if __name__ == "__main__":
