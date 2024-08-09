@@ -589,7 +589,7 @@ MDGridLayout:
                                 on_release: app.map_zoom(False)
                         MDGridLayout:
                             pos_hint: {"right": .99, "top": 1}
-                            size_hint: (.9, None) if app.is_desktop else (.99, None)
+                            size_hint: (.9, None) if app.is_desktop else (1, None)
                             #height: 0 if theapp.show_nav_section and not app.is_desktop else dp(32)
                             #opacity: 0 if theapp.show_nav_section and not app.is_desktop else .8
                             height: dp(32)
@@ -779,6 +779,16 @@ MDGridLayout:
                         size_hint: (None, None)
                         width: dp(160)
                         PrefSliderHandle:
+                    PrefLabel:
+                        text: _('preference_splash')
+                        opacity: 1 if app.is_desktop else 0
+                    PrefCheck:
+                        on_release: app.splash_selection(*args)
+                        id: selected_splashscreen
+                        active: True
+                        height: dp(34)
+                        opacity: 1 if app.is_desktop else 0
+
                     PrefLabel:
                         text: _('preference_controller_color')
                     PrefSlider:

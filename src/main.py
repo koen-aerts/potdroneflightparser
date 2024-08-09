@@ -113,7 +113,6 @@ class MainApp(MDApp):
     appTitle = f"{appName} - {appVersion}"
     defaultMapZoom = 3
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
-    refreshRates = ['0.25s', '0.50s', '1.00s', '1.50s', '2.00s']
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
     columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
@@ -1036,7 +1035,7 @@ class MainApp(MDApp):
 
         dronestatus2 = rthDesc if rthDesc == "RTH" else dronestatus
         if self.is_desktop:
-            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>7}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>5}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_flightmode')} {flightMode} | {_('map_battery')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | {dronestatus2} | {droneConnected} | {positionMode} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
+            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>7}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>5}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_flightmode')} {flightMode} | {_('map_battery_level')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | {dronestatus2} | {droneConnected} | {positionMode} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
         else:
             self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>6}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>5}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>5}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {flightMode} | {_('map_battery')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | {dronestatus2} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
 
@@ -1443,7 +1442,7 @@ class MainApp(MDApp):
     '''
     def refresh_rate_selection(self, item):
         menu_items = []
-        for refreshRate in self.refreshRates:
+        for refreshRate in ['0.50s', '1.00s', '1.50s', '2.00s']:
             menu_items.append({"text": refreshRate, "on_release": lambda x=refreshRate: self.refresh_rate_selection_callback(x)})
         self.refresh_rate_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
         self.refresh_rate_selection_menu.open()
@@ -1493,6 +1492,13 @@ class MainApp(MDApp):
         Config.set('preferences', 'gauges', item.active)
         Config.write()
 
+
+    '''
+    Enable or disable splash (Preferences).
+    '''
+    def splash_selection(self, item):
+        Config.set('preferences', 'splash', item.active)
+        Config.write()
 
     '''
     Enable or disable circular gauges (Preferences).
@@ -1961,6 +1967,7 @@ class MainApp(MDApp):
         self.root.ids.selected_marker_home_color.value = Config.getint('preferences', 'marker_home_color')
         self.root.ids.selected_rounding.active = Config.getboolean('preferences', 'rounded_readings')
         self.root.ids.selected_gauges.active = Config.getboolean('preferences', 'gauges')
+        self.root.ids.selected_splashscreen.active = Config.getboolean('preferences', 'splash')
         self.root.ids.selected_statusicons.active = Config.getboolean('preferences', 'statusicons')
         self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
         self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
@@ -2148,6 +2155,7 @@ class MainApp(MDApp):
             'selected_model': '--',
             'language': 'en_US',
             'gauges': True,
+            'splash': False,
             'statusicons': True
         })
         langcode = Config.get('preferences', 'language')
@@ -2198,11 +2206,12 @@ class MainApp(MDApp):
 
     def on_start(self):
         if self.is_desktop:
-            self.splash_img = Image(source="assets/splash1_alt1.png", fit_mode="scale-down")
-            self.splash_ver = Label(text=f"{self.appVersion}", pos_hint={"center_x": .5, "center_y": .25}, font_size=dp(50))
-            self.root_window.add_widget(self.splash_img)
-            self.root_window.add_widget(self.splash_ver)
-            Clock.schedule_once(self.remove_splash_image, 5)
+            if Config.getboolean('preferences', 'splash') == 0:
+             self.splash_img = Image(source="assets/splash1_alt1.png", fit_mode="scale-down")
+             self.splash_ver = Label(text=f"{self.appVersion}", pos_hint={"center_x": .5, "center_y": .25}, font_size=dp(50))
+             self.root_window.add_widget(self.splash_img)
+             self.root_window.add_widget(self.splash_ver)
+             Clock.schedule_once(self.remove_splash_image, 5)
         self.root.ids.selected_path.text = '--'
         self.reset()
         self.select_map_source()
