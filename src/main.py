@@ -1154,16 +1154,7 @@ class MainApp(MDApp):
 
 
     def change_playback_speed(self):
-        if self.playback_speed == 1:
-            self.playback_speed = 2
-        elif self.playback_speed == 2:
-            self.playback_speed = 4
-        elif self.playback_speed == 4:
-            self.playback_speed = 8
-        elif self.playback_speed == 8:
-            self.playback_speed = 16
-        else:
-            self.playback_speed = 1
+        self.playback_speed = self.playback_speed << 1 if self.playback_speed < 16 else 1
         self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box" if self.playback_speed < 16 else f"rocket-launch"
 
 
