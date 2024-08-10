@@ -237,6 +237,15 @@ msgstr "{filename} telah diekspor ke direktori dokumen penampil-catatan-penerban
 msgid "error_saving_export_csv"
 msgstr "Penyimpanan berkas CSV gagal {filename}: {error}"
 
+msgid "save_export_kml_file"
+msgstr "Simpan berkas catatan KML."
+
+msgid "export_kml_file_saved"
+msgstr "{filename} telah diekspor ke direktori dokumen penampil-catatan-penerbangan."
+
+msgid "error_saving_export_kml"
+msgstr "Penyimpanan berkas KML gagal {filename}: {error}"
+
 msgid "no_data_to_play_back"
 msgstr "Tidak ada data untuk diputar."
 

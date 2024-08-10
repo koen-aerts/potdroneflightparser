@@ -237,6 +237,15 @@ msgstr "{filename} is opgeslagen in de flightlogviewer Documents map."
 msgid "error_saving_export_csv"
 msgstr "Fout tijdens opslaan CSV bestand {filename}: {error}"
 
+msgid "save_export_kml_file"
+msgstr "Opslaan KML log bestand."
+
+msgid "export_kml_file_saved"
+msgstr "{filename} is opgeslagen in de flightlogviewer Documents map."
+
+msgid "error_saving_export_kml"
+msgstr "Fout tijdens opslaan KML bestand {filename}: {error}"
+
 msgid "no_data_to_play_back"
 msgstr "Geen gegevens om af the spelen."
 
