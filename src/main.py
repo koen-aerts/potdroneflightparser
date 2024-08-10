@@ -115,7 +115,7 @@ class MainApp(MDApp):
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
     refreshRates = ['0.125s', '0.25s', '0.50s', '1.00s', '1.50s', '2.00s']
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
-    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
+    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','altitude2metric','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
@@ -437,7 +437,7 @@ class MainApp(MDApp):
                         isNewPath = False
                     if pathNum > 0:
                         self.flightEnds[flightDesc] = tableLen
-                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, flightModeDesc, flightCounter])
+                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", alt2metric, f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, flightModeDesc, flightCounter])
                     tableLen = tableLen + 1
 
             flightFile.close()
@@ -685,7 +685,7 @@ class MainApp(MDApp):
                 self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
             except Exception as e:
                 msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
-                print(msg)
+                print(f"{msg}: {e}")
                 self.show_error_message(message=msg)
         elif self.is_ios:
             csvFile = os.path.join(self.ios_doc_path(), csvFilename)
@@ -694,7 +694,7 @@ class MainApp(MDApp):
                 self.show_info_message(message=_('export_csv_file_saved').format(filename=csvFile))
             except Exception as e:
                 msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
-                print(msg)
+                print(f"{msg}: {e}")
                 self.show_error_message(message=msg)
         elif self.is_windows: # For windows, use "save_file" interface in plyer filechooser.
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
@@ -708,7 +708,7 @@ class MainApp(MDApp):
                     self.show_info_message(message=_('data_exported_to').format(filename=myFiles[0]))
                 except Exception as e:
                     msg = _('error_saving_export_csv').format(filename=myFiles[0], error=e)
-                    print(msg)
+                    print(f"{msg}: {e}")
                     self.show_error_message(message=msg)
         else: # For non-windows, use "choose_dir" interface in plyer filechooser because plyer does currently not set the desired filename.
             oldwd = os.getcwd() # Remember current workdir in case the OS File browser changes it, causing all sorts of mapview issues.
@@ -723,7 +723,7 @@ class MainApp(MDApp):
                     self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
                 except Exception as e:
                     msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
-                    print(msg)
+                    print(f"{msg}: {e}")
                     self.show_error_message(message=msg)
 
 
@@ -847,7 +847,7 @@ class MainApp(MDApp):
                 self.show_info_message(message=_('data_exported_to').format(filename=kmlFile))
             except Exception as e:
                 msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
-                print(msg)
+                print(f"{msg}: {e}")
                 self.show_error_message(message=msg)
         elif self.is_ios:
             kmlFile = os.path.join(self.ios_doc_path(), kmlFilename)
@@ -856,9 +856,23 @@ class MainApp(MDApp):
                 self.show_info_message(message=_('export_kml_file_saved').format(filename=kmlFile))
             except Exception as e:
                 msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
-                print(msg)
+                print(f"{msg}: {e}")
                 self.show_error_message(message=msg)
-        else:
+        elif self.is_windows: # For windows, use "save_file" interface in plyer filechooser.
+            oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
+            myFiles = filechooser.save_file(title=_('save_export_kml_file'), filters=["*.kml"], path=kmlFilename)
+            newwd = os.getcwd()
+            if oldwd != newwd:
+                os.chdir(oldwd) # Change it back!
+            if myFiles and len(myFiles) > 0:
+                try:
+                    self.save_kml_file(myFiles[0])
+                    self.show_info_message(message=_('data_exported_to').format(filename=myFiles[0]))
+                except Exception as e:
+                    msg = _('error_saving_export_kml').format(filename=myFiles[0], error=e)
+                    print(f"{msg}: {e}")
+                    self.show_error_message(message=msg)
+        else: # For non-windows, use "choose_dir" interface in plyer filechooser because plyer does currently not set the desired filename.
             oldwd = os.getcwd() # Remember current workdir. Windows File Explorer is nasty and changes it, causing all sorts of mapview issues.
             myFiles = filechooser.choose_dir(title=_('save_export_kml_file'))
             newwd = os.getcwd()
@@ -871,7 +885,7 @@ class MainApp(MDApp):
                     self.show_info_message(message=_('data_exported_to').format(filename=kmlFile))
                 except Exception as e:
                     msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
-                    print(msg)
+                    print(f"{msg}: {e}")
                     self.show_error_message(message=msg)
 
 
