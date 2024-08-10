@@ -237,6 +237,15 @@ msgstr "{filename} has been exported to the flightlogviewer Documents directory.
 msgid "error_saving_export_csv"
 msgstr "Error saving CSV file {filename}: {error}"
 
+msgid "save_export_kml_file"
+msgstr "Save KML log file."
+
+msgid "export_kml_file_saved"
+msgstr "{filename} has been exported to the flightlogviewer Documents directory."
+
+msgid "error_saving_export_kml"
+msgstr "Error saving KML file {filename}: {error}"
+
 msgid "no_data_to_play_back"
 msgstr "No data to play back."
 

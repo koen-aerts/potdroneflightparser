@@ -235,6 +235,15 @@ msgstr "{filename} exportado a Documents."
 msgid "error_saving_export_csv"
 msgstr "Error al guardar CSV {filename}: {error}"
 
+msgid "save_export_kml_file"
+msgstr "Guardar archivo KML."
+
+msgid "export_kml_file_saved"
+msgstr "{filename} exportado a Documents."
+
+msgid "error_saving_export_kml"
+msgstr "Error al guardar KML {filename}: {error}"
+
 msgid "no_data_to_play_back"
 msgstr "No hay datos para reproducir."
 

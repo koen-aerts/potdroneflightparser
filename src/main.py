@@ -773,10 +773,10 @@ class MainApp(MDApp):
             isfirstrow = True
             for rowIdx in range(self.currentStartIdx, self.currentEndIdx+1):
                 row = self.logdata[rowIdx]
-                thistimestamp = datetime.datetime.fromisoformat(row[self.columns.index('timestamp')])
+                thistimestamp = datetime.datetime.fromisoformat(row[self.columns.index('timestamp')]).astimezone(datetime.timezone.utc) # Get timestamp in UTC.
                 elapsedFrame = None if prevtimestamp is None else thistimestamp - prevtimestamp # elasped microseconds since last frame.
                 if elapsedFrame is None or elapsedFrame > maxelapsedms: # Omit frames that are within maxelapsedms microseconds from each other.
-                    timestampstr = f"{thistimestamp.isoformat(sep='T', timespec='milliseconds')}Z"
+                    timestampstr = f"{thistimestamp.isoformat(sep='T', timespec='milliseconds')}"
                     dronelon = row[self.columns.index('dronelon')]
                     dronelat = row[self.columns.index('dronelat')]
                     dronealt = row[self.columns.index('altitude2metric')] # KML uses metric units.

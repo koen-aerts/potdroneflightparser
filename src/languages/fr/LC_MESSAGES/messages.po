@@ -234,12 +234,19 @@ msgid "save_export_csv_file"
 msgstr "Enregistrez le fichier journal CSV."
 
 msgid "export_csv_file_saved"
-msgstr ""
-"{filename} a été exporté vers le répertoire des Documents de "
-"FlightlogViewer."
+msgstr "{filename} a été exporté vers le répertoire des Documents de FlightlogViewer."
 
 msgid "error_saving_export_csv"
 msgstr "Erreur lors de l'enregistrement du fichier CSV {filename}: {error}"
+
+msgid "save_export_kml_file"
+msgstr "Enregistrez le fichier journal KML."
+
+msgid "export_kml_file_saved"
+msgstr "{filename} a été exporté vers le répertoire des Documents de FlightlogViewer."
+
+msgid "error_saving_export_kml"
+msgstr "Erreur lors de l'enregistrement du fichier KML {filename}: {error}"
 
 msgid "no_data_to_play_back"
 msgstr "Aucune donnée à lire."
