@@ -576,6 +576,7 @@ MDGridLayout:
                         MDGridLayout:
                             id: mapnav
                             pos_hint: {"x": 0.01, "top": 0.99} if app.is_desktop else {"x": 1, "top": 0}
+                            padding: [ 0, dp(40), 0, 0 ]
                             rows: 2
                             adaptive_size: True
                             MapButton:
@@ -586,12 +587,8 @@ MDGridLayout:
                                 on_release: app.map_zoom(False)
                         MDGridLayout:
                             pos_hint: {"right": .99, "top": 1}
-                            size_hint: (.9, None) if app.is_desktop else (1, None)
-                            #height: 0 if theapp.show_nav_section and not app.is_desktop else dp(32)
-                            #opacity: 0 if theapp.show_nav_section and not app.is_desktop else .8
+                            size_hint: (.98, None)
                             height: dp(32)
-                            #opacity: .8
-                            #opacity: 0 if theapp.show_nav_section and app.is_desktop else .8
                             adaptive_height: True
                             rows: 1
                             md_bg_color: self.theme_cls.backgroundColor
