@@ -85,11 +85,9 @@ Once imported, the log file will disappear from the Documents folder. Similarly,
 ![App Documents Folder](<resources/ios_file_browser2.png> "App Documents Folder")
 
 ## 2.2. From Source
-You can run the app directly from source. Use Python 3.11 or greater.
+You can run the app directly from source. Use [Python](<https://www.python.org/downloads/> "Download Python") 3.11 or greater. If you can't change the OS provided Python version (for instance Linux), use a tool such as [pyenv](<https://github.com/pyenv/pyenv> "pyenv") which allows you to install multiple versions of Python and easily switch between them.
 
-First, you need to [install Python](<https://www.python.org/downloads/> "Download Python") on your platform. Version 3.11 or greater is recommended.
-
-Then cd to the src directory and install the dependencies:
+cd to the src directory and install the dependencies:
 ```sh
 pip install -r requirements.txt
 ```
