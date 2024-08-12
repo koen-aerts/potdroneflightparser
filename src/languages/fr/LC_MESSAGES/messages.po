@@ -188,10 +188,7 @@ msgid "preference_app_version"
 msgstr "App Version:"
 
 msgid "preference_gauges"
-msgstr "Jauges"
-
-msgid "preference_status_icons"
-msgstr "Icônes circulaires"
+msgstr "Jauges:"
 
 msgid "preference_splash"
 msgstr "Supprimer l'écran de démarrage"

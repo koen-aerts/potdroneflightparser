@@ -188,10 +188,7 @@ msgid "preference_app_version"
 msgstr "App Version:"
 
 msgid "preference_gauges"
-msgstr "Medidores"
-
-msgid "preference_status_icons"
-msgstr "Iconos circulares"
+msgstr "Medidores:"
 
 msgid "preference_splash"
 msgstr "Quitar pantalla de bienvenida"

@@ -1129,7 +1129,6 @@ class MainApp(MDApp):
             return
         record = self.logdata[self.currentRowIdx]
         rthDesc = "RTH" if record[self.columns.index('rth')] == 1 else ''
-        droneConnected = 'Connected' if record[self.columns.index('droneconnected')] == 1 else 'DISCONNECTED'
         batteryLevel = record[self.columns.index('batterylevel')]
         batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10 # round to nearest 10.
         flightMode = record[self.columns.index('flightmode')]
@@ -1151,10 +1150,15 @@ class MainApp(MDApp):
         self.root.ids.value1_elapsed.text = str(elapsed)
 
         self.root.ids.battery_level.icon = "battery" if batLevelRnd == 100 else f"battery-{batLevelRnd}"
-        self.root.ids.flight_mode.icon = "alpha-v-box" if flightMode == FlightMode.VIDEO.value else "alpha-s-box" if flightMode == FlightMode.SPORT.value else "alpha-n-box" if flightMode == FlightMode.NORMAL.value else ""
+        self.root.ids.battery_level.icon_color = "red" if batteryLevel < 30 else "orange" if batteryLevel < 65 else "green"
+        self.root.ids.flight_mode.icon = "alpha-v-box" if flightMode == FlightMode.VIDEO.value else "alpha-s-box" if flightMode == FlightMode.SPORT.value else "alpha-n-box" if flightMode == FlightMode.NORMAL.value else "crosshairs-question"
+        self.root.ids.flight_mode.icon_color = "green" if flightMode == FlightMode.VIDEO.value else "orange" if flightMode == FlightMode.SPORT.value else "blue" if flightMode == FlightMode.NORMAL.value else "red"
         self.root.ids.drone_connection.icon = "signal" if record[self.columns.index('droneconnected')] == 1 else "signal-off"
-        self.root.ids.drone_action.icon = "airplane-marker" if record[self.columns.index('rth')] == 1 else "airplane-takeoff" if dronestatus == DroneStatus.LIFT.value else "airplane-landing" if dronestatus == DroneStatus.LANDING.value else "airplane" if dronestatus == DroneStatus.FLYING.value else "car-break-parking" if dronestatus == DroneStatus.IDLE.value else ""
-        self.root.ids.position_mode.icon = "satellite-uplink" if positionMode == PositionMode.GPS.value else "eye" if positionMode == PositionMode.OPTI.value else "panorama-fisheye" if positionMode == PositionMode.ATTI.value else ""
+        self.root.ids.drone_connection.icon_color = "green" if record[self.columns.index('droneconnected')] == 1 else "red"
+        self.root.ids.drone_action.icon = "airplane-marker" if record[self.columns.index('rth')] == 1 else "airplane-takeoff" if dronestatus == DroneStatus.LIFT.value else "airplane-landing" if dronestatus == DroneStatus.LANDING.value else "airplane" if dronestatus == DroneStatus.FLYING.value else "car-break-parking" if dronestatus == DroneStatus.IDLE.value else "crosshairs-question"
+        self.root.ids.drone_action.icon_color = "red" if record[self.columns.index('rth')] == 1 else "orange" if dronestatus == DroneStatus.LIFT.value else "orange" if dronestatus == DroneStatus.LANDING.value else "green" if dronestatus == DroneStatus.FLYING.value else "blue" if dronestatus == DroneStatus.IDLE.value else "red"
+        self.root.ids.position_mode.icon = "satellite-uplink" if positionMode == PositionMode.GPS.value else "eye" if positionMode == PositionMode.OPTI.value else "panorama-fisheye" if positionMode == PositionMode.ATTI.value else "crosshairs-question"
+        self.root.ids.position_mode.icon_color = "green" if positionMode == PositionMode.GPS.value else "red" if positionMode == PositionMode.OPTI.value else "orange" if positionMode == PositionMode.ATTI.value else "red"
 
         if self.is_desktop: # Gauges are turned off on mobile devices.
             # Set horizontal, vertical and altitude gauge values. Use rounded values.
@@ -1187,11 +1191,10 @@ class MainApp(MDApp):
                 G_rotation = abs(G_orientation) if G_orientation <= 0 else 360 - G_orientation # Convert to 0 - 359 range.
                 self.root.ids.HDgauge.value = G_rotation
 
-        dronestatus2 = rthDesc if rthDesc == "RTH" else dronestatus
         if self.is_desktop:
-            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>7}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>5}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_flightmode')} {flightMode} | {_('map_battery_level')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | {dronestatus2} | {droneConnected} | {positionMode} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
+            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>6}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
         else:
-            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>6}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>5}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>5}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {flightMode} | {_('map_battery')} {'{:>2}'.format(record[self.columns.index('batterylevel')])}% | {dronestatus2} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
+            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
 
         if updateSlider:
             if self.root.ids.value_duration.text != "":
@@ -1610,13 +1613,6 @@ class MainApp(MDApp):
     '''
     def splash_selection(self, item):
         Config.set('preferences', 'splash', item.active)
-        Config.write()
-
-    '''
-    Enable or disable circular gauges (Preferences).
-    '''
-    def statusicons_selection(self, item):
-        Config.set('preferences', 'statusicons', item.active)
         Config.write()
 
 
@@ -2080,7 +2076,6 @@ class MainApp(MDApp):
         self.root.ids.selected_rounding.active = Config.getboolean('preferences', 'rounded_readings')
         self.root.ids.selected_gauges.active = Config.getboolean('preferences', 'gauges')
         self.root.ids.selected_splashscreen.active = Config.getboolean('preferences', 'splash')
-        self.root.ids.selected_statusicons.active = Config.getboolean('preferences', 'statusicons')
         self.root.ids.selected_mapsource.text = Config.get('preferences', 'map_tile_server')
         self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
         self.root.ids.selected_model.text = Config.get('preferences', 'selected_model')
@@ -2266,8 +2261,7 @@ class MainApp(MDApp):
             'selected_model': '--',
             'language': 'en_US',
             'gauges': True,
-            'splash': False,
-            'statusicons': True
+            'splash': False
         })
         langcode = Config.get('preferences', 'language')
         langpath = os.path.join(os.path.dirname(__file__), 'languages')
