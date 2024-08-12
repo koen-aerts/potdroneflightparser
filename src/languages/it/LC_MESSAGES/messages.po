@@ -209,14 +209,10 @@ msgid "nothing_to_import"
 msgstr "Importazione non riuscita."
 
 msgid "drone_not_supported"
-msgstr ""
-"Questo modello di drone potrebbe non essere supportato per questo software: "
-"{modelname}"
+msgstr "Questo modello di drone potrebbe non essere supportato per questo software: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr ""
-"Nessuna importazione.Inserisci il file zip di registro volo nella directory "
-"flightlogviewer, Riprova."
+msgstr "Nessuna importazione.Inserisci il file zip di registro volo nella directory flightlogviewer, Riprova."
 
 msgid "select_log_zip_file"
 msgstr "Seleziona il file Registro zip."
