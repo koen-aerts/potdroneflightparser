@@ -209,14 +209,10 @@ msgid "nothing_to_import"
 msgstr "Rien à importer."
 
 msgid "drone_not_supported"
-msgstr ""
-"Ce modèle de drone peut ne pas être pris en charge par ce logiciel: "
-"{modelname}"
+msgstr "Ce modèle de drone peut ne pas être pris en charge par ce logiciel: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr ""
-"Rien à importer. Placez le fichier zip du journal dans le répertoire des "
-"Documents de Flightlogviewer, puis réessayez."
+msgstr "Rien à importer. Placez le fichier zip du journal dans le répertoire des Documents de Flightlogviewer, puis réessayez."
 
 msgid "select_log_zip_file"
 msgstr "Sélectionnez un fichier journal zip."

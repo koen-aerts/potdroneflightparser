@@ -212,9 +212,7 @@ msgid "drone_not_supported"
 msgstr "Model Drone tdk didukung perangkat lunak: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr ""
-"Tdk ada pemuatan. Letakkan berkas catatan zip ke direktori dokumen "
-"penampil-catatan-penerbangan, kemudian coba lagi."
+msgstr "Tdk ada pemuatan. Letakkan berkas catatan zip ke direktori dokumen penampil-catatan-penerbangan, kemudian coba lagi."
 
 msgid "select_log_zip_file"
 msgstr "Pilih berkas catatan zip."

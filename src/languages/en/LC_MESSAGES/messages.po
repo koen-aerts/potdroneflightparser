@@ -212,9 +212,7 @@ msgid "drone_not_supported"
 msgstr "This drone model may not be supported in this software: {modelname}"
 
 msgid "ios_nothing_to_import"
-msgstr ""
-"Nothing to import. Place the log zip file in the flightlogviewer Documents "
-"directory, then try again."
+msgstr "Nothing to import. Place the log zip file in the flightlogviewer Documents directory, then try again."
 
 msgid "select_log_zip_file"
 msgstr "Select a log zip file."
