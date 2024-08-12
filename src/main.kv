@@ -594,14 +594,14 @@ MDGridLayout:
                                 icon: "minus"
                                 on_release: app.map_zoom(False)
                         MDGridLayout:
-                            pos_hint: {"right": .99, "top": 1}
-                            size_hint: (.98, None)
+                            pos_hint: {"right": 1, "top": 1}
+                            size_hint: (1, None)
                             height: dp(32)
                             adaptive_height: True
                             rows: 1
                             md_bg_color: self.theme_cls.backgroundColor
                             MDLabel:
-                                id: map_metrics2
+                                id: map_metrics_ribbon
                                 text: ""
                                 role: "large" if app.is_desktop else "small"
                                 bold: True
@@ -625,6 +625,9 @@ MDGridLayout:
                                 id: position_mode
                                 icon: "satellite-uplink"
                                 size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
+                            MDIconButton: # Padding
+                                style: "standard"
+                                size: [dp(10), dp(10)]
         BaseScreen:
             name: "Screen_Day_Summary"
             on_enter: app.entered_screen_summary()
