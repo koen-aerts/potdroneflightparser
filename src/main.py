@@ -1192,9 +1192,9 @@ class MainApp(MDApp):
                 self.root.ids.HDgauge.value = G_rotation
 
         if self.is_desktop:
-            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>6}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
+            self.root.ids.map_metrics_ribbon.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>6}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
         else:
-            self.root.ids.map_metrics2.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
+            self.root.ids.map_metrics_ribbon.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])}"
 
         if updateSlider:
             if self.root.ids.value_duration.text != "":
@@ -1511,8 +1511,7 @@ class MainApp(MDApp):
             self.root.ids.value1_dist_short.text = ""
             self.root.ids.value1_hspeed.text = ""
             self.root.ids.value1_vspeed.text = ""
-            #self.root.ids.map_metrics1.text = ""
-            self.root.ids.map_metrics2.text = ""
+            self.root.ids.map_metrics_ribbon.text = ""
         else:
             self.currentStartIdx = self.flightStarts[self.root.ids.selected_path.text]
             self.currentEndIdx = self.flightEnds[self.root.ids.selected_path.text]
@@ -2114,8 +2113,7 @@ class MainApp(MDApp):
             self.root.ids.value1_hspeed.text = ""
             self.root.ids.value1_vspeed.text = ""
             self.root.ids.value1_elapsed.text = ""
-            #self.root.ids.map_metrics1.text = ""
-            self.root.ids.map_metrics2.text = ""
+            self.root.ids.map_metrics_ribbon.text = ""
             self.root.ids.flight_progress.is_updating = True
             self.root.ids.flight_progress.value = 0
             self.root.ids.flight_progress.is_updating = False
