@@ -188,10 +188,7 @@ msgid "preference_app_version"
 msgstr "Toepassing Versie:"
 
 msgid "preference_gauges"
-msgstr "Meters"
-
-msgid "preference_status_icons"
-msgstr "Circulaire pictogrammen"
+msgstr "Meters:"
 
 msgid "preference_splash"
 msgstr "Verberg welkomscherm"

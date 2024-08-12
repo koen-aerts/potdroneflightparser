@@ -188,10 +188,7 @@ msgid "preference_app_version"
 msgstr "App Version:"
 
 msgid "preference_gauges"
-msgstr "Gauges"
-
-msgid "preference_status_icons"
-msgstr "Status Icons"
+msgstr "Gauges:"
 
 msgid "preference_splash"
 msgstr "Hide Splash Screen"

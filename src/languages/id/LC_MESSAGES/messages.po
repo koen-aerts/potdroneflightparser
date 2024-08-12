@@ -188,10 +188,7 @@ msgid "preference_app_version"
 msgstr "App Version:"
 
 msgid "preference_gauges"
-msgstr "Pengukur"
-
-msgid "preference_status_icons"
-msgstr "Ikon Melingkar"
+msgstr "Pengukur:"
 
 msgid "preference_splash"
 msgstr "Hapus layar splash"

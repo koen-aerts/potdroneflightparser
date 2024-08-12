@@ -188,10 +188,7 @@ msgid "preference_app_version"
 msgstr "App Version:"
 
 msgid "preference_gauges"
-msgstr "Calibri"
-
-msgid "preference_status_icons"
-msgstr "Icone circolari"
+msgstr "Calibri:"
 
 msgid "preference_splash"
 msgstr "Rimuovere la schermata iniziale"

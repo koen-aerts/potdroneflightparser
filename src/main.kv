@@ -1,8 +1,16 @@
 <TopNavBar@MDTopAppBar>
     type: "small"
 
-<MapButton@MDIconButton>
+<ZoomButton@MDIconButton>
     style: "filled"
+
+<PlaybackButton@MDIconButton>
+    style: "filled"
+
+<StatusButton@MDIconButton>
+    style: "outlined"
+    theme_icon_color: "Custom"
+    icon_color: [0.27450980392156865, 0.27450980392156865, 0.30980392156862746, 1.0]
 
 <StatLabel@MDLabel>
     halign: "right"
@@ -468,7 +476,7 @@ MDGridLayout:
                             y: dp(10)
                             rows: 1
                             adaptive_size: True
-                            MapButton:
+                            PlaybackButton:
                                 icon: "skip-previous"
                                 on_release: app.jump_prev_flight()
                                 size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
@@ -476,7 +484,7 @@ MDGridLayout:
                                 size_hint: (None, None)
                                 width: dp(20) if app.is_desktop else dp(10)
                                 text: ""
-                            MapButton:
+                            PlaybackButton:
                                 id: playbutton
                                 icon: "play"
                                 on_release: app.play_flight()
@@ -485,7 +493,7 @@ MDGridLayout:
                                 size_hint: (None, None)
                                 width: dp(20) if app.is_desktop else dp(10)
                                 text: ""
-                            MapButton:
+                            PlaybackButton:
                                 icon: "skip-next"
                                 on_release: app.jump_next_flight()
                                 size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
@@ -493,7 +501,7 @@ MDGridLayout:
                                 size_hint: (None, None)
                                 width: dp(20) if app.is_desktop else dp(10)
                                 text: ""
-                            MapButton:
+                            PlaybackButton:
                                 id: speed_indicator
                                 on_release: app.change_playback_speed()
                                 icon: "numeric-0-box"
@@ -504,7 +512,7 @@ MDGridLayout:
                                 size_hint: (None, None)
                                 width: dp(20) if app.is_desktop else dp(10)
                                 text: ""
-                            MapButton:
+                            PlaybackButton:
                                 icon: "crosshairs-gps"
                                 on_release: app.center_map()
                                 size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
@@ -579,10 +587,10 @@ MDGridLayout:
                             padding: [ 0, dp(40), 0, 0 ]
                             rows: 2
                             adaptive_size: True
-                            MapButton:
+                            ZoomButton:
                                 icon: "plus"
                                 on_release: app.map_zoom(True)
-                            MapButton:
+                            ZoomButton:
                                 icon: "minus"
                                 on_release: app.map_zoom(False)
                         MDGridLayout:
@@ -597,26 +605,26 @@ MDGridLayout:
                                 text: ""
                                 role: "large" if app.is_desktop else "small"
                                 bold: True
-                            MapButton:
+                            StatusButton:
                                 id: battery_level
                                 icon: "battery"
-                                opacity: 1 if selected_statusicons.active else 0
-                            MapButton:
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
+                            StatusButton:
                                 id: flight_mode
                                 icon: "wifi"
-                                opacity: 1 if selected_statusicons.active else 0
-                            MapButton:
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
+                            StatusButton:
                                 id: drone_connection
                                 icon: "signal-off"
-                                opacity: 1 if selected_statusicons.active else 0
-                            MapButton:
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
+                            StatusButton:
                                 id: drone_action
                                 icon: "airplane"
-                                opacity: 1 if selected_statusicons.active else 0
-                            MapButton:
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
+                            StatusButton:
                                 id: position_mode
                                 icon: "satellite-uplink"
-                                opacity: 1 if selected_statusicons.active else 0
+                                size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
         BaseScreen:
             name: "Screen_Day_Summary"
             on_enter: app.entered_screen_summary()
@@ -760,12 +768,9 @@ MDGridLayout:
                         width: dp(160)
                         PrefSliderHandle:
                     PrefLabel:
-                        text: _('preference_status_icons')
-                    PrefCheck:
-                        on_release: app.statusicons_selection(*args)
-                        id: selected_statusicons
-                        active: True
-                        height: dp(34)
+                        text: ""
+                    PrefLabel:
+                        text: ""
                     # Row 6
                     PrefLabel:
                         text: _('preference_flight_path_color')
