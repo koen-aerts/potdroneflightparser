@@ -1133,7 +1133,6 @@ class MainApp(MDApp):
         batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10 # round to nearest 10.
         flightMode = record[self.columns.index('flightmode')]
         dronestatus = record[self.columns.index('dronestatus')]
-        positionMode = record[self.columns.index('positionmode')]
 
         self.root.ids.value1_alt.text = f"{record[self.columns.index('altitude2')]} {self.dist_unit()}"
         self.root.ids.value1_traveled.text = f"{record[self.columns.index('traveled')]} {self.dist_unit()}"
@@ -1157,8 +1156,6 @@ class MainApp(MDApp):
         self.root.ids.drone_connection.icon_color = "green" if record[self.columns.index('droneconnected')] == 1 else "red"
         self.root.ids.drone_action.icon = "airplane-marker" if record[self.columns.index('rth')] == 1 else "airplane-takeoff" if dronestatus == DroneStatus.LIFT.value else "airplane-landing" if dronestatus == DroneStatus.LANDING.value else "airplane" if dronestatus == DroneStatus.FLYING.value else "car-break-parking" if dronestatus == DroneStatus.IDLE.value else "crosshairs-question"
         self.root.ids.drone_action.icon_color = "red" if record[self.columns.index('rth')] == 1 else "orange" if dronestatus == DroneStatus.LIFT.value else "orange" if dronestatus == DroneStatus.LANDING.value else "green" if dronestatus == DroneStatus.FLYING.value else "blue" if dronestatus == DroneStatus.IDLE.value else "red"
-        self.root.ids.position_mode.icon = "satellite-uplink" if positionMode == PositionMode.GPS.value else "eye" if positionMode == PositionMode.OPTI.value else "panorama-fisheye" if positionMode == PositionMode.ATTI.value else "crosshairs-question"
-        self.root.ids.position_mode.icon_color = "green" if positionMode == PositionMode.GPS.value else "red" if positionMode == PositionMode.OPTI.value else "orange" if positionMode == PositionMode.ATTI.value else "red"
 
         if self.is_desktop: # Gauges are turned off on mobile devices.
             # Set horizontal, vertical and altitude gauge values. Use rounded values.
@@ -1194,7 +1191,7 @@ class MainApp(MDApp):
         if self.is_desktop:
             self.root.ids.map_metrics_ribbon.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_vs')} {'{:>6}'.format(record[self.columns.index('speed2vert')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
         else:
-            self.root.ids.map_metrics_ribbon.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])}"
+            self.root.ids.map_metrics_ribbon.text = f" {_('map_time')} {'{:>6}'.format(str(elapsed))[-5:]} | {_('map_dist')} {'{:>9}'.format(record[self.columns.index('distance3')])} {self.dist_unit()} | {_('map_alt')} {'{:>6}'.format(record[self.columns.index('altitude2')])} {self.dist_unit()} | {_('map_hs')} {'{:>5}'.format(record[self.columns.index('speed2')])} {self.speed_unit()} | {_('map_sats')} {'{:>2}'.format(record[self.columns.index('satellites')])} | {_('map_distance_flown')} {self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()}"
 
         if updateSlider:
             if self.root.ids.value_duration.text != "":
