@@ -43,8 +43,6 @@ from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
-from kivy.uix.slider import Slider
-
 
 if platform == 'android': # Android
     from android.permissions import request_permissions, Permission
@@ -2682,42 +2680,6 @@ class HeadingGauge(Widget):
         self._headingR.center_x = self._gauge.center_x
         self._headingR.center_y = self._gauge.center_y
         self._headingR.rotation = (1 * self.unit) - (self.value * 1)
-
-
-class ProgressSlider(BoxLayout):
-    def __init__(self, **kwargs):
-        super(ProgressSlider, self).__init__(**kwargs)
-        self.orientation = 'vertical'  
-        self.slider = Slider(min=0, max=100, value=0, size_hint=(1.8, None))
-        self.slider.bind(value=self.on_progress_slider_value_change)
-        #self.slider.observe(self.on_value_change, names='value')
-        self.slider.cursor_image = 'assets/slider3.png'
-        self.slider.track_active_color = (1, 0, 0, 1)
-        self.slider.track_inactive_color: "#aaaaaa"
-        self.slider.track_active_color: "#444444"
-        self.slider.background_normal = ''
-        self.slider.cursor_color = (1, 0, 0, 1)
-        self.add_widget(self.slider)
-
-    def on_progress_slider_value_change(self, instance, value):
-        MDApp.get_running_app().on_progress_slider_value_change(instance, value)  
-
-    def on_touch_move(self, touch):
-        if self.collide_point(touch.x, touch.y):
-            print("Touch down on the slider!")
-            play_button = MDApp.get_running_app().root.ids['playbutton']
-            icon_name = play_button.icon
-            if icon_name == "play":
-                return
-            else:
-                play_button.trigger_action(duration=0.1)
-        else:
-            play_button = MDApp.get_running_app().root.ids['playbutton']
-            icon_name = play_button.icon
-            if icon_name == "play":
-                return
-            else:
-                play_button.trigger_action(duration=0.1)
 
 
 if __name__ == "__main__":
