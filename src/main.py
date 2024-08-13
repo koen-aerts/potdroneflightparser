@@ -490,7 +490,6 @@ class MainApp(MDApp):
     def show_flight_date(self, importRef):
         logDate = re.sub(r"-.*", r"", importRef) # Extract date section from log (zip) filename.
         self.root.ids.value_date.text = datetime.date.fromisoformat(logDate).strftime("%x")
-        #self.root.ids.map_metrics1.text = f" {importRef} / {_('map_date')} {self.root.ids.value_date.text}"
 
 
     def show_flight_stats(self):
@@ -1196,7 +1195,7 @@ class MainApp(MDApp):
                 durstr = self.root.ids.value_duration.text.split(":")
                 durval = datetime.timedelta(hours=int(durstr[0]), minutes=int(durstr[1]), seconds=int(durstr[2]))
                 if durval != 0: # Prevent division by zero
-                    self.root.ids.flight_progress.value = elapsed / durval * 100  
+                    self.root.ids.flight_progress.value = elapsed / durval * 100
                 else:
                     self.root.ids.flight_progress.value = 0
         # Controller Marker.
