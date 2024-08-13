@@ -595,7 +595,8 @@ MDGridLayout:
                                 on_release: app.map_zoom(False)
                         MDGridLayout:
                             pos_hint: {"right": 1, "top": 1}
-                            size_hint: (1, None)
+                            size_hint: (None, None)
+                            width: dp(140) if not app.is_desktop and theapp.show_nav_section else self.parent.width
                             height: dp(32)
                             adaptive_height: True
                             rows: 1
@@ -605,6 +606,10 @@ MDGridLayout:
                                 text: ""
                                 role: "large" if app.is_desktop else "small"
                                 bold: True
+                                opacity: 0 if not app.is_desktop and theapp.show_nav_section else 1
+                            MDIconButton: # Padding
+                                style: "standard"
+                                size: [dp(10), dp(10)]
                             StatusButton:
                                 id: battery_level
                                 icon: "battery"
