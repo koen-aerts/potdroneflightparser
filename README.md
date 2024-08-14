@@ -20,6 +20,8 @@ This project is based on reverse engineering of the Potensic flight bin files (m
 On Windows, MacOS (x64/ARM), Android, or iOS, you can download and run one of the executables from the [Releases](<../../releases> "Releases") section.
 
 ### 2.1.1 Windows
+You need Windows 10 or higher. If you want to run on older versions of Windows, see the section below on running it directly from source.
+
 Download the zip file and unpack it. Run the .exe installer like you would any other app. You may see Windows Defender or your virus scanner warn you about running content from the Internet and try to scare you away from proceeding with the install. If you carefully read the messages, you should be able to get past this and run the installer. Sometimes the options on proceeding with the running of the .exe are hidden behind other links or buttons in the alert windows and may not seem intuitive.
 
 To uninstall, go to Apps under Settings and use the uninstall feature.
@@ -62,9 +64,9 @@ To solve this, you can remove the Extended Attributes from the file. You will ha
 ### 2.2.3 Android
 Download the .apk file to your device and open it. Depending on your Android version and settings, you will see several warnings about running content from the Internet. You may need to allow the app from which you are launching the apk (web browser or file browser) to launch the apk, and in addition, you will have to read the warnings that will try to stop you from installing the app. There will be options along the way to accept the risk and proceed with the install, albeit those options may not appear until you click on certain links or buttons in the alert pop-ups. You may miss it the first time, so simply try again. It is anything but intuitive, however, there are not too many different options to select from. Most devices will allow you to install anything you want, but will attempt to discourage you to do so.
 
-Uninstalling the app is the same as you would for any other mobile app. This action will also delete all the data that is stored within the app, which includes imported log files and preferences.
+Uninstalling the app is the same as you would for any other mobile app. This action will also delete all the data that is stored within the app, which includes imported log files, preferences and cache.
 
-If you are updating the app to a newer version, you should be able to install on top of the existing app. If this does not work, use the app's backup feature first to back up your data. It will be saved to a zip file, so make sure you pay attention where you save it. Then you can uninstall the app and install the new version. Once you have the new version running, you will be able to import the backup zip file into the app to restore your data.
+If you are updating the app to a newer version, you should be able to install on top of the existing app. If this does not work, use the app's backup feature first to back up your data. It will be saved to a zip file, so make sure you pay attention to where you save it. Then you can uninstall the app and install the new version. Once you have the new version running, you will be able to import the backup zip file into the app to restore your data.
 
 
 ### 2.2.4 iOS
@@ -101,7 +103,7 @@ python main.py
 ![selfie from a Potensic Atom SE](<src/assets/app-icon256.png> "Atom SE selfie")
 
 
-# More Info
+# Additional Info
 Check [here](<https://koenaerts.ca/micro-drones/parsing-potensic-flight-data-files/> "Parsing Potensic Flight Data Files").
 
 
