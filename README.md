@@ -22,7 +22,9 @@ On Windows, MacOS (x64/ARM), Android, or iOS, you can download and run one of th
 ### 2.1.1 Windows
 Download the zip file and unpack it. Run the .exe installer like you would any other app. You may see Windows Defender or your virus scanner warn you about running content from the Internet and try to scare you away from proceeding with the install. If you carefully read the messages, you should be able to get past this and run the installer. Sometimes the options on proceeding with the running of the .exe are hidden behind other links or buttons in the alert windows and may not seem intuitive.
 
-To uninstall, run the uninstaller that comes with the app. In many cases, it should be located here: ```C:\Program Files (x86)\Flight Log Viewer\uninstaller.exe```
+To uninstall, go to Apps under Settings and use the uninstall feature.
+![Uninstall](<resources/windows_uninstall.png> "Uninstall")
+If you have an older version of the app, this option may not be there, in which case you can run the uninstall process directly from here: ```C:\Program Files (x86)\Flight Log Viewer\uninstaller.exe```
 
 You can also delete the app's configuration and cache, which is usally located at: ```C:\Users\[your_user_name]\AppData\Local\FlightLogViewer```
 
