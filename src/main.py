@@ -2195,8 +2195,7 @@ class MainApp(MDApp):
     Open help page on the project home page and for the matching version of the app.
     '''
     def show_help(self):
-        #webbrowser.open(f"https://github.com/koen-aerts/potdroneflightparser/tree/{self.appVersion}")
-        webbrowser.open("https://github.com/koen-aerts/potdroneflightparser/blob/Chris_2_2_3/help/guide.md")
+        webbrowser.open(f"https://htmlpreview.github.io/?https://github.com/koen-aerts/potdroneflightparser/blob/{self.appVersion}/docs/guide.html")
 
 
     '''
@@ -2304,7 +2303,7 @@ class MainApp(MDApp):
     def on_start(self):
         if self.is_desktop:
             if Config.getboolean('preferences', 'splash') == 0:
-                self.splash_img = Image(source="assets/splash1_alt1.png", fit_mode="scale-down")
+                self.splash_img = Image(source="assets/splash.png", fit_mode="scale-down")
                 self.splash_ver = Label(text=f"{self.appVersion}", pos_hint={"center_x": .5, "center_y": .25}, font_size=dp(50))
                 self.root_window.add_widget(self.splash_img)
                 self.root_window.add_widget(self.splash_ver)
