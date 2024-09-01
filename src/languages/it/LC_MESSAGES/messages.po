@@ -268,6 +268,12 @@ msgstr "Elimina"
 msgid "cancel"
 msgstr "Annulla"
 
+msgid "later"
+msgstr "Rimandare"
+
+msgid "download"
+msgstr "Scaricamento"
+
 msgid "backup"
 msgstr "Backup"
 
@@ -300,6 +306,9 @@ msgstr "Ripristinato da: {filename}."
 
 msgid "select_backup_zip_file"
 msgstr "Seleziona un file zip di backup."
+
+msgid "upgrade_notice"
+msgstr "La versione {version} per {platform} è disponibile per il download"
 
 msgid "parsing_log_file"
 msgstr "Analisi del file di Registro..."
