@@ -2169,10 +2169,24 @@ class MainApp(MDApp):
                     self.execute_db("DELETE FROM log_files WHERE filename = ?", (importedFile,))
 
 
+    def clear_cache(self):
+        '''
+        Clear the cache directory (where drone icons and map tiles are stored).
+        '''
+        print(f"Clearing cache: {self.root.ids.map.cache_dir}")
+        for root, dirs, files in os.walk(self.root.ids.map.cache_dir, topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                os.rmdir(os.path.join(root, name))
+        self.show_info_message(message=_('cache_cleared'))
+
+
     def check_for_updates(self):
         '''
         Check if a newer version of this app is available for the platform.
         '''
+        print("Checking for software update...")
         try:
             response = requests.get(
                 "https://api.github.com/repos/koen-aerts/potdroneflightparser/releases?per_page=1&page=1",

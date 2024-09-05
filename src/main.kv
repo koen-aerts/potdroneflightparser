@@ -680,6 +680,10 @@ MDGridLayout:
                     MDTopAppBarTitle:
                         text: f"{app.appName} - {_('title_preferences')}"
                         pos_hint: {"center_x": .5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "delete"
+                            on_release: app.clear_cache()
                 MDGridLayout:
                     cols: 4
                     md_bg_color: self.theme_cls.backgroundColor
