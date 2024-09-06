@@ -310,5 +310,8 @@ msgstr "Sélectionnez un fichier zip de sauvegarde."
 msgid "upgrade_notice"
 msgstr "La version {version} pour {platform} est disponible en téléchargement."
 
+msgid "cache_cleared"
+msgstr "Cache vidé."
+
 msgid "parsing_log_file"
 msgstr "Analyse du fichier journal..."

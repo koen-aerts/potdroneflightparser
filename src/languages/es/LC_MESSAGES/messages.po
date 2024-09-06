@@ -310,5 +310,8 @@ msgstr "Seleccione zip de respaldo."
 msgid "upgrade_notice"
 msgstr "La versión {version} para {platform} está disponible para descargar."
 
+msgid "cache_cleared"
+msgstr "Caché vaciado."
+
 msgid "parsing_log_file"
 msgstr "Analizando registro..."

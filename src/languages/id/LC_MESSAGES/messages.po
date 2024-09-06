@@ -310,5 +310,8 @@ msgstr "Pilih berkas zip cadangan."
 msgid "upgrade_notice"
 msgstr "Versi {version} untuk {platform} tersedia untuk diunduh."
 
+msgid "cache_cleared"
+msgstr "Cache dikosongkan."
+
 msgid "parsing_log_file"
 msgstr "Mengurai Berkas Catatan..."

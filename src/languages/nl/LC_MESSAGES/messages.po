@@ -310,5 +310,8 @@ msgstr "Kies een back-up zip bestand."
 msgid "upgrade_notice"
 msgstr "Versie {version} voor {platform} is beschikbaar voor download."
 
+msgid "cache_cleared"
+msgstr "Cache geleegd."
+
 msgid "parsing_log_file"
 msgstr "Inlezen Log Bestand..."
