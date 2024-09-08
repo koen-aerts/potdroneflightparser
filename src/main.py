@@ -113,7 +113,7 @@ class MainApp(MDApp):
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
     refreshRates = ['0.125s', '0.25s', '0.50s', '1.00s', '1.50s', '2.00s']
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
-    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','altitude2metric','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','batterytemp','flightmode','flightcounter')
+    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','altitude2metric','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation1','orientation2','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','batterytemp','batterycurrent','flightmode','flightcounter')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
@@ -242,6 +242,7 @@ class MainApp(MDApp):
                     droneConnected = struct.unpack('<B', fcRecord[469+offset3:470+offset3])[0] # Drone connected to controller, 1 = Yes, 0 = No.
                     batteryLevel = struct.unpack('<B', fcRecord[481+offset3:482+offset3])[0] # Battery level.
                     batteryTemp = struct.unpack('<B', fcRecord[476+offset3:477+offset3])[0] # Battery temperature (celcius).
+                    batteryCurrent = -struct.unpack('<h', fcRecord[474+offset3:476+offset3])[0] # Battery current (mA).
                     flightMode = struct.unpack('<B', fcRecord[448+offset2:449+offset2])[0] # Flight mode: normal, video, sports.
                     flightModeDesc = FlightMode.VIDEO.value if flightMode == 7 else FlightMode.NORMAL.value if flightMode == 8 else FlightMode.SPORT.value if flightMode == 9 else ''
                     droneAction = struct.unpack('<B', fcRecord[486+offset3:487+offset3])[0] # Drone action: 0 = motors off, 1 = grounded or taking off, 2 = flying, 3 = landing. # Field @ offset 443 looks the same?
@@ -437,7 +438,7 @@ class MainApp(MDApp):
                         isNewPath = False
                     if pathNum > 0:
                         self.flightEnds[flightDesc] = tableLen
-                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", alt2metric, f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation2, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, batteryTemp, flightModeDesc, flightCounter])
+                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", alt2metric, f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation1, orientation2, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, batteryTemp, batteryCurrent, flightModeDesc, flightCounter])
                     tableLen = tableLen + 1
 
             flightFile.close()
@@ -1130,6 +1131,7 @@ class MainApp(MDApp):
         rthDesc = "RTH" if record[self.columns.index('rth')] == 1 else ''
         batteryLevel = record[self.columns.index('batterylevel')]
         batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10 # round to nearest 10.
+        batteryTemp = record[self.columns.index('batterytemp')]
         flightMode = record[self.columns.index('flightmode')]
         dronestatus = record[self.columns.index('dronestatus')]
 
@@ -1183,7 +1185,7 @@ class MainApp(MDApp):
                 y = math.cos(math.radians(head_lat_1)) * math.sin(math.radians(self.head_lat_2)) - math.sin(math.radians(head_lat_1)) * math.cos(math.radians(self.head_lat_2)) * math.cos(math.radians(dLon))
                 brng = math.atan2(x,y)
                 brng = math.degrees(brng)
-                G_orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees, -180 to 180.
+                G_orientation = round(math.degrees(record[self.columns.index('orientation2')])) # Drone orientation in degrees, -180 to 180.
                 G_rotation = abs(G_orientation) if G_orientation <= 0 else 360 - G_orientation # Convert to 0 - 359 range.
                 self.root.ids.HDgauge.value = G_rotation
 
@@ -1411,7 +1413,7 @@ class MainApp(MDApp):
             # Return base image if there is no current rotation (orientation).
             return f"assets/{base_filename}.png"
         record = self.logdata[self.currentRowIdx]
-        orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees, -180 to 180.
+        orientation = round(math.degrees(record[self.columns.index('orientation2')])) # Drone orientation in degrees, -180 to 180.
         rotation = abs(orientation) if orientation <= 0 else 360 - orientation # Convert to 0 - 359 range.
         rotated_filename = os.path.join(self.root.ids.map.cache_dir, f"{base_filename}-{rotation}.png")
         if not os.path.exists(rotated_filename):
