@@ -1136,6 +1136,7 @@ class MainApp(MDApp):
         batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10 # round to nearest 10.
         batteryTemp = record[self.columns.index('batterytemp')]
         batteryVoltage = locale.format_string("%.1f", round(record[self.columns.index('batteryvoltage')], 1), grouping=True, monetary=False)
+        batteryCurrent = locale.format_string("%.1f", round(record[self.columns.index('batterycurrent')]/1000, 1), grouping=True, monetary=False)
         flightMode = record[self.columns.index('flightmode')]
         dronestatus = record[self.columns.index('dronestatus')]
 
@@ -1147,8 +1148,8 @@ class MainApp(MDApp):
         self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
         self.root.ids.value1_vspeed.text = f"{record[self.columns.index('speed2vert')]} {self.speed_unit()}"
 
-        self.root.ids.value1_batterylevel1.text = f"{record[self.columns.index('batterylevel')]}%"
-        self.root.ids.value1_batterylevel2.text = f"{batteryVoltage}V / {batteryTemp}C"
+        self.root.ids.value1_batterylevel1.text = f"{record[self.columns.index('batterylevel')]}% / {batteryVoltage}V"
+        self.root.ids.value1_batterylevel2.text = f"{batteryTemp}C / {batteryCurrent}A"
         self.root.ids.value1_rth_desc.text = dronestatus if len(rthDesc) == 0 else rthDesc
         elapsed = record[5]
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
