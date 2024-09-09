@@ -243,8 +243,8 @@ class MainApp(MDApp):
                     batteryLevel = struct.unpack('<B', fcRecord[481+offset3:482+offset3])[0] # Battery level.
                     batteryTemp = struct.unpack('<B', fcRecord[476+offset3:477+offset3])[0] # Battery temperature (celcius).
                     batteryCurrent = -struct.unpack('<h', fcRecord[474+offset3:476+offset3])[0] # Battery current (mA).
-                    batteryVoltage1 = round(struct.unpack('<h', fcRecord[470+offset3:472+offset3])[0]/1000, 1) # Battery voltage 1
-                    batteryVoltage2 = round(struct.unpack('<h', fcRecord[472+offset3:474+offset3])[0]/1000, 1) # Battery voltage 2
+                    batteryVoltage1 = struct.unpack('<h', fcRecord[470+offset3:472+offset3])[0]/1000 # Battery voltage 1
+                    batteryVoltage2 = struct.unpack('<h', fcRecord[472+offset3:474+offset3])[0]/1000 # Battery voltage 2
                     batteryVoltage = batteryVoltage1 + batteryVoltage2
                     flightMode = struct.unpack('<B', fcRecord[448+offset2:449+offset2])[0] # Flight mode: normal, video, sports.
                     flightModeDesc = FlightMode.VIDEO.value if flightMode == 7 else FlightMode.NORMAL.value if flightMode == 8 else FlightMode.SPORT.value if flightMode == 9 else ''
@@ -1135,6 +1135,7 @@ class MainApp(MDApp):
         batteryLevel = record[self.columns.index('batterylevel')]
         batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10 # round to nearest 10.
         batteryTemp = record[self.columns.index('batterytemp')]
+        batteryVoltage = locale.format_string("%.1f", round(record[self.columns.index('batteryvoltage')], 1), grouping=True, monetary=False)
         flightMode = record[self.columns.index('flightmode')]
         dronestatus = record[self.columns.index('dronestatus')]
 
@@ -1143,10 +1144,11 @@ class MainApp(MDApp):
         self.root.ids.value1_traveled_short.text = f"({self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()})"
         self.root.ids.value1_flightmode.text = flightMode
         self.root.ids.value1_dist.text = f"{record[self.columns.index('distance3')]} {self.dist_unit()}"
-        self.root.ids.value1_dist_short.text = f"({self.shorten_dist_val(record[self.columns.index('distance3')])} {self.dist_unit_km()})"
         self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
         self.root.ids.value1_vspeed.text = f"{record[self.columns.index('speed2vert')]} {self.speed_unit()}"
-        self.root.ids.value1_batterylevel.text = f"{record[self.columns.index('batterylevel')]}%"
+
+        self.root.ids.value1_batterylevel1.text = f"{record[self.columns.index('batterylevel')]}%"
+        self.root.ids.value1_batterylevel2.text = f"{batteryVoltage}V / {batteryTemp}C"
         self.root.ids.value1_rth_desc.text = dronestatus if len(rthDesc) == 0 else rthDesc
         elapsed = record[5]
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
@@ -1506,10 +1508,10 @@ class MainApp(MDApp):
             self.root.ids.value1_traveled.text = ""
             self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_rth_desc.text = ""
-            self.root.ids.value1_batterylevel.text = ""
+            self.root.ids.value1_batterylevel1.text = ""
+            self.root.ids.value1_batterylevel2.text = ""
             self.root.ids.value1_flightmode.text = ""
             self.root.ids.value1_dist.text = ""
-            self.root.ids.value1_dist_short.text = ""
             self.root.ids.value1_hspeed.text = ""
             self.root.ids.value1_vspeed.text = ""
             self.root.ids.map_metrics_ribbon.text = ""
@@ -2107,10 +2109,10 @@ class MainApp(MDApp):
             self.root.ids.value1_traveled.text = ""
             self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_rth_desc.text = ""
-            self.root.ids.value1_batterylevel.text = ""
+            self.root.ids.value1_batterylevel1.text = ""
+            self.root.ids.value1_batterylevel2.text = ""
             self.root.ids.value1_flightmode.text = ""
             self.root.ids.value1_dist.text = ""
-            self.root.ids.value1_dist_short.text = ""
             self.root.ids.value1_hspeed.text = ""
             self.root.ids.value1_vspeed.text = ""
             self.root.ids.value1_elapsed.text = ""
