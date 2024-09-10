@@ -113,7 +113,7 @@ class MainApp(MDApp):
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
     refreshRates = ['0.125s', '0.25s', '0.50s', '1.00s', '1.50s', '2.00s']
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
-    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','altitude2metric','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation1','orientation2','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','batterytemp','batterycurrent','batteryvoltage','batteryvoltage1','batteryvoltage2','flightmode','flightcounter')
+    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','altitude2metric','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation1','orientation2','roll','pitch','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','batterytemp','batterycurrent','batteryvoltage','batteryvoltage1','batteryvoltage2','flightmode','flightcounter')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
@@ -275,8 +275,10 @@ class MainApp(MDApp):
                     speed2vert = self.speed_val(speed2vertmetric)
                     if self.root.ids.selected_rounding.active and speed2vert < 0 and round(speed2vert) == 0:
                         speed2vert = 0
-                    orientation1 = struct.unpack('f', fcRecord[175+offset2:179+offset2])[0] # Drone orientation in radians. Seems to slightly differ from orientation2... not sure why.
+                    orientation1 = struct.unpack('f', fcRecord[175+offset2:179+offset2])[0] # Drone orientation in radians. Seems to slightly differ from orientation2... not sure why. Yaw??
                     orientation2 = struct.unpack('f', fcRecord[391+offset2:395+offset2])[0] # Drone orientation in radians.
+                    roll = struct.unpack('f', fcRecord[383+offset2:387+offset2])[0] # Roll - TODO: need to confirm still
+                    pitch = struct.unpack('f', fcRecord[423+offset2:427+offset2])[0] # Pitch - TODO: need to confirm still
 
                     # Some checks to handle cases with bad or incomplete GPS data.
                     hasDroneCoords = dronelat != 0.0 and dronelon != 0.0
@@ -441,7 +443,7 @@ class MainApp(MDApp):
                         isNewPath = False
                     if pathNum > 0:
                         self.flightEnds[flightDesc] = tableLen
-                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", alt2metric, f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation1, orientation2, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, batteryTemp, batteryCurrent, batteryVoltage, batteryVoltage1, batteryVoltage2, flightModeDesc, flightCounter])
+                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", alt2metric, f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation1, orientation2, roll, pitch, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, batteryTemp, batteryCurrent, batteryVoltage, batteryVoltage1, batteryVoltage2, flightModeDesc, flightCounter])
                     tableLen = tableLen + 1
 
             flightFile.close()
