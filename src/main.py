@@ -11,6 +11,8 @@ import threading
 import locale
 import sqlite3
 import gettext
+import json
+import requests
 import webbrowser 
 
 from enum import Enum
@@ -102,10 +104,8 @@ class BaseScreen(MDScreen):
 
 class MainApp(MDApp):
 
-    '''
-    Global variables and constants.
-    '''
-    appVersion = "v2.3.0"
+    # Global variables and constants.
+    appVersion = "v2.3.1"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -113,7 +113,7 @@ class MainApp(MDApp):
     pathWidths = [ "1.0", "1.5", "2.0", "2.5", "3.0" ]
     refreshRates = ['0.125s', '0.25s', '0.50s', '1.00s', '1.50s', '2.00s']
     assetColors = [ "#ed1c24", "#0000ff", "#22b14c", "#7f7f7f", "#ffffff", "#c3c3c3", "#000000", "#ffff00", "#a349a4", "#aad2fa" ]
-    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','altitude2metric','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','flightmode','flightcounter')
+    columns = ('recnum', 'recid', 'flight','timestamp','tod','time','distance1','dist1lat','dist1lon','distance2','dist2lat','dist2lon','distance3','altitude1','altitude2','altitude2metric','speed1','speed1lat','speed1lon','speed2','speed2lat','speed2lon','speed1vert','speed2vert','satellites','ctrllat','ctrllon','homelat','homelon','dronelat','dronelon','orientation1','orientation2','roll','pitch','motor1status','motor2status','motor3status','motor4status','motorstatus','dronestatus','droneaction','rssi','channel','flightctrlconnected','remoteconnected','droneconnected','rth','positionmode','gps','inuse','traveled','batterylevel','batterytemp','batterycurrent','batteryvoltage','batteryvoltage1','batteryvoltage2','flightmode','flightcounter')
     showColsBasicDreamer = ('flight','tod','time','altitude1','distance1','satellites','homelat','homelon','dronelat','dronelon')
     configFilename = "FlightLogViewer.ini"
     dbFilename = "FlightLogData.db"
@@ -131,10 +131,10 @@ class MainApp(MDApp):
     head_lon_2 = 0
 
 
-    '''
-    Parse Atom based logs.
-    '''
     def parse_atom_logs(self, importRef):
+        '''
+        Parse Atom based logs.
+        '''
         self.zipFilename = importRef
         fpvFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype = 'FPV' ORDER BY filename", (importRef,))
         binFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype IN ('BIN','FC') ORDER BY filename", (importRef,))
@@ -241,6 +241,11 @@ class MainApp(MDApp):
                     droneInUse = struct.unpack('<B', fcRecord[295+offset2:296+offset2])[0] # Drone is detected "in action" (0 = flying or in use, 1 = not in use).
                     droneConnected = struct.unpack('<B', fcRecord[469+offset3:470+offset3])[0] # Drone connected to controller, 1 = Yes, 0 = No.
                     batteryLevel = struct.unpack('<B', fcRecord[481+offset3:482+offset3])[0] # Battery level.
+                    batteryTemp = struct.unpack('<B', fcRecord[476+offset3:477+offset3])[0] # Battery temperature (celcius).
+                    batteryCurrent = -struct.unpack('<h', fcRecord[474+offset3:476+offset3])[0] # Battery current (mA).
+                    batteryVoltage1 = struct.unpack('<h', fcRecord[470+offset3:472+offset3])[0]/1000 # Battery voltage 1
+                    batteryVoltage2 = struct.unpack('<h', fcRecord[472+offset3:474+offset3])[0]/1000 # Battery voltage 2
+                    batteryVoltage = batteryVoltage1 + batteryVoltage2
                     flightMode = struct.unpack('<B', fcRecord[448+offset2:449+offset2])[0] # Flight mode: normal, video, sports.
                     flightModeDesc = FlightMode.VIDEO.value if flightMode == 7 else FlightMode.NORMAL.value if flightMode == 8 else FlightMode.SPORT.value if flightMode == 9 else ''
                     droneAction = struct.unpack('<B', fcRecord[486+offset3:487+offset3])[0] # Drone action: 0 = motors off, 1 = grounded or taking off, 2 = flying, 3 = landing. # Field @ offset 443 looks the same?
@@ -270,7 +275,10 @@ class MainApp(MDApp):
                     speed2vert = self.speed_val(speed2vertmetric)
                     if self.root.ids.selected_rounding.active and speed2vert < 0 and round(speed2vert) == 0:
                         speed2vert = 0
-                    orientation = struct.unpack('f', fcRecord[391+offset2:395+offset2])[0] # Drone orientation in radians.
+                    orientation1 = struct.unpack('f', fcRecord[175+offset2:179+offset2])[0] # Drone orientation in radians. Seems to slightly differ from orientation2... not sure why. Yaw??
+                    orientation2 = struct.unpack('f', fcRecord[391+offset2:395+offset2])[0] # Drone orientation in radians.
+                    roll = struct.unpack('f', fcRecord[383+offset2:387+offset2])[0] # Roll - TODO: need to confirm still
+                    pitch = struct.unpack('f', fcRecord[423+offset2:427+offset2])[0] # Pitch - TODO: need to confirm still
 
                     # Some checks to handle cases with bad or incomplete GPS data.
                     hasDroneCoords = dronelat != 0.0 and dronelon != 0.0
@@ -435,7 +443,7 @@ class MainApp(MDApp):
                         isNewPath = False
                     if pathNum > 0:
                         self.flightEnds[flightDesc] = tableLen
-                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", alt2metric, f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, flightModeDesc, flightCounter])
+                    self.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.fmt_num(dist1)}", f"{self.fmt_num(dist1lat)}", f"{self.fmt_num(dist1lon)}", f"{self.fmt_num(dist2)}", f"{self.fmt_num(dist2lat)}", f"{self.fmt_num(dist2lon)}", f"{self.fmt_num(dist3)}", f"{self.fmt_num(alt1)}", f"{self.fmt_num(alt2)}", alt2metric, f"{self.fmt_num(speed1)}", f"{self.fmt_num(speed1lat)}", f"{self.fmt_num(speed1lon)}", f"{self.fmt_num(speed2)}", f"{self.fmt_num(speed2lat)}", f"{self.fmt_num(speed2lon)}", f"{self.fmt_num(speed1vert)}", f"{self.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation1, orientation2, roll, pitch, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.fmt_num(self.dist_val(distTraveled))}", batteryLevel, batteryTemp, batteryCurrent, batteryVoltage, batteryVoltage1, batteryVoltage2, flightModeDesc, flightCounter])
                     tableLen = tableLen + 1
 
             flightFile.close()
@@ -512,10 +520,10 @@ class MainApp(MDApp):
             self.root.ids.flight_stats_grid.add_widget(MDLabel(text=f"{self.fmt_num(self.speed_val(self.flightStats[i][8]))} {self.speed_unit()}", max_lines=1, halign="right", valign="center", padding=[0,0,dp(10),0]))
 
 
-    '''
-    Import the selected Flight Data Zip file.
-    '''
     def initiate_import_file(self, selectedFile):
+        '''
+        Import the selected Flight Data Zip file.
+        '''
         if not os.path.isfile(selectedFile):
             self.show_error_message(message=_('no_valid_file_specified').format(filename=selectedFile))
             return
@@ -596,11 +604,11 @@ class MainApp(MDApp):
         self.dialog_wait.dismiss()
 
 
-    '''
-    Delete the import zip file. Applies to iOS only.
-    '''
     def post_import_cleanup(self, selectedFile):
-        if platform == 'ios':
+        '''
+        Delete the import zip file. Applies to iOS only.
+        '''
+        if self.is_ios:
             os.remove(selectedFile)
 
 
@@ -608,10 +616,10 @@ class MainApp(MDApp):
         return storagepath.get_documents_dir()[7:] # remove "file://" from URL to create a Python-friendly path.
 
 
-    '''
-    Open a file import dialog (import zip file).
-    '''
     def open_file_import_dialog(self):
+        '''
+        Open a file import dialog (import zip file).
+        '''
         if self.is_android:
             # Open Android Shared Storage. This opens in a separate thread so we wait here
             # until that dialog has closed. Otherwise the map drawing will be triggered from
@@ -646,10 +654,10 @@ class MainApp(MDApp):
                 self.initiate_import_file(myFiles[0])
 
 
-    '''
-    Save the flight data in a CSV file.
-    '''
     def save_csv_file(self, csvFilename):
+        '''
+        Save the flight data in a CSV file.
+        '''
         with open(csvFilename, 'w') as f:
             head = ''
             for col in self.columns:
@@ -668,10 +676,10 @@ class MainApp(MDApp):
         f.close()
 
 
-    '''
-    Open a file export dialog (export csv file).
-    '''
     def open_csv_file_export_dialog(self):
+        '''
+        Open a file export dialog (export csv file).
+        '''
         csvFilename = re.sub("\.zip$", "", self.zipFilename) + ".csv"
         if self.is_android:
             csvFile = os.path.join(self.shared_storage.get_cache_dir(), csvFilename)
@@ -724,10 +732,10 @@ class MainApp(MDApp):
                     self.show_error_message(message=msg)
 
 
-    '''
-    Save the flight data in a KML file.
-    '''
     def save_kml_file(self, kmlFilename):
+        '''
+        Save the flight data in a KML file.
+        '''
         root = ET.Element("kml", xmlns="http://www.opengis.net/kml/2.2")
         doc = ET.SubElement(root, "Document")
         ET.SubElement(doc, "name").text = f"{self.root.ids.selected_model.text} logs of {self.root.ids.value_date.text}"
@@ -830,10 +838,10 @@ class MainApp(MDApp):
         xml.write(kmlFilename, encoding='UTF-8', xml_declaration=True)
 
 
-    '''
-    Open a file export dialog (export KML file).
-    '''
     def open_kml_file_export_dialog(self):
+        '''
+        Open a file export dialog (export KML file).
+        '''
         kmlFilename = re.sub("\.zip$", "", self.zipFilename) + ".kml"
         if self.is_android:
             kmlFile = os.path.join(self.shared_storage.get_cache_dir(), kmlFilename)
@@ -886,10 +894,10 @@ class MainApp(MDApp):
                     self.show_error_message(message=msg)
 
 
-    '''
-    File Chooser, called when a file has been selected on the Android device.
-    '''
     def import_android_chooser_callback(self, uri_list):
+        '''
+        File Chooser, called when a file has been selected on the Android device.
+        '''
         try:
             for uri in uri_list:
                 self.chosenFile = self.shared_storage.copy_from_shared(uri) # copy to private storage
@@ -899,10 +907,10 @@ class MainApp(MDApp):
         self.chooser_open = False
 
 
-    '''
-    Map Source dropdown functions.
-    '''
     def open_mapsource_selection(self, item):
+        '''
+        Map Source dropdown functions.
+        '''
         menu_items = []
         for mapOption in SelectableTileServer:
             menu_items.append({"text": mapOption.value, "on_release": lambda x=mapOption.value: self.mapsource_selection_callback(x)})
@@ -928,10 +936,10 @@ class MainApp(MDApp):
         self.root.ids.map.map_source = mapSource
 
 
-    '''
-    Called when checkbox for Path view is selected (to show or hide drone path on the map).
-    '''
     def generate_map_layers(self):
+        '''
+        Called when checkbox for Path view is selected (to show or hide drone path on the map).
+        '''
         self.flightPaths = []
         if not self.pathCoords:
             return
@@ -957,10 +965,10 @@ class MainApp(MDApp):
             self.flightPaths.append(flightPath)
 
 
-    '''
-    Clear out the Map. Remove all markers, flight paths and layers.
-    '''
     def clear_map(self):
+        '''
+        Clear out the Map. Remove all markers, flight paths and layers.
+        '''
         self.stop_flight(True)
         if self.layer_drone:
             self.root.ids.map.remove_marker(self.dronemarker)
@@ -986,10 +994,10 @@ class MainApp(MDApp):
             self.homemarker = None
 
 
-    '''
-    Build layers on the Map with markers and flight paths.
-    '''
     def init_map_layers(self):
+        '''
+        Build layers on the Map with markers and flight paths.
+        '''
         if not self.flightPaths:
             return
         self.stop_flight(True)
@@ -1032,10 +1040,10 @@ class MainApp(MDApp):
         self.root.ids.DSgauge.display_unit = self.dist_unit()
 
 
-    '''
-    Zooms the map so that the entire flight path will fit.
-    '''
     def zoom_to_fit(self):
+        '''
+        Zooms the map so that the entire flight path will fit.
+        '''
         flightNum = 0 if (self.root.ids.selected_path.text == '--') else int(re.sub(r"[^0-9]", r"", self.root.ids.selected_path.text))
         # Find appropriate zoom level that shows the entire flight path.
         zoom = self.root.ids.map.map_source.max_zoom
@@ -1049,20 +1057,20 @@ class MainApp(MDApp):
             self.root.ids.map.zoom = zoom
 
 
-    '''
-    Center the map at the last known center point.
-    '''
     def center_map(self):
+        '''
+        Center the map at the last known center point.
+        '''
         if self.flightOptions and len(self.flightOptions) > 0:
             self.zoom_to_fit()
         else:
             self.root.ids.map.center_on(self.centerlat, self.centerlon)
 
 
-    '''
-    Zoom in/out when the zoom buttons on the map are selected. Only for desktop view.
-    '''
     def map_zoom(self, zoomin):
+        '''
+        Zoom in/out when the zoom buttons on the map are selected. Only for desktop view.
+        '''
         if zoomin:
             if self.root.ids.map.zoom < self.root.ids.map.map_source.max_zoom:
                 self.root.ids.map.zoom = self.root.ids.map.zoom + 1
@@ -1075,10 +1083,10 @@ class MainApp(MDApp):
         self.root.ids.screen_manager.current = view_name
 
 
-    '''
-    Called when map screen is opened.
-    '''
     def entered_screen_map(self):
+        '''
+        Called when map screen is opened.
+        '''
         self.app_view = "map"
         if self.map_rebuild_required:
             self.clear_map()
@@ -1088,46 +1096,49 @@ class MainApp(MDApp):
             self.map_rebuild_required = False
 
 
-    '''
-    Called when map screen is navigated away from.
-    '''
     def left_screen_map(self):
+        '''
+        Called when map screen is navigated away from.
+        '''
         self.stop_flight()
         self.map_rebuild_required = False
 
 
-    '''
-    Called when flight summary screen is opened.
-    '''
     def entered_screen_summary(self):
+        '''
+        Called when flight summary screen is opened.
+        '''
         self.app_view = "sum"
 
 
-    '''
-    Called when log file screen is opened.
-    '''
     def entered_screen_log(self):
+        '''
+        Called when log file screen is opened.
+        '''
         self.app_view = "log"
 
 
-    '''
-    Called when map screen is closed.
-    '''
     def close_map_screen(self):
+        '''
+        Called when map screen is closed.
+        '''
         self.reset()
         self.root.ids.screen_manager.current = "Screen_Log_Files"
 
 
-    '''
-    Update ctrl/home/drone markers on the map as well as other labels with flight information.
-    '''
     def set_markers(self, updateSlider=True):
+        '''
+        Update ctrl/home/drone markers on the map as well as other labels with flight information.
+        '''
         if not self.currentRowIdx:
             return
         record = self.logdata[self.currentRowIdx]
         rthDesc = "RTH" if record[self.columns.index('rth')] == 1 else ''
         batteryLevel = record[self.columns.index('batterylevel')]
         batLevelRnd = math.floor(batteryLevel / 10 + 0.5) * 10 # round to nearest 10.
+        batteryTemp = record[self.columns.index('batterytemp')]
+        batteryVoltage = locale.format_string("%.1f", round(record[self.columns.index('batteryvoltage')], 1), grouping=True, monetary=False)
+        batteryCurrent = locale.format_string("%.1f", round(record[self.columns.index('batterycurrent')]/1000, 1), grouping=True, monetary=False)
         flightMode = record[self.columns.index('flightmode')]
         dronestatus = record[self.columns.index('dronestatus')]
 
@@ -1136,10 +1147,11 @@ class MainApp(MDApp):
         self.root.ids.value1_traveled_short.text = f"({self.shorten_dist_val(record[self.columns.index('traveled')])} {self.dist_unit_km()})"
         self.root.ids.value1_flightmode.text = flightMode
         self.root.ids.value1_dist.text = f"{record[self.columns.index('distance3')]} {self.dist_unit()}"
-        self.root.ids.value1_dist_short.text = f"({self.shorten_dist_val(record[self.columns.index('distance3')])} {self.dist_unit_km()})"
         self.root.ids.value1_hspeed.text = f"{record[self.columns.index('speed2')]} {self.speed_unit()}"
         self.root.ids.value1_vspeed.text = f"{record[self.columns.index('speed2vert')]} {self.speed_unit()}"
-        self.root.ids.value1_batterylevel.text = f"{record[self.columns.index('batterylevel')]}%"
+
+        self.root.ids.value1_batterylevel1.text = f"{record[self.columns.index('batterylevel')]}% / {batteryVoltage}V"
+        self.root.ids.value1_batterylevel2.text = f"{batteryTemp}C / {batteryCurrent}A"
         self.root.ids.value1_rth_desc.text = dronestatus if len(rthDesc) == 0 else rthDesc
         elapsed = record[5]
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
@@ -1181,7 +1193,7 @@ class MainApp(MDApp):
                 y = math.cos(math.radians(head_lat_1)) * math.sin(math.radians(self.head_lat_2)) - math.sin(math.radians(head_lat_1)) * math.cos(math.radians(self.head_lat_2)) * math.cos(math.radians(dLon))
                 brng = math.atan2(x,y)
                 brng = math.degrees(brng)
-                G_orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees, -180 to 180.
+                G_orientation = round(math.degrees(record[self.columns.index('orientation2')])) # Drone orientation in degrees, -180 to 180.
                 G_rotation = abs(G_orientation) if G_orientation <= 0 else 360 - G_orientation # Convert to 0 - 359 range.
                 self.root.ids.HDgauge.value = G_rotation
 
@@ -1226,10 +1238,10 @@ class MainApp(MDApp):
         self.root.ids.map.trigger_update(False)
 
 
-    '''
-    Update ctrl/home/drone markers on the map with the next set of coordinates in the table list.
-    '''
     def set_frame(self):
+        '''
+        Update ctrl/home/drone markers on the map with the next set of coordinates in the table list.
+        '''
         self.root.ids.flight_progress.is_updating = True
         self.isPlaying = True
         self.root.ids.playbutton.icon = "pause"
@@ -1288,10 +1300,10 @@ class MainApp(MDApp):
         self.root.ids.speed_indicator.icon = f"numeric-{self.playback_speed}-box" if self.playback_speed < 16 else f"rocket-launch"
 
 
-    '''
-    Jump to beginning of current flight, or the end of the previous one.
-    '''
     def jump_prev_flight(self):
+        '''
+        Jump to beginning of current flight, or the end of the previous one.
+        '''
         if len(self.logdata) == 0:
             self.show_warning_message(message=_('no_data_to_play_back'))
             return
@@ -1318,10 +1330,10 @@ class MainApp(MDApp):
             self.show_info_message(message=_('no_previous_flight'))
 
 
-    '''
-    Jump to end of current flight, or the beginning of the next one.
-    '''
     def jump_next_flight(self):
+        '''
+        Jump to end of current flight, or the beginning of the next one.
+        '''
         if len(self.logdata) == 0:
             self.show_warning_message(message=_('no_data_to_play_back'))
             return
@@ -1348,10 +1360,10 @@ class MainApp(MDApp):
             self.show_info_message(message=_('no_next_flight'))
 
 
-    '''
-    Start or resume playback of the selected flight. If flight is finished, restart from beginning.
-    '''
     def play_flight(self):
+        '''
+        Start or resume playback of the selected flight. If flight is finished, restart from beginning.
+        '''
         self.stopRequested = False
         if (self.isPlaying):
             self.stop_flight(True)
@@ -1367,10 +1379,10 @@ class MainApp(MDApp):
         threading.Thread(target=self.set_frame, args=()).start()
 
 
-    '''
-    Stop flight playback.
-    '''
     def stop_flight(self, wait=False):
+        '''
+        Stop flight playback.
+        '''
         if not self.isPlaying:
             return
         self.stopRequested = True
@@ -1379,19 +1391,19 @@ class MainApp(MDApp):
                 time.sleep(0.25)
 
 
-    '''
-    Change Flight Path Line Width (Preferences).
-    '''
     def flight_path_width_selection(self, slider, coords):
+        '''
+        Change Flight Path Line Width (Preferences).
+        '''
         Config.set('preferences', 'flight_path_width', int(slider.value))
         Config.write()
         self.map_rebuild_required = True
 
 
-    '''
-    Flight Path Colours functions.
-    '''
     def flight_path_color_selection(self, slider, coords):
+        '''
+        Flight Path Colours functions.
+        '''
         colorIdx = int(slider.value)
         slider.track_active_color = self.assetColors[colorIdx]
         slider.track_inactive_color = self.assetColors[colorIdx]
@@ -1400,16 +1412,16 @@ class MainApp(MDApp):
         self.map_rebuild_required = True
 
 
-    '''
-    Return reference to the drone icon image. If it needs to be rotated, it will be generated from the base icon image.
-    '''
     def get_drone_icon_source(self):
+        '''
+        Return reference to the drone icon image. If it needs to be rotated, it will be generated from the base icon image.
+        '''
         base_filename = f"Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}"
         if not self.currentRowIdx:
             # Return base image if there is no current rotation (orientation).
             return f"assets/{base_filename}.png"
         record = self.logdata[self.currentRowIdx]
-        orientation = round(math.degrees(record[self.columns.index('orientation')])) # Drone orientation in degrees, -180 to 180.
+        orientation = round(math.degrees(record[self.columns.index('orientation2')])) # Drone orientation in degrees, -180 to 180.
         rotation = abs(orientation) if orientation <= 0 else 360 - orientation # Convert to 0 - 359 range.
         rotated_filename = os.path.join(self.root.ids.map.cache_dir, f"{base_filename}-{rotation}.png")
         if not os.path.exists(rotated_filename):
@@ -1419,10 +1431,10 @@ class MainApp(MDApp):
         return rotated_filename
 
 
-    '''
-    Drone Marker Colour functions.
-    '''
     def marker_drone_color_selection(self, slider, coords):
+        '''
+        Drone Marker Colour functions.
+        '''
         colorIdx = int(slider.value)
         slider.track_active_color = self.assetColors[colorIdx]
         slider.track_inactive_color = self.assetColors[colorIdx]
@@ -1433,10 +1445,10 @@ class MainApp(MDApp):
             self.set_markers()
 
 
-    '''
-    Controller Marker Colour functions.
-    '''
     def marker_ctrl_color_selection(self, slider, coords):
+        '''
+        Controller Marker Colour functions.
+        '''
         colorIdx = int(slider.value)
         slider.track_active_color = self.assetColors[colorIdx]
         slider.track_inactive_color = self.assetColors[colorIdx]
@@ -1447,10 +1459,10 @@ class MainApp(MDApp):
             self.set_markers()
 
 
-    '''
-    Home Marker Colour functions.
-    '''
     def marker_home_color_selection(self, slider, coords):
+        '''
+        Home Marker Colour functions.
+        '''
         colorIdx = int(slider.value)
         slider.track_active_color = self.assetColors[colorIdx]
         slider.track_inactive_color = self.assetColors[colorIdx]
@@ -1461,10 +1473,10 @@ class MainApp(MDApp):
             self.set_markers()
 
 
-    '''
-    Flight Path dropdown functions.
-    '''
     def open_flight_selection(self, item):
+        '''
+        Flight Path dropdown functions.
+        '''
         if self.flightOptions is None:
             return
         menu_items = []
@@ -1499,10 +1511,10 @@ class MainApp(MDApp):
             self.root.ids.value1_traveled.text = ""
             self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_rth_desc.text = ""
-            self.root.ids.value1_batterylevel.text = ""
+            self.root.ids.value1_batterylevel1.text = ""
+            self.root.ids.value1_batterylevel2.text = ""
             self.root.ids.value1_flightmode.text = ""
             self.root.ids.value1_dist.text = ""
-            self.root.ids.value1_dist_short.text = ""
             self.root.ids.value1_hspeed.text = ""
             self.root.ids.value1_vspeed.text = ""
             self.root.ids.map_metrics_ribbon.text = ""
@@ -1528,10 +1540,10 @@ class MainApp(MDApp):
             self.root.ids.value_tottraveled_short.text = f"({self.shorten_dist_val(self.dist_val(self.flightStats[flightNum][9]))} {self.dist_unit_km()})"
 
 
-    '''
-    Change Unit of Measure (Preferences).
-    '''
     def uom_selection(self, item):
+        '''
+        Change Unit of Measure (Preferences).
+        '''
         menu_items = []
         for pathWidth in ['metric', 'imperial']:
             menu_items.append({"text": pathWidth, "on_release": lambda x=pathWidth: self.uom_selection_callback(x)})
@@ -1545,10 +1557,10 @@ class MainApp(MDApp):
         self.show_info_message(message=_('reopen_log_for_changes_to_take_effect'))
 
 
-    '''
-    Change Display of Home Marker (Preferences).
-    '''
     def refresh_rate_selection(self, item):
+        '''
+        Change Display of Home Marker (Preferences).
+        '''
         menu_items = []
         for refreshRate in self.refreshRates:
             menu_items.append({"text": refreshRate, "on_release": lambda x=refreshRate: self.refresh_rate_selection_callback(x)})
@@ -1561,10 +1573,10 @@ class MainApp(MDApp):
         Config.write()
 
 
-    '''
-    Change Display of Home Marker (Preferences).
-    '''
     def home_marker_selection(self, item):
+        '''
+        Change Display of Home Marker (Preferences).
+        '''
         Config.set('preferences', 'show_marker_home', item.active)
         Config.write()
         self.map_rebuild_required = True
@@ -1572,10 +1584,10 @@ class MainApp(MDApp):
             self.layer_home.opacity = 1 if self.root.ids.selected_home_marker.active else 0
 
 
-    '''
-    Change Display of Controller Marker (Preferences).
-    '''
     def ctrl_marker_selection(self, item):
+        '''
+        Change Display of Controller Marker (Preferences).
+        '''
         Config.set('preferences', 'show_marker_ctrl', item.active)
         Config.write()
         self.map_rebuild_required = True
@@ -1583,94 +1595,94 @@ class MainApp(MDApp):
             self.layer_ctrl.opacity = 1 if self.root.ids.selected_ctrl_marker.active else 0
 
 
-    '''
-    Enable or disable rounding of values (Preferences).
-    '''
     def rounding_selection(self, item):
+        '''
+        Enable or disable rounding of values (Preferences).
+        '''
         Config.set('preferences', 'rounded_readings', item.active)
         Config.write()
         self.stop_flight(True)
         self.show_info_message(message=_('reopen_log_for_changes_to_take_effect'))
 
 
-    '''
-    Enable or disable analog gauges (Preferences).
-    '''
     def gauges_selection(self, item):
+        '''
+        Enable or disable analog gauges (Preferences).
+        '''
         Config.set('preferences', 'gauges', item.active)
         Config.write()
 
 
-    '''
-    Enable or disable splash (Preferences).
-    '''
     def splash_selection(self, item):
+        '''
+        Enable or disable splash (Preferences).
+        '''
         Config.set('preferences', 'splash', item.active)
         Config.write()
 
 
-    '''    
-    Return specified distance in the proper Unit (metric vs imperial).
-    '''
     def dist_val(self, num):
+        '''
+        Return specified distance in the proper Unit (metric vs imperial).
+        '''
         if num is None:
             return None
         return num * 3.28084 if self.root.ids.selected_uom.text == 'imperial' else num
 
 
-    '''
-    Convert ft to miles or m to km.
-    '''
     def shorten_dist_val(self, numval):
+        '''
+        Convert ft to miles or m to km.
+        '''
         if numval is None:
             return ""
         num = locale.atof(numval) if isinstance(numval, str) else numval
         return self.fmt_num(num / 5280.0, True) if self.root.ids.selected_uom.text == 'imperial' else self.fmt_num(num / 1000.0, True)
 
 
-    '''
-    Return selected distance unit of measure.
-    '''
     def dist_unit(self):
+        '''
+        Return selected distance unit of measure.
+        '''
         return "ft" if self.root.ids.selected_uom.text == 'imperial' else "m"
 
 
-    '''
-    Return selected distance unit of measure.
-    '''
     def dist_unit_km(self):
+        '''
+        Return selected distance unit of measure.
+        '''
         return "mi" if self.root.ids.selected_uom.text == 'imperial' else "km"
 
 
-    '''
-    Format number based on selected rounding option.
-    '''
     def fmt_num(self, num, decimal=False):
+        '''
+        Format number based on selected rounding option.
+        '''
         if num is None:
             return ""
         return locale.format_string("%.0f", num, grouping=True, monetary=False) if self.root.ids.selected_rounding.active and not decimal else locale.format_string("%.2f", num, grouping=True, monetary=False)
 
 
-    '''
-    Return specified speed in the proper Unit (metric vs imperial).
-    '''
     def speed_val(self, num):
+        '''
+        Return specified speed in the proper Unit (metric vs imperial).
+        '''
         if num is None:
             return None
         return num * 2.236936 if self.root.ids.selected_uom.text == 'imperial' else num * 3.6
 
 
-    '''
-    Return selected speed unit of measure.
-    '''
     def speed_unit(self):
+        '''
+        Return selected speed unit of measure.
+        '''
         return "mph" if self.root.ids.selected_uom.text == 'imperial' else "kph"
 
 
-    '''
-    Change Language (Preferences).
-    '''
     def language_selection(self, item):
+        '''
+        Change Language (Preferences).
+        '''
         menu_items = []
         for languageId in self.languages:
             menu_items.append({"text": self.languages.get(languageId), "on_release": lambda x=languageId: self.language_selection_callback(x)})
@@ -1684,11 +1696,11 @@ class MainApp(MDApp):
         self.show_info_message(message=_('reopen_app_for_changes_to_take_effect'))
 
 
-    '''
-    Dropdown selection with different drone models determined from the imported log files.
-    Model names are slightly inconsistent based on the version of the Potensic app they were generated in.
-    '''
     def model_selection(self, item):
+        '''
+        Dropdown selection with different drone models determined from the imported log files.
+        Model names are slightly inconsistent based on the version of the Potensic app they were generated in.
+        '''
         models = self.execute_db("SELECT modelref FROM models ORDER BY modelref")
         menu_items = []
         for modelRef in models:
@@ -1708,10 +1720,10 @@ class MainApp(MDApp):
         Config.write()
 
 
-    '''
-    Retrieve and display all flight logs imported to the app.
-    '''
     def list_log_files(self):
+        '''
+        Retrieve and display all flight logs imported to the app.
+        '''
         imports = self.execute_db("""
             SELECT i.importref, i.dateref, count(s.flight_number), sum(duration), max(duration), max(max_distance), max(max_altitude), max(max_h_speed), max(max_v_speed), sum(traveled)
             FROM imports i
@@ -1757,10 +1769,10 @@ class MainApp(MDApp):
             self.root.ids.log_files.add_widget(button2)
 
 
-    '''
-    Called when a log file has been selected. It will be opened, parsed and displayed on the map screen.
-    '''
     def initiate_log_file(self, buttonObj):
+        '''
+        Called when a log file has been selected. It will be opened, parsed and displayed on the map screen.
+        '''
         self.dialog_wait.open()
         threading.Thread(target=self.select_log_file, args=(buttonObj.value,)).start()
 
@@ -1953,10 +1965,10 @@ class MainApp(MDApp):
                 self.restore_data(myFiles[0])
 
 
-    '''
-    Restore data from a backup file.
-    '''
     def restore_data(self, selectedFile):
+        '''
+        Restore data from a backup file.
+        '''
         if not os.path.isfile(selectedFile):
             self.show_error_message(message=_('not_valid_backup_file_specified').format(filename=selectedFile))
             return
@@ -1984,10 +1996,10 @@ class MainApp(MDApp):
         shutil.rmtree(resDir, ignore_errors=True) # Delete temp files.
 
 
-    '''
-    Called when map screen is closed.
-    '''
     def close_pref_screen(self):
+        '''
+        Called when map screen is closed.
+        '''
         if self.app_view == "map":
             self.open_view("Screen_Map")
         elif self.app_view == "sum":
@@ -1996,10 +2008,10 @@ class MainApp(MDApp):
             self.open_view("Screen_Log_Files")
 
 
-    '''
-    Run a SQL command and return results.
-    '''
     def execute_db(self, expression, params=None):
+        '''
+        Run a SQL command and return results.
+        '''
         con = sqlite3.connect(self.dbFile)
         cur = con.cursor()
         if (params):
@@ -2012,10 +2024,10 @@ class MainApp(MDApp):
         return results
 
 
-    '''
-    Create the DB and schema.
-    '''
     def init_db(self):
+        '''
+        Create the DB and schema.
+        '''
         self.execute_db("""
             CREATE TABLE IF NOT EXISTS models(
                 modelref TEXT PRIMARY KEY
@@ -2054,10 +2066,10 @@ class MainApp(MDApp):
         self.execute_db("CREATE INDEX IF NOT EXISTS flight_stats_index ON flight_stats(importref)")
 
 
-    '''
-    Read from config (ini) file.
-    '''
     def init_prefs(self):
+        '''
+        Read from config (ini) file.
+        '''
         self.root.ids.selected_uom.text = Config.get('preferences', 'unit_of_measure')
         self.root.ids.selected_home_marker.active = Config.getboolean('preferences', 'show_marker_home')
         self.root.ids.selected_ctrl_marker.active = Config.getboolean('preferences', 'show_marker_ctrl')
@@ -2075,10 +2087,10 @@ class MainApp(MDApp):
         self.root.ids.selected_language.text = self.languages.get(Config.get('preferences', 'language'))
 
 
-    '''
-    Reset the application as it were before opening a file.
-    '''
     def reset(self):
+        '''
+        Reset the application as it were before opening a file.
+        '''
         self.centerlat = 51.50722
         self.centerlon = -0.1275
         self.playback_speed = 1
@@ -2100,10 +2112,10 @@ class MainApp(MDApp):
             self.root.ids.value1_traveled.text = ""
             self.root.ids.value1_traveled_short.text = ""
             self.root.ids.value1_rth_desc.text = ""
-            self.root.ids.value1_batterylevel.text = ""
+            self.root.ids.value1_batterylevel1.text = ""
+            self.root.ids.value1_batterylevel2.text = ""
             self.root.ids.value1_flightmode.text = ""
             self.root.ids.value1_dist.text = ""
-            self.root.ids.value1_dist_short.text = ""
             self.root.ids.value1_hspeed.text = ""
             self.root.ids.value1_vspeed.text = ""
             self.root.ids.value1_elapsed.text = ""
@@ -2128,10 +2140,10 @@ class MainApp(MDApp):
             self.center_map()
 
 
-    '''
-    Delete unreferenced log files. Delete unreferenced DB records.
-    '''
     def cleanup_orphaned_refs(self):
+        '''
+        Delete unreferenced log files. Delete unreferenced DB records.
+        '''
         importedFiles = []
         for fileRef in self.execute_db("SELECT filename FROM log_files"):
             importedFiles.append(fileRef[0])
@@ -2169,54 +2181,168 @@ class MainApp(MDApp):
                     self.execute_db("DELETE FROM log_files WHERE filename = ?", (importedFile,))
 
 
-    '''
-    Show info/warning/error messages.
-    '''
+    def clear_cache(self):
+        '''
+        Clear the cache directory (where drone icons and map tiles are stored).
+        '''
+        print(f"Clearing cache: {self.root.ids.map.cache_dir}")
+        for root, dirs, files in os.walk(self.root.ids.map.cache_dir, topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                os.rmdir(os.path.join(root, name))
+        self.show_info_message(message=_('cache_cleared'))
+
+
+    def check_for_updates(self):
+        '''
+        Check if a newer version of this app is available for the platform.
+        '''
+        print("Checking for software update...")
+        try:
+            response = requests.get(
+                "https://api.github.com/repos/koen-aerts/potdroneflightparser/releases?per_page=1&page=1",
+                headers = {
+                    "Accept": "application/vnd.github+json"
+                },
+                params = {
+                    "per_page": "1",
+                    "page": "1"
+                }
+            )
+            if response.status_code == 200:
+                relObj = json.loads(response.content)
+                latestVersion = relObj[0]["name"]
+                latestVersionParts = latestVersion.split(".")
+                currentVersionParts = self.appVersion.split(".")
+                hasUpdate = False
+                if len(latestVersionParts) != len(currentVersionParts):
+                    hasUpdate = True
+                else:
+                    for idx in range(len(latestVersionParts)):
+                        latestVerPt = int(re.sub("[^0-9]*", "", latestVersionParts[idx]))
+                        currentVerPt = int(re.sub("[^0-9]*", "", currentVersionParts[idx]))
+                        if latestVerPt > currentVerPt:
+                            hasUpdate = True
+                            break
+                if hasUpdate:
+                    print(f"Current version: {self.appVersion}. Latest version: {latestVersion}")
+                    isPreRel = relObj[0]["prerelease"] == "true"
+                    if not isPreRel: # Pre-releases are excluded as they are not considered stable.
+                        downloadUrl = relObj[0]["html_url"]
+                        platform = None
+                        for asset in relObj[0]["assets"]: # Find matching platform
+                            assetName = asset["name"]
+                            if assetName.endswith(".apk") and self.is_android:
+                                platform = "Android"
+                                break
+                            elif assetName.endswith(".api") and self.is_ios:
+                                platform = "iOS"
+                                break
+                            elif '_macos_' in assetName and self.is_macos:
+                                platform = "MacOS"
+                                break
+                            elif '_win64_' in assetName and self.is_windows:
+                                platform = "Windows"
+                                break
+                            elif '_linux_' in assetName and self.is_linux:
+                                platform = "Linux"
+                                break
+                        # Only show new version alert if it includes one for the platform the app is running on.
+                        if platform is not None:
+                            mainthread(self.open_upgrade_dialog)(latestVersion, platform, downloadUrl)
+                elif latestVersion != self.appVersion:
+                    print(f"Current version: {self.appVersion} (unreleased). Latest version: {latestVersion}")
+            else:
+                print(f"Received status code of {response.status_code} while checking for updates.")
+        except Exception as e:
+            print(f"Failed to check for app updates: {e}")
+
+
+    def open_upgrade_dialog(self, version, platform, downloadUrl):
+        downloadBtn = MDButton(MDButtonText(text=_('download')), style="text", on_release=self.download_upgrade)
+        downloadBtn.value = downloadUrl
+        self.dialog_upgrade = MDDialog(
+            MDDialogHeadlineText(
+                text = _('upgrade_notice').format(version=version, platform=platform),
+                halign="left",
+            ),
+            MDDialogButtonContainer(
+                Widget(),
+                downloadBtn,
+                MDButton(MDButtonText(text=_('later')), style="text", on_release=self.close_upgrade_dialog),
+                spacing="8dp",
+            ),
+        )
+        self.dialog_upgrade.open()
+
+
+    def close_upgrade_dialog(self, *args):
+        self.dialog_upgrade.dismiss()
+        self.dialog_upgrade = None
+
+
+    def download_upgrade(self, buttonObj):
+        self.close_upgrade_dialog(None)
+        print(f"Downloading new app version: {buttonObj.value}")
+        webbrowser.open(buttonObj.value)
+
+
     @mainthread
     def show_info_message(self, message: str):
+        '''
+        Show info messages.
+        '''
         MDSnackbar(MDSnackbarText(text=message), y=dp(24), pos_hint={"center_x": 0.5}, size_hint_x=0.8).open()
     @mainthread
     def show_warning_message(self, message: str):
+        '''
+        Show warning messages.
+        '''
         MDSnackbar(MDSnackbarText(text=message), y=dp(24), pos_hint={"center_x": 0.5}, size_hint_x=0.8).open()
     @mainthread
     def show_error_message(self, message: str):
+        '''
+        Show error messages.
+        '''
         MDSnackbar(MDSnackbarText(text=message), y=dp(24), pos_hint={"center_x": 0.5}, size_hint_x=0.8).open()
 
 
-    '''
-    Close the spash screen.
-    '''
     def remove_splash_image(self, dt):
+        '''
+        Close the spash screen.
+        '''
         self.root_window.remove_widget(self.splash_img)
         self.root_window.remove_widget(self.splash_ver)
 
 
-    '''
-    Open help page on the project home page and for the matching version of the app.
-    '''
     def show_help(self):
+        '''
+        Open help page on the project home page and for the matching version of the app.
+        '''
         webbrowser.open(f"https://htmlpreview.github.io/?https://github.com/koen-aerts/potdroneflightparser/blob/{self.appVersion}/docs/guide.html")
 
 
-    '''
-    Capture keyboard input.
-    '''
     def events(self, instance, keyboard, keycode, text, modifiers):
-        '''Called when buttons are pressed on the mobile device.'''
+        '''
+        Capture keyboard input. Called when buttons are pressed on the mobile device.
+        '''
         if keyboard in (1001, 27):
             self.stop()
         return True
 
 
-    '''
-    Constructor
-    '''
     def __init__(self, **kwargs):
+        '''
+        Constructor
+        '''
         super().__init__(**kwargs)
         self.is_ios = platform == 'ios'
         self.is_android = platform == 'android'
         self.is_windows = platform == 'win'
-        self.is_desktop = self.is_windows or platform in ('linux', 'macosx')
+        self.is_macos = platform == 'macosx'
+        self.is_linux = platform == 'linux'
+        self.is_desktop = self.is_windows or self.is_macos or self.is_linux
         self.title = self.appTitle
         self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
@@ -2292,7 +2418,6 @@ class MainApp(MDApp):
             )
         )
         self.dialog_wait.auto_dismiss = False
-        self.cleanup_orphaned_refs()
 
 
     def build(self):
@@ -2301,6 +2426,8 @@ class MainApp(MDApp):
 
 
     def on_start(self):
+        self.cleanup_orphaned_refs()
+        threading.Thread(target=self.check_for_updates).start() # No need to hold up the app while checking for updates.
         if self.is_desktop:
             if Config.getboolean('preferences', 'splash') == 0:
                 self.splash_img = Image(source="assets/splash.png", fit_mode="scale-down")
@@ -2321,18 +2448,18 @@ class MainApp(MDApp):
         return True
 
 
-    '''
-    Called when the app is exited.
-    '''
     def on_stop(self):
+        '''
+        Called when the app is exited.
+        '''
         self.stop_flight(True)
         return super().on_stop()
 
 
-'''
-Distance Gauge
-'''    
 class DistGauge(Widget):
+    '''
+    Distance Gauge
+    '''    
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=0, max=99000, errorvalue=0)
@@ -2409,10 +2536,10 @@ class DistGauge(Widget):
         self._glab2.text = self.display_unit
 
 
-'''
-Altitude Gauge
-'''
 class AltGauge(Widget):
+    '''
+    Altitude Gauge
+    '''
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=0, max=8000, errorvalue=0)
@@ -2491,10 +2618,10 @@ class AltGauge(Widget):
         self._glab2.text = self.display_unit
 
 
-'''
-Horizontal Speed Gauge
-'''
 class HGauge(Widget):
+    '''
+    Horizontal Speed Gauge
+    '''
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=-400, max=400, errorvalue=0)
@@ -2552,10 +2679,10 @@ class HGauge(Widget):
         self._glab2.text = self.display_unit
 
 
-'''
-Vertical Speed Gauge
-'''
 class VGauge(Widget):
+    '''
+    Vertical Speed Gauge
+    '''
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=-14, max=14, errorvalue=0)
@@ -2613,10 +2740,10 @@ class VGauge(Widget):
         self._glab2.text = self.display_unit
 
 
-'''
-Heading Gauge (direction drone is travelling as opposed to direction drone is looking)
-'''
 class HeadingGauge(Widget):
+    '''
+    Heading Gauge (direction drone is travelling as opposed to direction drone is looking)
+    '''
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=0, max=400, errorvalue=0)
     drotation = BoundedNumericProperty(0, min=0, max=400, errorvalue=0) #Rotational position of drone

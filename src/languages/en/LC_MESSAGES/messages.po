@@ -268,6 +268,12 @@ msgstr "Delete"
 msgid "cancel"
 msgstr "Cancel"
 
+msgid "later"
+msgstr "Later"
+
+msgid "download"
+msgstr "Download"
+
 msgid "backup"
 msgstr "Backup"
 
@@ -300,6 +306,12 @@ msgstr "Restored from: {filename}."
 
 msgid "select_backup_zip_file"
 msgstr "Select a backup zip file."
+
+msgid "upgrade_notice"
+msgstr "Version {version} for {platform} is available for download."
+
+msgid "cache_cleared"
+msgstr "Cache Cleared."
 
 msgid "parsing_log_file"
 msgstr "Parsing Log File..."

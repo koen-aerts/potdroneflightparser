@@ -268,6 +268,12 @@ msgstr "Hapus"
 msgid "cancel"
 msgstr "Batal"
 
+msgid "later"
+msgstr "Menangguhkan"
+
+msgid "download"
+msgstr "Unduh"
+
 msgid "backup"
 msgstr "Pencadangan"
 
@@ -300,6 +306,12 @@ msgstr "Dikembalikan dari: {filename}."
 
 msgid "select_backup_zip_file"
 msgstr "Pilih berkas zip cadangan."
+
+msgid "upgrade_notice"
+msgstr "Versi {version} untuk {platform} tersedia untuk diunduh."
+
+msgid "cache_cleared"
+msgstr "Cache dikosongkan."
 
 msgid "parsing_log_file"
 msgstr "Mengurai Berkas Catatan..."
