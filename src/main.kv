@@ -594,6 +594,29 @@ MDGridLayout:
                                 icon: "minus"
                                 on_release: app.map_zoom(False)
                         MDGridLayout:
+                            id: mapnav
+                            size_hint: (None, None)
+                            width: dp(120)
+                            height: dp(50)
+                            pos_hint: {"x": 0.01} if app.is_desktop else {"x": 1}
+                            y: dp(100) if app.is_desktop else dp(90)
+                            #pos_hint: {"x": 0.01, "y": dp(70)} if app.is_desktop else {"x": 0.01, "y": dp(60)}
+                            #padding: [ 0, dp(40), 0, 0 ]
+                            rows: 1
+                            #adaptive_width: True
+                            #row_default_height: dp(50)
+                            md_bg_color: self.theme_cls.backgroundColor
+                            Image:
+                                id: map_img_roll
+                                source: "assets/roll.png"
+                                fit_mode: "contain"
+                            MDLabel:
+                                text: "  "
+                            Image:
+                                id: map_img_wind
+                                source: "assets/wind.png"
+                                fit_mode: "contain"
+                        MDGridLayout:
                             pos_hint: {"right": 1, "top": 1}
                             size_hint: (None, None)
                             width: dp(140) if not app.is_desktop and theapp.show_nav_section else self.parent.width
