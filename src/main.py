@@ -14,38 +14,35 @@ import gettext
 import json
 import requests
 import webbrowser 
-
-from enum import Enum
-from PIL import Image as PILImage
 import xml.etree.ElementTree as ET
+
+from enums import MotorStatus, DroneStatus, FlightMode, PositionMode, SelectableTileServer
+from exports import ExportCsv, ExportKml
+from widgets import SplashScreen
+from pathlib import Path
+from zipfile import ZipFile
+from PIL import Image as PILImage
 
 from kivy.core.window import Window
 Window.allow_screensaver = False
 
-from kivy.utils import platform
+from kivy.clock import mainthread
 from kivy.config import Config
+from kivy.metrics import dp
+from kivy.utils import platform
 from kivymd.app import MDApp
-from kivy.uix.widget import Widget
+from kivymd.uix.button import MDButton, MDButtonText, MDIconButton
 from kivymd.uix.dialog import MDDialog, MDDialogHeadlineText, MDDialogButtonContainer, MDDialogContentContainer
+from kivymd.uix.label import MDLabel
+from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.progressindicator.progressindicator import MDCircularProgressIndicator
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarText
-from kivymd.uix.label import MDLabel
-from kivymd.uix.button import MDButton, MDButtonText, MDIconButton
-from kivy.metrics import dp
-from kivy.clock import mainthread
 from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
 
-from kivy.properties import NumericProperty, BoundedNumericProperty, StringProperty
-from kivy.uix.scatter import Scatter
-from kivy.uix.image import Image
-from kivy.uix.label import Label
-from kivy.uix.boxlayout import BoxLayout
-from kivy.clock import Clock
-
+# Platform specific imports.
 if platform == 'android': # Android
     from android.permissions import request_permissions, Permission
     from androidstorage4kivy import SharedStorage, Chooser, ShareSheet
@@ -56,46 +53,6 @@ else: # Windows, MacOS, Linux
     Window.maximize()
     from plyer import filechooser
     from platformdirs import user_config_dir, user_data_dir, user_cache_dir
-
-from pathlib import Path
-from zipfile import ZipFile
-
-
-class MotorStatus(Enum):
-  UNKNOWN = 'Unknown'
-  OFF = 'Off'
-  IDLE = 'Idling'
-  LIFT = 'Running'
-
-
-class DroneStatus(Enum):
-  UNKNOWN = 'Unknown'
-  OFF = 'Motors Off'
-  IDLE = 'Idling'
-  LIFT = 'Taking Off'
-  LANDING = 'Landing'
-  FLYING = 'Flying'
-
-
-class FlightMode(Enum):
-  UNKNOWN = 'Unknown'
-  NORMAL = 'Normal'
-  VIDEO = 'Video'
-  SPORT = 'Sport'
-
-
-class PositionMode(Enum):
-  UNKNOWN = 'Unknown'
-  GPS = 'GPS'
-  OPTI = 'Vision'
-  ATTI = 'Attitude'
-
-
-class SelectableTileServer(Enum):
-  OPENSTREETMAP = 'OpenStreetMap'
-  GOOGLE_STANDARD = 'Google Standard'
-  GOOGLE_SATELLITE = 'Google Satellite'
-  OPEN_TOPO = 'Open Topo'
 
 
 class BaseScreen(MDScreen):
@@ -654,37 +611,16 @@ class MainApp(MDApp):
                 self.initiate_import_file(myFiles[0])
 
 
-    def save_csv_file(self, csvFilename):
-        '''
-        Save the flight data in a CSV file.
-        '''
-        with open(csvFilename, 'w') as f:
-            head = ''
-            for col in self.columns:
-                if len(head) > 0:
-                    head = head + ','
-                head = head + col
-            f.write(head)
-            for record in self.logdata:
-                hasWritten = False
-                f.write('\n')
-                for col in record:
-                    if (hasWritten):
-                        f.write(',')
-                    f.write('"' + str(col) + '"')
-                    hasWritten = True
-        f.close()
-
-
     def open_csv_file_export_dialog(self):
         '''
         Open a file export dialog (export csv file).
         '''
         csvFilename = re.sub("\.zip$", "", self.zipFilename) + ".csv"
+        export = ExportCsv(columnnames=self.columns, rows=self.logdata)
         if self.is_android:
             csvFile = os.path.join(self.shared_storage.get_cache_dir(), csvFilename)
             try:
-                self.save_csv_file(csvFile)
+                export.save(csvFile)
                 url = self.shared_storage.copy_to_shared(csvFile)
                 ShareSheet().share_file(url)
                 self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
@@ -695,7 +631,7 @@ class MainApp(MDApp):
         elif self.is_ios:
             csvFile = os.path.join(self.ios_doc_path(), csvFilename)
             try:
-                self.save_csv_file(csvFile)
+                export.save(csvFile)
                 self.show_info_message(message=_('export_csv_file_saved').format(filename=csvFile))
             except Exception as e:
                 msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
@@ -709,7 +645,7 @@ class MainApp(MDApp):
                 os.chdir(oldwd) # Change it back!
             if myFiles and len(myFiles) > 0:
                 try:
-                    self.save_csv_file(myFiles[0])
+                    export.save(myFiles[0])
                     self.show_info_message(message=_('data_exported_to').format(filename=myFiles[0]))
                 except Exception as e:
                     msg = _('error_saving_export_csv').format(filename=myFiles[0], error=e)
@@ -724,7 +660,7 @@ class MainApp(MDApp):
             if myFiles and len(myFiles) > 0 and os.path.isdir(myFiles[0]):
                 csvFile = os.path.join(myFiles[0], csvFilename)
                 try:
-                    self.save_csv_file(csvFile)
+                    export.save(csvFile)
                     self.show_info_message(message=_('data_exported_to').format(filename=csvFile))
                 except Exception as e:
                     msg = _('error_saving_export_csv').format(filename=csvFile, error=e)
@@ -732,121 +668,30 @@ class MainApp(MDApp):
                     self.show_error_message(message=msg)
 
 
-    def save_kml_file(self, kmlFilename):
-        '''
-        Save the flight data in a KML file.
-        '''
-        root = ET.Element("kml", xmlns="http://www.opengis.net/kml/2.2")
-        doc = ET.SubElement(root, "Document")
-        ET.SubElement(doc, "name").text = f"{self.root.ids.selected_model.text} logs of {self.root.ids.value_date.text}"
-        ET.SubElement(doc, "description").append(ET.Comment(f' --><![CDATA[Logfile: {self.zipFilename}<br><br>Exported: {datetime.datetime.now().isoformat()}<br><br><a href="https://github.com/koen-aerts/potdroneflightparser">Flight Log Viewer</a>]]><!-- '))
-        style = ET.SubElement(doc, "Style", id="pathStyle")
-        lineStyle = ET.SubElement(style, "LineStyle")
-        pathColor = self.assetColors[int(self.root.ids.selected_flight_path_color.value)]
-        ET.SubElement(lineStyle, "color").text = f"ff{pathColor[5:7]}{pathColor[3:5]}{pathColor[1:3]}"
-        ET.SubElement(lineStyle, "width").text = self.pathWidths[int(self.root.ids.selected_flight_path_width.value)]
-        style = ET.SubElement(doc, "Style", id="homeStyle")
-        iconStyle = ET.SubElement(style, "IconStyle")
-        icon = ET.SubElement(iconStyle, "Icon")
-        ET.SubElement(icon, "href").text = f"https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Home-{str(int(self.root.ids.selected_marker_home_color.value)+1)}.png"
-        ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
-        style = ET.SubElement(doc, "Style", id="ctrlStyle")
-        iconStyle = ET.SubElement(style, "IconStyle")
-        icon = ET.SubElement(iconStyle, "Icon")
-        ET.SubElement(icon, "href").text = f"https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Controller-{str(int(self.root.ids.selected_marker_ctrl_color.value)+1)}.png"
-        ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
-        style = ET.SubElement(doc, "Style", id="droneStyle")
-        iconStyle = ET.SubElement(style, "IconStyle")
-        icon = ET.SubElement(iconStyle, "Icon")
-        ET.SubElement(icon, "href").text = f"https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets/Drone-{str(int(self.root.ids.selected_marker_drone_color.value)+1)}.png"
-        ET.SubElement(iconStyle, "hotSpot", x="0.5", y="0.5", xunits="fraction", yunits="fraction")
-        style = ET.SubElement(doc, "Style", id="hidePoints")
-        listStyle = ET.SubElement(style, "ListStyle")
-        ET.SubElement(listStyle, "listItemType").text = "checkHideChildren"
-        flightNo = 1
-        while flightNo <= len(self.flightOptions):
-            coords = ''
-            self.currentStartIdx = self.flightStarts[f"{flightNo}"]
-            self.currentEndIdx = self.flightEnds[f"{flightNo}"]
-            folder = ET.SubElement(doc, "Folder")
-            ET.SubElement(folder, "name").text = f"Flight #{flightNo}"
-            ET.SubElement(folder, "description").append(ET.Comment(f' --><![CDATA[Duration: {str(self.flightStats[flightNo][3])}<br>Distance flown: {self.fmt_num(self.dist_val(self.flightStats[flightNo][9]))} {self.dist_unit()}]]><!-- '))
-            ET.SubElement(folder, "styleUrl").text = "#hidePoints"
-            ET.SubElement(folder, "visibility").text = "0"
-            prevtimestamp = None
-            maxelapsedms = d = datetime.timedelta(microseconds=500000)
-            isfirstrow = True
-            for rowIdx in range(self.currentStartIdx, self.currentEndIdx+1):
-                row = self.logdata[rowIdx]
-                thistimestamp = datetime.datetime.fromisoformat(row[self.columns.index('timestamp')]).astimezone(datetime.timezone.utc) # Get timestamp in UTC.
-                elapsedFrame = None if prevtimestamp is None else thistimestamp - prevtimestamp # elasped microseconds since last frame.
-                if elapsedFrame is None or elapsedFrame > maxelapsedms: # Omit frames that are within maxelapsedms microseconds from each other.
-                    timestampstr = f"{thistimestamp.isoformat(sep='T', timespec='milliseconds')}"
-                    dronelon = row[self.columns.index('dronelon')]
-                    dronelat = row[self.columns.index('dronelat')]
-                    dronealt = row[self.columns.index('altitude2metric')] # KML uses metric units.
-                    if isfirstrow:
-                        lookAt = ET.SubElement(folder, "LookAt")
-                        ET.SubElement(lookAt, "longitude").text = dronelon
-                        ET.SubElement(lookAt, "latitude").text = dronelat
-                        ET.SubElement(lookAt, "altitude").text = "200" # Viewing altitude
-                        ET.SubElement(lookAt, "heading").text = "0" # Look North
-                        ET.SubElement(lookAt, "tilt").text = "45" # Look down 45 degrees
-                        ET.SubElement(lookAt, "range").text = str((self.flightStats[flightNo][0]*2)+500) # Determine potential good viewing distance.
-                        ET.SubElement(lookAt, "altitudeMode").text = "relativeToGround"
-                        isfirstrow = False
-                    placeMark = ET.SubElement(folder, "Placemark") # Drone marker.
-                    timest = ET.SubElement(placeMark, "TimeStamp")
-                    ET.SubElement(timest, "when").text = timestampstr
-                    ET.SubElement(placeMark, "styleUrl").text = "#droneStyle"
-                    point = ET.SubElement(placeMark, "Point")
-                    ET.SubElement(point, "altitudeMode").text = "relativeToGround"
-                    ET.SubElement(point, "coordinates").text = f"{dronelon},{dronelat},{dronealt}"
-                    if (len(coords) > 0):
-                        coords += '\n'
-                    coords += f"{dronelon},{dronelat},{dronealt}" # flight path coordinates and altitude.
-                    homelon = row[self.columns.index('homelon')]
-                    homelat = row[self.columns.index('homelat')]
-                    if homelon != '0.0' and homelat != '0.0': # Home marker.
-                        placeMark = ET.SubElement(folder, "Placemark")
-                        timest = ET.SubElement(placeMark, "TimeStamp")
-                        ET.SubElement(timest, "when").text = timestampstr
-                        ET.SubElement(placeMark, "styleUrl").text = "#homeStyle"
-                        point = ET.SubElement(placeMark, "Point")
-                        ET.SubElement(point, "altitudeMode").text = "relativeToGround"
-                        ET.SubElement(point, "coordinates").text = f"{homelon},{homelat},0"
-                    ctrllon = row[self.columns.index('ctrllon')]
-                    ctrllat = row[self.columns.index('ctrllat')]
-                    if ctrllon != '0.0' and ctrllat != '0.0': # Controller marker.
-                        placeMark = ET.SubElement(folder, "Placemark")
-                        timest = ET.SubElement(placeMark, "TimeStamp")
-                        ET.SubElement(timest, "when").text = timestampstr
-                        ET.SubElement(placeMark, "styleUrl").text = "#ctrlStyle"
-                        point = ET.SubElement(placeMark, "Point")
-                        ET.SubElement(point, "altitudeMode").text = "relativeToGround"
-                        ET.SubElement(point, "coordinates").text = f"{ctrllon},{ctrllat},1.5" # Assume average human holds controller 1.5 meters from ground.
-                    prevtimestamp = thistimestamp
-            placeMark = ET.SubElement(folder, "Placemark")
-            ET.SubElement(placeMark, "name").text = f"Flight Path {flightNo}"
-            ET.SubElement(placeMark, "styleUrl").text = "#pathStyle"
-            lineString = ET.SubElement(placeMark, "LineString")
-            ET.SubElement(lineString, "tessellate").text = "1"
-            ET.SubElement(lineString, "altitudeMode").text = "relativeToGround"
-            ET.SubElement(lineString, "coordinates").text = coords
-            flightNo = flightNo + 1
-        xml = ET.ElementTree(root)
-        xml.write(kmlFilename, encoding='UTF-8', xml_declaration=True)
-
-
     def open_kml_file_export_dialog(self):
         '''
         Open a file export dialog (export KML file).
         '''
         kmlFilename = re.sub("\.zip$", "", self.zipFilename) + ".kml"
+        export = ExportKml(
+            columnnames=self.columns,
+            rows=self.logdata,
+            name=f"{self.root.ids.selected_model.text} logs of {self.root.ids.value_date.text}",
+            description=f'Logfile: {self.zipFilename}<br><br>Exported: {datetime.datetime.now().isoformat()}<br><br>{ExportKml.appRef}',
+            pathcolor=self.assetColors[int(self.root.ids.selected_flight_path_color.value)],
+            pathwidth=self.pathWidths[int(self.root.ids.selected_flight_path_width.value)],
+            homecolorref=str(int(self.root.ids.selected_marker_home_color.value)+1),
+            ctrlcolorref=str(int(self.root.ids.selected_marker_ctrl_color.value)+1),
+            dronecolorref=str(int(self.root.ids.selected_marker_drone_color.value)+1),
+            flightstarts=self.flightStarts,
+            flightends=self.flightEnds,
+            flightstats=self.flightStats,
+            uom=self.root.ids.selected_uom.text
+        )
         if self.is_android:
             kmlFile = os.path.join(self.shared_storage.get_cache_dir(), kmlFilename)
             try:
-                self.save_kml_file(kmlFile)
+                export.save(kmlFile)
                 url = self.shared_storage.copy_to_shared(kmlFile)
                 ShareSheet().share_file(url)
                 self.show_info_message(message=_('data_exported_to').format(filename=kmlFile))
@@ -857,7 +702,7 @@ class MainApp(MDApp):
         elif self.is_ios:
             kmlFile = os.path.join(self.ios_doc_path(), kmlFilename)
             try:
-                self.save_kml_file(kmlFile)
+                export.save(kmlFile)
                 self.show_info_message(message=_('export_kml_file_saved').format(filename=kmlFile))
             except Exception as e:
                 msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
@@ -871,7 +716,7 @@ class MainApp(MDApp):
                 os.chdir(oldwd) # Change it back!
             if myFiles and len(myFiles) > 0:
                 try:
-                    self.save_kml_file(myFiles[0])
+                    export.save(myFiles[0])
                     self.show_info_message(message=_('data_exported_to').format(filename=myFiles[0]))
                 except Exception as e:
                     msg = _('error_saving_export_kml').format(filename=myFiles[0], error=e)
@@ -886,7 +731,7 @@ class MainApp(MDApp):
             if myFiles and len(myFiles) > 0 and os.path.isdir(myFiles[0]):
                 kmlFile = os.path.join(myFiles[0], kmlFilename)
                 try:
-                    self.save_kml_file(kmlFile)
+                    export.save(kmlFile)
                     self.show_info_message(message=_('data_exported_to').format(filename=kmlFile))
                 except Exception as e:
                     msg = _('error_saving_export_kml').format(filename=kmlFile, error=e)
@@ -2349,14 +2194,6 @@ class MainApp(MDApp):
         MDSnackbar(MDSnackbarText(text=message), y=dp(24), pos_hint={"center_x": 0.5}, size_hint_x=0.8).open()
 
 
-    def remove_splash_image(self, dt):
-        '''
-        Close the spash screen.
-        '''
-        self.root_window.remove_widget(self.splash_img)
-        self.root_window.remove_widget(self.splash_ver)
-
-
     def show_help(self):
         '''
         Open help page on the project home page and for the matching version of the app.
@@ -2471,11 +2308,8 @@ class MainApp(MDApp):
         threading.Thread(target=self.check_for_updates).start() # No need to hold up the app while checking for updates.
         if self.is_desktop:
             if Config.getboolean('preferences', 'splash') == 0:
-                self.splash_img = Image(source="assets/splash.png", fit_mode="scale-down")
-                self.splash_ver = Label(text=f"{self.appVersion}", pos_hint={"center_x": .5, "center_y": .25}, font_size=dp(50))
-                self.root_window.add_widget(self.splash_img)
-                self.root_window.add_widget(self.splash_ver)
-                Clock.schedule_once(self.remove_splash_image, 5)
+                self.splash = SplashScreen(text=self.appVersion, window=self.root_window)
+                self.splash.show()
         self.root.ids.selected_path.text = '--'
         self.reset()
         self.select_map_source()
@@ -2495,358 +2329,6 @@ class MainApp(MDApp):
         '''
         self.stop_flight(True)
         return super().on_stop()
-
-
-class DistGauge(Widget):
-    '''
-    Distance Gauge
-    '''    
-    display_unit = StringProperty("")
-    unit = NumericProperty(1.8)
-    value = BoundedNumericProperty(0, min=0, max=99000, errorvalue=0)
-    file_gauge = StringProperty("assets/Distance_Background.png")
-    file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
-    file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
-    size_gauge = dp(150)
-
-    def __init__(self, **kwargs):
-        super(DistGauge, self).__init__(**kwargs)
-        self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        _img_gauge = Image(
-            source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
-        )
-        self._needleL = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        self._needleS = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        _img_needle_short = Image(
-            source=self.file_needle_short,
-            size=(dp(self.size_gauge), dp(self.size_gauge))
-        )
-        _img_needle_long = Image(
-            source=self.file_needle_long,
-            size=(dp(self.size_gauge), dp(self.size_gauge))
-        )
-        self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
-        self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
-        self._gauge.add_widget(_img_gauge)
-        self._needleS.add_widget(_img_needle_short)
-        self._needleL.add_widget(_img_needle_long)
-        self.add_widget(self._gauge)
-        self.add_widget(self._needleS)
-        self.add_widget(self._needleL)
-        self.add_widget(self._glab)
-        self.add_widget(self._glab2)
-        self.bind(pos=self._update)
-        self.bind(size=self._update)
-        self.bind(value=self._turn)
-
-    def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
-        self._gauge.pos = self.pos
-        self._needleL.pos = (self.x, self.y)
-        self._needleL.center = self._gauge.center
-        self._needleS.pos = (self.x, self.y)
-        self._needleS.center = self._gauge.center
-        self._glab.center_x = self._gauge.center_x - dp(28)
-        self._glab.center_y = self._gauge.center_y + dp(1)
-        self._glab2.center_x = self._gauge.center_x
-        self._glab2.center_y = self._gauge.center_y - dp(20)
-
-    def _turn(self, *args): # Turn needle
-        self._needleS.center_x = self._gauge.center_x
-        self._needleS.center_y = self._gauge.center_y
-        self._needleS.rotation = ((1 * self.unit) - (self.value * self.unit * 2)/10)
-        self._needleL.center_x = self._gauge.center_x
-        self._needleL.center_y = self._gauge.center_y
-        self._needleL.rotation = (1 * self.unit) - (self.value * self.unit * 2)        
-        self._glab.text = "[b]{0:04d}[/b]".format(self.value)
-        self._glab2.text = self.display_unit
-
-
-class AltGauge(Widget):
-    '''
-    Altitude Gauge
-    '''
-    display_unit = StringProperty("")
-    unit = NumericProperty(1.8)
-    value = BoundedNumericProperty(0, min=0, max=8000, errorvalue=0)
-    file_gauge = StringProperty("assets/Altimeter_Background2.png")
-    file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
-    file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
-    size_gauge = dp(150)
-    size_text = NumericProperty(10)
-
-    def __init__(self, **kwargs):
-        super(AltGauge, self).__init__(**kwargs)
-        self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        _img_gauge = Image(
-            source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
-        )
-        self._needleL = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        self._needleS = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )        
-        _img_needle_short = Image(
-            source=self.file_needle_short,
-            size=(dp(self.size_gauge), dp(self.size_gauge))
-        )
-        _img_needle_long = Image(
-            source=self.file_needle_long,
-            size=(dp(self.size_gauge), dp(self.size_gauge))
-        )
-        self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
-        self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
-        self._gauge.add_widget(_img_gauge)
-        self._needleS.add_widget(_img_needle_short)
-        self._needleL.add_widget(_img_needle_long)
-        self.add_widget(self._gauge)
-        self.add_widget(self._needleS)
-        self.add_widget(self._needleL)
-        self.add_widget(self._glab)
-        self.add_widget(self._glab2)
-        self.bind(pos=self._update)
-        self.bind(size=self._update)
-        self.bind(value=self._turn)
-        self.bind(display_unit=self._turn)
-
-    def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
-        self._gauge.pos = self.pos
-        self._needleL.pos = (self.x, self.y)
-        self._needleL.center = self._gauge.center
-        self._needleS.pos = (self.x, self.y)
-        self._needleS.center = self._gauge.center
-        self._glab.center_x = self._gauge.center_x - dp(28)
-        self._glab.center_y = self._gauge.center_y + dp(1)
-        self._glab2.center_x = self._gauge.center_x
-        self._glab2.center_y = self._gauge.center_y - dp(20)
-
-    def _turn(self, *args): # Turn needle
-        self._needleS.center_x = self._gauge.center_x
-        self._needleS.center_y = self._gauge.center_y
-        self._needleS.rotation = ((1 * self.unit) - (self.value * self.unit * 2)/10)
-        self._needleL.center_x = self._gauge.center_x
-        self._needleL.center_y = self._gauge.center_y
-        self._needleL.rotation = (1 * self.unit) - (self.value * self.unit * 2)        
-        self._glab.text = "[b]{0:04d}[/b]".format(self.value)
-        self._glab2.text = self.display_unit
-
-
-class HGauge(Widget):
-    '''
-    Horizontal Speed Gauge
-    '''
-    display_unit = StringProperty("")
-    unit = NumericProperty(1.8)
-    value = BoundedNumericProperty(0, min=-400, max=400, errorvalue=0)
-    file_gauge = StringProperty("assets/AirSpeedIndicator_Background_H.png")
-    file_needle = StringProperty("assets/needle.png")
-    size_gauge = dp(150)
-    size_text = NumericProperty(10)
-
-    def __init__(self, **kwargs):
-        super(HGauge, self).__init__(**kwargs)
-        self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        _img_gauge = Image(
-            source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
-        )
-        self._needle = Scatter(
-            size=(self.size_gauge, self.size_gauge),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        _img_needle = Image(
-            source=self.file_needle,
-            size=(self.size_gauge, self.size_gauge)
-        )
-        self._glab = Label(font_size=dp(14), markup=True)
-        self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
-        self._gauge.add_widget(_img_gauge)
-        self._needle.add_widget(_img_needle)
-        self.add_widget(self._gauge)
-        self.add_widget(self._needle)
-        self.add_widget(self._glab2)
-        self.bind(pos=self._update)
-        self.bind(size=self._update)
-        self.bind(value=self._turn)
-
-    def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
-        self._gauge.pos = self.pos
-        self._needle.pos = (self.x, self.y)
-        self._needle.center = self._gauge.center
-        self._glab.center_x = self._gauge.center_x
-        self._glab.center_y = self._gauge.center_y
-        self._glab2.center_x = self._gauge.center_x
-        self._glab2.center_y = self._gauge.center_y - dp(20)
-
-    def _turn(self, *args): # Turn needle
-        self._needle.center_x = self._gauge.center_x
-        self._needle.center_y = self._gauge.center_y
-        self._needle.rotation = (100 * self.unit) - (self.value * self.unit * 4)
-        self._glab2.text = self.display_unit
-
-
-class VGauge(Widget):
-    '''
-    Vertical Speed Gauge
-    '''
-    display_unit = StringProperty("")
-    unit = NumericProperty(1.8)
-    value = BoundedNumericProperty(0, min=-14, max=14, errorvalue=0)
-    file_gauge = StringProperty("assets/AirSpeedIndicator_Background_V.png")
-    file_needle = StringProperty("assets/needle.png")
-    size_gauge = dp(150)
-    size_text = NumericProperty(10)
-
-    def __init__(self, **kwargs):
-        super(VGauge, self).__init__(**kwargs)
-        self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        _img_gauge = Image(
-            source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
-        )
-        self._needle = Scatter(
-            size=(self.size_gauge, self.size_gauge),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        _img_needle = Image(
-            source=self.file_needle,
-            size=(self.size_gauge, self.size_gauge)
-        )
-        self._glab = Label(font_size=dp(14), markup=True)
-        self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
-        self._gauge.add_widget(_img_gauge)
-        self._needle.add_widget(_img_needle)
-        self.add_widget(self._gauge)
-        self.add_widget(self._needle)
-        self.add_widget(self._glab2)
-        self.bind(pos=self._update)
-        self.bind(size=self._update)
-        self.bind(value=self._turn)
-
-    def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
-        self._gauge.pos = self.pos
-        self._needle.pos = (self.x, self.y)
-        self._needle.center = self._gauge.center
-        self._glab.center_x = self._gauge.center_x
-        self._glab.center_y = self._gauge.center_y
-        self._glab2.center_x = self._gauge.center_x
-        self._glab2.center_y = self._gauge.center_y - dp(20)
-
-    def _turn(self, *args): # Turn needle
-        self._needle.center_x = self._gauge.center_x
-        self._needle.center_y = self._gauge.center_y
-        self._needle.rotation = -(self.value * self.unit * 5.5)
-        self._glab2.text = self.display_unit
-
-
-class HeadingGauge(Widget):
-    '''
-    Heading Gauge (direction drone is travelling as opposed to direction drone is looking)
-    '''
-    unit = NumericProperty(1.8)
-    value = BoundedNumericProperty(0, min=0, max=400, errorvalue=0)
-    drotation = BoundedNumericProperty(0, min=0, max=400, errorvalue=0) #Rotational position of drone
-    file_gauge = StringProperty("assets/HeadingIndicator_Background1.png")
-    file_heading_ring = StringProperty("assets/HeadingRing.png")
-    file_heading_aircraft = StringProperty("assets/Heading_drone3a.png")
-    size_gauge = dp(150)
-    size_text = NumericProperty(10)
-
-    def __init__(self, **kwargs):
-        super(HeadingGauge, self).__init__(**kwargs)
-        self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        _img_gauge = Image(
-            source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
-        )
-        self._headingR = Scatter(
-            size=(self.size_gauge, self.size_gauge),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        self._aircrafT = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
-            do_rotation=False,
-            do_scale=False,
-            do_translation=False
-        )
-        _img_aircraft = Image(
-            source=self.file_heading_aircraft,
-            size=(self.size_gauge, self.size_gauge)  
-         )
-        _img_heading_ring = Image(
-            source=self.file_heading_ring,
-            size=(self.size_gauge, self.size_gauge)
-        )
-        self._gauge.add_widget(_img_gauge)
-        self._headingR.add_widget(_img_heading_ring)
-        self._aircrafT.add_widget(_img_aircraft)
-        self.add_widget(self._gauge)
-        self.add_widget(self._headingR)
-        self.add_widget(self._aircrafT)        
-        self.bind(pos=self._update)
-        self.bind(size=self._update)
-        self.bind(value=self._turn)
-
-    def _update(self, *args): # Update positioning.
-        self._gauge.pos = self.pos
-        self._headingR.pos = (self.x, self.y)
-        self._headingR.center = self._gauge.center
-        self._aircrafT.pos = (self.x, self.y)
-
-    def _turn(self, *args): # Turn
-        self._headingR.center_x = self._gauge.center_x
-        self._headingR.center_y = self._gauge.center_y
-        self._headingR.rotation = (1 * self.unit) - (self.value * 1)
-
 
 if __name__ == "__main__":
     MainApp().run()
