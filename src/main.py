@@ -9,16 +9,15 @@ import time
 import re
 import threading
 import locale
-import sqlite3
 import gettext
 import json
 import requests
-import webbrowser 
-import xml.etree.ElementTree as ET
+import webbrowser
 
 from enums import MotorStatus, DroneStatus, FlightMode, PositionMode, SelectableTileServer
 from exports import ExportCsv, ExportKml
 from widgets import SplashScreen
+from db import Db
 from pathlib import Path
 from zipfile import ZipFile
 from PIL import Image as PILImage
@@ -29,6 +28,7 @@ Window.allow_screensaver = False
 from kivy.clock import mainthread
 from kivy.config import Config
 from kivy.metrics import dp
+from kivy.uix.widget import Widget
 from kivy.utils import platform
 from kivymd.app import MDApp
 from kivymd.uix.button import MDButton, MDButtonText, MDIconButton
@@ -93,8 +93,8 @@ class MainApp(MDApp):
         Parse Atom based logs.
         '''
         self.zipFilename = importRef
-        fpvFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype = 'FPV' ORDER BY filename", (importRef,))
-        binFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ? AND bintype IN ('BIN','FC') ORDER BY filename", (importRef,))
+        fpvFiles = self.db.execute("SELECT filename FROM log_files WHERE importref = ? AND bintype = 'FPV' ORDER BY filename", (importRef,))
+        binFiles = self.db.execute("SELECT filename FROM log_files WHERE importref = ? AND bintype IN ('BIN','FC') ORDER BY filename", (importRef,))
 
         # First read the FPV file. The presence of this file is optional. The format of this
         # file differs slightly based on the mobile platform it was created on: Android vs iOS.
@@ -407,7 +407,7 @@ class MainApp(MDApp):
 
         if (len(pathCoord) > 0):
             self.pathCoords.append(pathCoord)
-        dbRows = self.execute_db("""
+        dbRows = self.db.execute("""
             SELECT flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed, traveled
             FROM flight_stats WHERE importref = ?
             """, (importRef,)
@@ -416,7 +416,7 @@ class MainApp(MDApp):
         for i in range(1, len(self.flightStats)):
             if not hasData:
                 # These stats are used in the log file list to show metrics for each file.
-                self.execute_db("""
+                self.db.execute("""
                     INSERT INTO flight_stats(importref, flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed, traveled)
                     VALUES(?, ?, ?, ?, ?, ?, ?, ?)
                     """,
@@ -489,7 +489,7 @@ class MainApp(MDApp):
         droneModel = re.sub(r"[^\w]", r" ", droneModel) # Remove non-alphanumeric characters from the model name.
         lcDM = droneModel.lower()
         if 'p1a' in lcDM or 'atom' in lcDM:
-            already_imported = self.execute_db("SELECT importedon FROM imports WHERE importref = ?", (zipBaseName,))
+            already_imported = self.db.execute("SELECT importedon FROM imports WHERE importref = ?", (zipBaseName,))
             if already_imported is None or len(already_imported) == 0:
                 self.dialog_wait.open()
                 threading.Thread(target=self.import_file, args=(droneModel, zipBaseName, selectedFile)).start()
@@ -519,14 +519,14 @@ class MainApp(MDApp):
                 else:
                     if not hasFc:
                         logDate = re.sub(r"-.*", r"", zipBaseName) # Extract date section from zip filename.
-                        self.execute_db("INSERT OR IGNORE INTO models(modelref) VALUES(?)", (droneModel,))
-                        self.execute_db(
+                        self.db.execute("INSERT OR IGNORE INTO models(modelref) VALUES(?)", (droneModel,))
+                        self.db.execute(
                             "INSERT OR IGNORE INTO imports(importref, modelref, dateref, importedon) VALUES(?,?,?,?)",
                             (zipBaseName, droneModel, logDate, datetime.datetime.now().isoformat())
                         )
                         hasFc = True
                     shutil.copyfile(binFile, os.path.join(self.logfileDir, binBaseName))
-                    self.execute_db(
+                    self.db.execute(
                         "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
                         (binBaseName, zipBaseName, binType)
                     )
@@ -535,7 +535,7 @@ class MainApp(MDApp):
             for fpvFile in fpvList:
                 fpvBaseName = os.path.basename(fpvFile)
                 shutil.copyfile(fpvFile, os.path.join(self.logfileDir, fpvBaseName))
-                self.execute_db(
+                self.db.execute(
                     "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
                     (fpvBaseName, zipBaseName, "FPV")
                 )
@@ -1587,7 +1587,7 @@ class MainApp(MDApp):
         Dropdown selection with different drone models determined from the imported log files.
         Model names are slightly inconsistent based on the version of the Potensic app they were generated in.
         '''
-        models = self.execute_db("SELECT modelref FROM models ORDER BY modelref")
+        models = self.db.execute("SELECT modelref FROM models ORDER BY modelref")
         menu_items = []
         for modelRef in models:
             menu_items.append({"text": modelRef[0], "on_release": lambda x=modelRef[0]: self.model_selection_callback(x)})
@@ -1610,7 +1610,7 @@ class MainApp(MDApp):
         '''
         Retrieve and display all flight logs imported to the app.
         '''
-        imports = self.execute_db("""
+        imports = self.db.execute("""
             SELECT i.importref, i.dateref, count(s.flight_number), sum(duration), max(duration), max(max_distance), max(max_altitude), max(max_h_speed), max(max_v_speed), sum(traveled)
             FROM imports i
             LEFT OUTER JOIN flight_stats s ON s.importref = i.importref
@@ -1701,18 +1701,18 @@ class MainApp(MDApp):
 
 
     def delete_log_file(self, buttonObj):
-        logFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ?", (buttonObj.value,))
+        logFiles = self.db.execute("SELECT filename FROM log_files WHERE importref = ?", (buttonObj.value,))
         for fileRef in logFiles:
             file = fileRef[0]
             os.remove(os.path.join(self.logfileDir, file))
-        modelRef = self.execute_db("SELECT modelref FROM imports WHERE importref = ?", (buttonObj.value,))
-        self.execute_db("DELETE FROM flight_stats WHERE importref = ?", (buttonObj.value,))
-        self.execute_db("DELETE FROM log_files WHERE importref = ?", (buttonObj.value,))
-        self.execute_db("DELETE FROM imports WHERE importref = ?", (buttonObj.value,))
+        modelRef = self.db.execute("SELECT modelref FROM imports WHERE importref = ?", (buttonObj.value,))
+        self.db.execute("DELETE FROM flight_stats WHERE importref = ?", (buttonObj.value,))
+        self.db.execute("DELETE FROM log_files WHERE importref = ?", (buttonObj.value,))
+        self.db.execute("DELETE FROM imports WHERE importref = ?", (buttonObj.value,))
         if modelRef is not None and len(modelRef) > 0:
-            importRef = self.execute_db("SELECT count (1) FROM imports WHERE modelref = ?", (modelRef[0][0],))
+            importRef = self.db.execute("SELECT count (1) FROM imports WHERE modelref = ?", (modelRef[0][0],))
             if importRef is None or len(importRef) == 0 or importRef[0][0] == 0:
-                self.execute_db("DELETE FROM models WHERE modelref = ?", (modelRef[0][0],))
+                self.db.execute("DELETE FROM models WHERE modelref = ?", (modelRef[0][0],))
                 self.select_drone_model("--")
         self.list_log_files()
         self.close_delete_log_dialog(None)
@@ -1748,7 +1748,7 @@ class MainApp(MDApp):
             zipFile = os.path.join(cache_dir, backupName)
             try:
                 with ZipFile(zipFile, 'w') as zip:
-                    zip.write(self.dbFile, os.path.basename(self.dbFile))
+                    zip.write(self.db.dataFile(), os.path.basename(self.db.dataFile()))
                     zip.write(self.configFile, os.path.basename(self.configFile))
                     for bin_file in self.get_dir_content(self.logfileDir):
                         zip.write(bin_file, os.path.basename(bin_file))
@@ -1762,7 +1762,7 @@ class MainApp(MDApp):
             zipFile = os.path.join(self.ios_doc_path(), backupName)
             try:
                 with ZipFile(zipFile, 'w') as zip:
-                    zip.write(self.dbFile, os.path.basename(self.dbFile))
+                    zip.write(self.db.dataFile(), os.path.basename(self.db.dataFile()))
                     zip.write(self.configFile, os.path.basename(self.configFile))
                     for bin_file in self.get_dir_content(self.logfileDir):
                         zip.write(bin_file, os.path.basename(bin_file))
@@ -1780,7 +1780,7 @@ class MainApp(MDApp):
                 zipFile = os.path.join(myFiles[0], backupName)
                 try:
                     with ZipFile(zipFile, 'w') as zip:
-                        zip.write(self.dbFile, os.path.basename(self.dbFile))
+                        zip.write(self.db.dataFile(), os.path.basename(self.db.dataFile()))
                         zip.write(self.configFile, os.path.basename(self.configFile))
                         for bin_file in self.get_dir_content(self.logfileDir):
                             zip.write(bin_file, os.path.basename(bin_file))
@@ -1868,7 +1868,7 @@ class MainApp(MDApp):
             for binFile in glob.glob(os.path.join(resDir, '**/*'), recursive=True):
                 binBaseName = os.path.basename(binFile)
                 if binBaseName == self.dbFilename:
-                    shutil.copy(binFile, self.dbFile)
+                    shutil.copy(binFile, self.db.dataFile())
                 elif binBaseName == self.configFilename:
                     shutil.copy(binFile, self.configFile)
                 else:
@@ -1892,64 +1892,6 @@ class MainApp(MDApp):
             self.open_view("Screen_Day_Summary")
         elif self.app_view == "log":
             self.open_view("Screen_Log_Files")
-
-
-    def execute_db(self, expression, params=None):
-        '''
-        Run a SQL command and return results.
-        '''
-        con = sqlite3.connect(self.dbFile)
-        cur = con.cursor()
-        if (params):
-            cur.execute(expression, params)
-        else:
-            cur.execute(expression)
-        results = cur.fetchall()
-        con.commit()
-        con.close()
-        return results
-
-
-    def init_db(self):
-        '''
-        Create the DB and schema.
-        '''
-        self.execute_db("""
-            CREATE TABLE IF NOT EXISTS models(
-                modelref TEXT PRIMARY KEY
-            )
-        """)
-        self.execute_db("""
-            CREATE TABLE IF NOT EXISTS imports(
-                importref TEXT PRIMARY KEY,
-                modelref TEXT NOT NULL,
-                dateref TEXT NOT NULL,
-                importedon TEXT NOT NULL,
-                FOREIGN KEY (modelref) REFERENCES models(modelref) ON DELETE CASCADE ON UPDATE NO ACTION
-            )
-        """)
-        self.execute_db("""
-            CREATE TABLE IF NOT EXISTS log_files(
-                filename TEXT PRIMARY KEY,
-                importref TEXT NOT NULL,
-                bintype TEXT NOT NULL,
-                FOREIGN KEY (importref) REFERENCES imports(importref) ON DELETE CASCADE ON UPDATE NO ACTION
-            )
-        """)
-        self.execute_db("""
-            CREATE TABLE IF NOT EXISTS flight_stats(
-                importref TEXT NOT NULL,
-                flight_number INTEGER NOT NULL,
-                duration INTEGER NOT NULL,
-                max_distance REAL NOT NULL,
-                max_altitude REAL NOT NULL,
-                max_h_speed REAL NOT NULL,
-                max_v_speed REAL NOT NULL,
-                traveled REAL NOT NULL,
-                FOREIGN KEY (importref) REFERENCES imports(importref) ON DELETE CASCADE ON UPDATE NO ACTION
-            )
-        """)
-        self.execute_db("CREATE INDEX IF NOT EXISTS flight_stats_index ON flight_stats(importref)")
 
 
     def init_prefs(self):
@@ -2031,7 +1973,7 @@ class MainApp(MDApp):
         Delete unreferenced log files. Delete unreferenced DB records.
         '''
         importedFiles = []
-        for fileRef in self.execute_db("SELECT filename FROM log_files"):
+        for fileRef in self.db.execute("SELECT filename FROM log_files"):
             importedFiles.append(fileRef[0])
         filesOnDisk = []
         for binFile in glob.glob(os.path.join(self.logfileDir, '*'), recursive=False):
@@ -2044,10 +1986,10 @@ class MainApp(MDApp):
         for importedFile in importedFiles:
             if importedFile not in filesOnDisk:
                 print(f"Deleting orphaned reference to {importedFile}")
-                importRefRecs = self.execute_db("SELECT importref FROM log_files WHERE filename = ?", (importedFile,))
+                importRefRecs = self.db.execute("SELECT importref FROM log_files WHERE filename = ?", (importedFile,))
                 importRef = importRefRecs[0][0] if importRefRecs is not None and len(importRefRecs) > 0 else None
                 if importRef is not None:
-                    logFiles = self.execute_db("SELECT filename FROM log_files WHERE importref = ?", (importRef,))
+                    logFiles = self.db.execute("SELECT filename FROM log_files WHERE importref = ?", (importRef,))
                     for fileRef in logFiles:
                         file = fileRef[0]
                         try:
@@ -2055,16 +1997,16 @@ class MainApp(MDApp):
                         except:
                             # Do nothing.
                             ...
-                    modelRef = self.execute_db("SELECT modelref FROM imports WHERE importref = ?", (importRef,))
-                    self.execute_db("DELETE FROM flight_stats WHERE importref = ?", (importRef,))
-                    self.execute_db("DELETE FROM log_files WHERE importref = ?", (importRef,))
-                    self.execute_db("DELETE FROM imports WHERE importref = ?", (importRef,))
+                    modelRef = self.db.execute("SELECT modelref FROM imports WHERE importref = ?", (importRef,))
+                    self.db.execute("DELETE FROM flight_stats WHERE importref = ?", (importRef,))
+                    self.db.execute("DELETE FROM log_files WHERE importref = ?", (importRef,))
+                    self.db.execute("DELETE FROM imports WHERE importref = ?", (importRef,))
                     if modelRef is not None and len(modelRef) > 0:
-                        importRef = self.execute_db("SELECT count (1) FROM imports WHERE modelref = ?", (modelRef[0][0],))
+                        importRef = self.db.execute("SELECT count (1) FROM imports WHERE modelref = ?", (modelRef[0][0],))
                         if importRef is None or len(importRef) == 0 or importRef[0][0] == 0:
-                            self.execute_db("DELETE FROM models WHERE modelref = ?", (modelRef[0][0],))
+                            self.db.execute("DELETE FROM models WHERE modelref = ?", (modelRef[0][0],))
                 else:
-                    self.execute_db("DELETE FROM log_files WHERE filename = ?", (importedFile,))
+                    self.db.execute("DELETE FROM log_files WHERE filename = ?", (importedFile,))
 
 
     def clear_cache(self):
@@ -2226,8 +2168,7 @@ class MainApp(MDApp):
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
         if not os.path.exists(self.logfileDir):
             Path(self.logfileDir).mkdir(parents=True, exist_ok=True)
-        self.dbFile = os.path.join(self.dataDir, self.dbFilename) # sqlite DB file.
-        self.init_db()
+        self.db = Db(os.path.join(self.dataDir, self.dbFilename)) # sqlite DB file.
         configDir = self.dataDir if self.is_ios else user_config_dir(self.appPathName, self.appPathName) # Place where app ini config file goes.
         if not os.path.exists(configDir):
             Path(configDir).mkdir(parents=True, exist_ok=True)
