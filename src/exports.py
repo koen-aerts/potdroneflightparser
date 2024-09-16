@@ -36,10 +36,11 @@ class ExportKml:
     appRef = '<a href="https://github.com/koen-aerts/potdroneflightparser">Flight Log Viewer</a>'
     appAssetSrc = "https://raw.githubusercontent.com/koen-aerts/potdroneflightparser/v2.2.0/src/assets"
     def __init__(
-        self, columnnames=[], rows=[], name="Flight Logs", description=appRef, pathcolor="#ff0000",
+        self, commonlib, columnnames=[], rows=[], name="Flight Logs", description=appRef, pathcolor="#ff0000",
         pathwidth="1", homecolorref="1", ctrlcolorref="1", dronecolorref="1", flightstarts=[],
         flightends=[], flightstats=[], uom="metric"
     ):
+        self.common = commonlib
         self.columns = columnnames
         self.rows = rows
         self.logName = name
@@ -53,16 +54,7 @@ class ExportKml:
         self.flightEnds = flightends
         self.flightStats = flightstats
         self.uom = uom
-    def fmt_num(self, num):
-        if num is None:
-            return ""
-        return locale.format_string("%.2f", num, grouping=True, monetary=False)
-    def dist_unit(self):
-        return "ft" if self.uom == 'imperial' else "m"
-    def dist_val(self, num):
-        if num is None:
-            return None
-        return num * 3.28084 if self.uom == 'imperial' else num
+
     def save(self, kmlFilename):
         root = ET.Element("kml", xmlns="http://www.opengis.net/kml/2.2")
         doc = ET.SubElement(root, "Document")
@@ -97,7 +89,7 @@ class ExportKml:
             self.currentEndIdx = self.flightEnds[f"{flightNo}"]
             folder = ET.SubElement(doc, "Folder")
             ET.SubElement(folder, "name").text = f"Flight #{flightNo}"
-            ET.SubElement(folder, "description").append(ET.Comment(f' --><![CDATA[Duration: {str(self.flightStats[flightNo][3])}<br>Distance flown: {self.fmt_num(self.dist_val(self.flightStats[flightNo][9]))} {self.dist_unit()}]]><!-- '))
+            ET.SubElement(folder, "description").append(ET.Comment(f' --><![CDATA[Duration: {str(self.flightStats[flightNo][3])}<br>Distance flown: {self.common.fmt_num(self.common.dist_val(self.flightStats[flightNo][9]))} {self.common.dist_unit()}]]><!-- '))
             ET.SubElement(folder, "styleUrl").text = "#hidePoints"
             ET.SubElement(folder, "visibility").text = "0"
             prevtimestamp = None
