@@ -1626,14 +1626,9 @@ class MainApp(MDApp):
         print("Checking for software update...")
         try:
             response = requests.get(
-                "https://api.github.com/repos/koen-aerts/potdroneflightparser/releases?per_page=1&page=1",
-                headers = {
-                    "Accept": "application/vnd.github+json"
-                },
-                params = {
-                    "per_page": "1",
-                    "page": "1"
-                }
+                "https://api.github.com/repos/koen-aerts/potdroneflightparser/releases",
+                headers = { "Accept": "application/vnd.github+json" },
+                params = { "per_page": "1", "page": "1" }
             )
             if response.status_code == 200:
                 relObj = json.loads(response.content)
