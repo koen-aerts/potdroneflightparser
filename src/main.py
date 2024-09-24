@@ -272,7 +272,7 @@ class MainApp(MDApp):
         '''
         Open a file export dialog (export csv file).
         '''
-        csvFilename = re.sub("\.zip$", "", self.zipFilename) + ".csv"
+        csvFilename = re.sub(r"\.zip$", "", self.zipFilename) + ".csv"
         export = ExportCsv(columnnames=self.columns, rows=self.logdata)
         if self.is_android:
             csvFile = os.path.join(self.shared_storage.get_cache_dir(), csvFilename)
@@ -329,7 +329,7 @@ class MainApp(MDApp):
         '''
         Open a file export dialog (export KML file).
         '''
-        kmlFilename = re.sub("\.zip$", "", self.zipFilename) + ".kml"
+        kmlFilename = re.sub(r"\.zip$", "", self.zipFilename) + ".kml"
         export = ExportKml(
             commonlib=self.common,
             columnnames=self.columns,
@@ -758,7 +758,7 @@ class MainApp(MDApp):
         self.root.ids.flight_progress.is_updating = True
         self.isPlaying = True
         self.root.ids.playbutton.icon = "pause"
-        refreshRate = float(re.sub("[^0-9\.]", "", self.root.ids.selected_refresh_rate.text))
+        refreshRate = float(re.sub(r"[^0-9\.]", "", self.root.ids.selected_refresh_rate.text))
         totalTimeElapsed = self.logdata[self.currentRowIdx][self.columns.index('time')]
         prevTs = None
         timeElapsed = None

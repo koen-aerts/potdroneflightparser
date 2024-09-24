@@ -162,8 +162,6 @@ class AtomBaseLogParser():
                     speed2vertmetric = -struct.unpack('f', fcRecord[347+offset2:351+offset2])[0] # Vertical speed
                     speed2vertmetricabs = abs(speed2vertmetric)
                     speed2vert = self.common.speed_val(speed2vertmetric)
-                    if self.parent.root.ids.selected_rounding.active and speed2vert < 0 and round(speed2vert) == 0:
-                        speed2vert = 0
                     orientation1 = struct.unpack('f', fcRecord[175+offset2:179+offset2])[0] # Drone orientation in radians. Seems to slightly differ from orientation2... not sure why. Yaw??
                     orientation2 = struct.unpack('f', fcRecord[391+offset2:395+offset2])[0] # Drone orientation in radians.
                     roll = struct.unpack('f', fcRecord[383+offset2:387+offset2])[0] # Roll - TODO: need to confirm still
