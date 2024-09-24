@@ -1,3 +1,6 @@
+'''
+Log parsing functionality - Developer: Koen Aerts
+'''
 import os
 import struct
 import math
@@ -6,7 +9,6 @@ import re
 
 from enums import MotorStatus, DroneStatus, FlightMode, PositionMode
 
-from kivy.clock import mainthread
 from kivy_garden.mapview.utils import haversine
 
 
@@ -14,6 +16,8 @@ class AtomBaseLogParser():
 
     def __init__(self, parent):
         self.parent = parent
+        self.db = parent.db
+        self.common = parent.common
 
 
     def parse(self, importRef):
@@ -21,8 +25,8 @@ class AtomBaseLogParser():
         Parse Atom based logs.
         '''
         self.parent.zipFilename = importRef
-        fpvFiles = self.parent.db.execute("SELECT filename FROM log_files WHERE importref = ? AND bintype = 'FPV' ORDER BY filename", (importRef,))
-        binFiles = self.parent.db.execute("SELECT filename FROM log_files WHERE importref = ? AND bintype IN ('BIN','FC') ORDER BY filename", (importRef,))
+        fpvFiles = self.db.execute("SELECT filename FROM log_files WHERE importref = ? AND bintype = 'FPV' ORDER BY filename", (importRef,))
+        binFiles = self.db.execute("SELECT filename FROM log_files WHERE importref = ? AND bintype IN ('BIN','FC') ORDER BY filename", (importRef,))
 
         # First read the FPV file. The presence of this file is optional. The format of this
         # file differs slightly based on the mobile platform it was created on: Android vs iOS.
@@ -102,14 +106,14 @@ class AtomBaseLogParser():
                     ctrllon = struct.unpack('<i', fcRecord[163+offset2:167+offset2])[0]/10000000
                     homelat = struct.unpack('<i', fcRecord[435+offset2:439+offset2])[0]/10000000 # Home Point coords (for Return To Home).
                     homelon = struct.unpack('<i', fcRecord[439+offset2:443+offset2])[0]/10000000
-                    dist1lat = self.parent.common.dist_val(struct.unpack('f', fcRecord[235+offset2:239+offset2])[0]) # Distance home point vs controller??
-                    dist1lon = self.parent.common.dist_val(struct.unpack('f', fcRecord[239+offset2:243+offset2])[0])
-                    dist2lat = self.parent.common.dist_val(struct.unpack('f', fcRecord[319+offset2:323+offset2])[0]) # Distance home point vs controller??
-                    dist2lon = self.parent.common.dist_val(struct.unpack('f', fcRecord[323+offset2:327+offset2])[0])
+                    dist1lat = self.common.dist_val(struct.unpack('f', fcRecord[235+offset2:239+offset2])[0]) # Distance home point vs controller??
+                    dist1lon = self.common.dist_val(struct.unpack('f', fcRecord[239+offset2:243+offset2])[0])
+                    dist2lat = self.common.dist_val(struct.unpack('f', fcRecord[319+offset2:323+offset2])[0]) # Distance home point vs controller??
+                    dist2lon = self.common.dist_val(struct.unpack('f', fcRecord[323+offset2:327+offset2])[0])
                     dist1 = round(math.sqrt(math.pow(dist1lat, 2) + math.pow(dist1lon, 2)), 2) # Pythagoras to calculate real distance.
                     dist2 = round(math.sqrt(math.pow(dist2lat, 2) + math.pow(dist2lon, 2)), 2) # Pythagoras to calculate real distance.
                     dist3metric = struct.unpack('f', fcRecord[431+offset2:435+offset2])[0]# Distance from home point, as reported by the drone.
-                    dist3 = self.parent.common.dist_val(dist3metric)
+                    dist3 = self.common.dist_val(dist3metric)
                     gps = struct.unpack('f', fcRecord[279+offset2:283+offset2])[0] # GPS (-1 = no GPS, 0 = GPS ready, 2 and up = GPS in use)
                     gpsStatus = 'Yes' if gps >= 0 else 'No'
                     #sdff = (special - 2) * 4 * 60 * 1000
@@ -139,25 +143,25 @@ class AtomBaseLogParser():
                     inUse = 'Yes' if droneInUse == 0 else 'No'
                     posModeDesc = PositionMode.GPS.value if positionMode == 3 else PositionMode.OPTI.value if positionMode == 2 else positionMode # TODO - don't know value yet for ATTI, probably 1??
 
-                    alt1 = round(self.parent.common.dist_val(-struct.unpack('f', fcRecord[243+offset2:247+offset2])[0]), 2) # Relative height from controller vs distance to ground??
+                    alt1 = round(self.common.dist_val(-struct.unpack('f', fcRecord[243+offset2:247+offset2])[0]), 2) # Relative height from controller vs distance to ground??
                     alt2metric = -struct.unpack('f', fcRecord[343+offset2:347+offset2])[0] # Relative height from controller vs distance to ground??
-                    alt2 = round(self.parent.common.dist_val(alt2metric), 2)
-                    speed1lat = self.parent.common.speed_val(struct.unpack('f', fcRecord[247+offset2:251+offset2])[0])
-                    speed1lon = self.parent.common.speed_val(struct.unpack('f', fcRecord[251+offset2:255+offset2])[0])
+                    alt2 = round(self.common.dist_val(alt2metric), 2)
+                    speed1lat = self.common.speed_val(struct.unpack('f', fcRecord[247+offset2:251+offset2])[0])
+                    speed1lon = self.common.speed_val(struct.unpack('f', fcRecord[251+offset2:255+offset2])[0])
                     speed2latmetric = struct.unpack('f', fcRecord[327+offset2:331+offset2])[0]
-                    speed2lat = self.parent.common.speed_val(speed2latmetric)
+                    speed2lat = self.common.speed_val(speed2latmetric)
                     speed2lonmetric = struct.unpack('f', fcRecord[331+offset2:335+offset2])[0]
-                    speed2lon = self.parent.common.speed_val(speed2lonmetric)
+                    speed2lon = self.common.speed_val(speed2lonmetric)
                     # Offset 335 + 339 (float)
                     # Offset 351 + 355 (float)
                     # Offset 371 + 375 (float)
                     speed1 = round(math.sqrt(math.pow(speed1lat, 2) + math.pow(speed1lon, 2)), 2) # Pythagoras to calculate real speed.
                     speed2metric = round(math.sqrt(math.pow(speed2latmetric, 2) + math.pow(speed2lonmetric, 2)), 2)
                     speed2 = round(math.sqrt(math.pow(speed2lat, 2) + math.pow(speed2lon, 2)), 2) # Pythagoras to calculate real speed.
-                    speed1vert = self.parent.common.speed_val(-struct.unpack('f', fcRecord[255+offset2:259+offset2])[0])
+                    speed1vert = self.common.speed_val(-struct.unpack('f', fcRecord[255+offset2:259+offset2])[0])
                     speed2vertmetric = -struct.unpack('f', fcRecord[347+offset2:351+offset2])[0] # Vertical speed
                     speed2vertmetricabs = abs(speed2vertmetric)
-                    speed2vert = self.parent.common.speed_val(speed2vertmetric)
+                    speed2vert = self.common.speed_val(speed2vertmetric)
                     if self.parent.root.ids.selected_rounding.active and speed2vert < 0 and round(speed2vert) == 0:
                         speed2vert = 0
                     orientation1 = struct.unpack('f', fcRecord[175+offset2:179+offset2])[0] # Drone orientation in radians. Seems to slightly differ from orientation2... not sure why. Yaw??
@@ -328,14 +332,14 @@ class AtomBaseLogParser():
                         isNewPath = False
                     if pathNum > 0:
                         self.parent.flightEnds[flightDesc] = tableLen
-                    self.parent.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.parent.common.fmt_num(dist1)}", f"{self.parent.common.fmt_num(dist1lat)}", f"{self.parent.common.fmt_num(dist1lon)}", f"{self.parent.common.fmt_num(dist2)}", f"{self.parent.common.fmt_num(dist2lat)}", f"{self.parent.common.fmt_num(dist2lon)}", f"{self.parent.common.fmt_num(dist3)}", f"{self.parent.common.fmt_num(alt1)}", f"{self.parent.common.fmt_num(alt2)}", alt2metric, f"{self.parent.common.fmt_num(speed1)}", f"{self.parent.common.fmt_num(speed1lat)}", f"{self.parent.common.fmt_num(speed1lon)}", f"{self.parent.common.fmt_num(speed2)}", f"{self.parent.common.fmt_num(speed2lat)}", f"{self.parent.common.fmt_num(speed2lon)}", f"{self.parent.common.fmt_num(speed1vert)}", f"{self.parent.common.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation1, orientation2, roll, winddirection, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.parent.common.fmt_num(self.parent.common.dist_val(distTraveled))}", batteryLevel, batteryTemp, batteryCurrent, batteryVoltage, batteryVoltage1, batteryVoltage2, flightModeDesc, flightCounter])
+                    self.parent.logdata.append([recordCount, recordId, pathNum, readingTs.isoformat(sep=' '), readingTs.strftime('%X'), elapsedTs, f"{self.common.fmt_num(dist1)}", f"{self.common.fmt_num(dist1lat)}", f"{self.common.fmt_num(dist1lon)}", f"{self.common.fmt_num(dist2)}", f"{self.common.fmt_num(dist2lat)}", f"{self.common.fmt_num(dist2lon)}", f"{self.common.fmt_num(dist3)}", f"{self.common.fmt_num(alt1)}", f"{self.common.fmt_num(alt2)}", alt2metric, f"{self.common.fmt_num(speed1)}", f"{self.common.fmt_num(speed1lat)}", f"{self.common.fmt_num(speed1lon)}", f"{self.common.fmt_num(speed2)}", f"{self.common.fmt_num(speed2lat)}", f"{self.common.fmt_num(speed2lon)}", f"{self.common.fmt_num(speed1vert)}", f"{self.common.fmt_num(speed2vert)}", str(satellites), str(ctrllat), str(ctrllon), str(homelat), str(homelon), str(dronelat), str(dronelon), orientation1, orientation2, roll, winddirection, motor1Stat, motor2Stat, motor3Stat, motor4Stat, droneMotorStatus.value, droneActionDesc.value, droneAction, fpvRssi, fpvChannel, fpvFlightCtrlConnected, fpvRemoteConnected, droneConnected, rth, posModeDesc, gpsStatus, inUse, f"{self.common.fmt_num(self.common.dist_val(distTraveled))}", batteryLevel, batteryTemp, batteryCurrent, batteryVoltage, batteryVoltage1, batteryVoltage2, flightModeDesc, flightCounter])
                     tableLen = tableLen + 1
 
             flightFile.close()
 
         if (len(pathCoord) > 0):
             self.parent.pathCoords.append(pathCoord)
-        dbRows = self.parent.db.execute("""
+        dbRows = self.db.execute("""
             SELECT flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed, traveled
             FROM flight_stats WHERE importref = ?
             """, (importRef,)
@@ -344,7 +348,7 @@ class AtomBaseLogParser():
         for i in range(1, len(self.parent.flightStats)):
             if not hasData:
                 # These stats are used in the log file list to show metrics for each file.
-                self.parent.db.execute("""
+                self.db.execute("""
                     INSERT INTO flight_stats(importref, flight_number, duration, max_distance, max_altitude, max_h_speed, max_v_speed, traveled)
                     VALUES(?, ?, ?, ?, ?, ?, ?, ?)
                     """,

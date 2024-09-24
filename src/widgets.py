@@ -7,10 +7,10 @@ from kivy.uix.scatter import Scatter
 from kivy.uix.widget import Widget
 
 class SplashScreen():
-    splash_img = Image(source="assets/splash.png", fit_mode="scale-down")
-    splash_text = None
-    splash_win = None
     def __init__(self, window=None, text=None):
+        self.splash_img = Image(source="assets/splash.png", fit_mode="scale-down")
+        self.splash_text = None
+        self.splash_win = None
         if window:
             self.splash_win = window
         if text:
@@ -38,13 +38,13 @@ class DistGauge(Widget):
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=0, max=99000, errorvalue=0)
-    file_gauge = StringProperty("assets/Distance_Background.png")
-    file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
-    file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
-    size_gauge = dp(150)
 
     def __init__(self, **kwargs):
         super(DistGauge, self).__init__(**kwargs)
+        self.file_gauge = "assets/Distance_Background.png"
+        self.file_needle_long = "assets/LongNeedleAltimeter1a.png"
+        self.file_needle_short = "assets/SmallNeedleAltimeter1a.png"
+        self.size_gauge = dp(150)
         self._gauge = Scatter(
             size=(self.size_gauge, self.size_gauge),
             do_rotation=False,
@@ -118,14 +118,14 @@ class AltGauge(Widget):
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=0, max=8000, errorvalue=0)
-    file_gauge = StringProperty("assets/Altimeter_Background2.png")
-    file_needle_long = StringProperty("assets/LongNeedleAltimeter1a.png")
-    file_needle_short = StringProperty("assets/SmallNeedleAltimeter1a.png")
-    size_gauge = dp(150)
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
         super(AltGauge, self).__init__(**kwargs)
+        self.file_gauge = "assets/Altimeter_Background2.png"
+        self.file_needle_long = "assets/LongNeedleAltimeter1a.png"
+        self.file_needle_short = "assets/SmallNeedleAltimeter1a.png"
+        self.size_gauge = dp(150)
         self._gauge = Scatter(
             size=(self.size_gauge, self.size_gauge),
             do_rotation=False,
@@ -200,13 +200,13 @@ class HGauge(Widget):
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=-400, max=400, errorvalue=0)
-    file_gauge = StringProperty("assets/AirSpeedIndicator_Background_H.png")
-    file_needle = StringProperty("assets/needle.png")
-    size_gauge = dp(150)
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
         super(HGauge, self).__init__(**kwargs)
+        self.file_gauge = "assets/AirSpeedIndicator_Background_H.png"
+        self.file_needle = "assets/needle.png"
+        self.size_gauge = dp(150)
         self._gauge = Scatter(
             size=(self.size_gauge, self.size_gauge),
             do_rotation=False,
@@ -261,13 +261,13 @@ class VGauge(Widget):
     display_unit = StringProperty("")
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=-14, max=14, errorvalue=0)
-    file_gauge = StringProperty("assets/AirSpeedIndicator_Background_V.png")
-    file_needle = StringProperty("assets/needle.png")
-    size_gauge = dp(150)
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
         super(VGauge, self).__init__(**kwargs)
+        self.file_gauge = "assets/AirSpeedIndicator_Background_V.png"
+        self.file_needle = "assets/needle.png"
+        self.size_gauge = dp(150)
         self._gauge = Scatter(
             size=(self.size_gauge, self.size_gauge),
             do_rotation=False,
@@ -322,14 +322,14 @@ class HeadingGauge(Widget):
     unit = NumericProperty(1.8)
     value = BoundedNumericProperty(0, min=0, max=400, errorvalue=0)
     drotation = BoundedNumericProperty(0, min=0, max=400, errorvalue=0) #Rotational position of drone
-    file_gauge = StringProperty("assets/HeadingIndicator_Background1.png")
-    file_heading_ring = StringProperty("assets/HeadingRing.png")
-    file_heading_aircraft = StringProperty("assets/Heading_drone3a.png")
-    size_gauge = dp(150)
     size_text = NumericProperty(10)
 
     def __init__(self, **kwargs):
         super(HeadingGauge, self).__init__(**kwargs)
+        self.file_gauge = "assets/HeadingIndicator_Background1.png"
+        self.file_heading_ring = "assets/HeadingRing.png"
+        self.file_heading_aircraft = "assets/Heading_drone3a.png"
+        self.size_gauge = dp(150)
         self._gauge = Scatter(
             size=(self.size_gauge, self.size_gauge),
             do_rotation=False,

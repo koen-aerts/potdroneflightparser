@@ -1,3 +1,6 @@
+'''
+Export functioncality for CSV and KML - Developer: Koen Aerts
+'''
 import datetime
 import xml.etree.ElementTree as ET
 

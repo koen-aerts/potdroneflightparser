@@ -1,3 +1,6 @@
+'''
+SQLite DB Access - Developer: Koen Aerts
+'''
 import sqlite3
 
 class Db():

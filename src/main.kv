@@ -82,6 +82,26 @@ MDGridLayout:
     MDScreenManager:
         id: screen_manager
         BaseScreen:
+            name: "Screen_Loading"
+            on_enter: app.entered_screen_loading()
+            MDGridLayout:
+                cols: 1
+                size: root.width, root.height
+                md_bg_color: self.theme_cls.backgroundColor
+                TopNavBar:
+                    height: dp(40)
+                    MDTopAppBarTitle:
+                        text: f"{app.appName}"
+                        pos_hint: {"center_x": .5}
+                MDLabel:
+                    size_hint: (1, 1)
+                    pos_hint: {"center_x": .5, "center_y": .5}
+                    text: "Loading..."
+                    halign: "center"
+                    role: "large"
+                    max_lines: 1
+                    bold: True
+        BaseScreen:
             name: "Screen_Log_Files"
             on_enter: app.entered_screen_log()
             MDGridLayout:
@@ -89,8 +109,9 @@ MDGridLayout:
                 size: root.width, root.height
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
-                    height: dp(40)
+                    size: root.width, dp(40)
                     MDTopAppBarLeadingButtonContainer:
+                        id: screen_log_appbar_lead
                         MDActionTopAppBarButton:
                             icon: "folder-download-outline"
                             on_release: app.open_file_import_dialog()
@@ -104,9 +125,11 @@ MDGridLayout:
                             icon: "help-circle-outline"
                             on_release: app.show_help()                              
                     MDTopAppBarTitle:
+                        id: screen_log_appbar_title
                         text: f"{app.appName} - {_('title_logs')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
+                        id: screen_log_appbar_tail
                         MDActionTopAppBarButton:
                             icon: "wrench-cog-outline"
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"
@@ -157,7 +180,7 @@ MDGridLayout:
                 cols: 1
                 size: root.width, root.height
                 TopNavBar:
-                    height: dp(40)
+                    size: root.width, dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "close"
@@ -666,7 +689,7 @@ MDGridLayout:
                 size: root.width, root.height
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
-                    height: dp(40)
+                    size: root.width, dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "close"
@@ -701,7 +724,7 @@ MDGridLayout:
                 size: root.width, root.height
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
-                    height: dp(40)
+                    size: root.width, dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "close"

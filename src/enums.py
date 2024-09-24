@@ -1,3 +1,6 @@
+'''
+enums - Developer: Koen Aerts
+'''
 from enum import Enum
 
 class MotorStatus(Enum):

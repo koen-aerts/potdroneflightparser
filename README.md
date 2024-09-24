@@ -103,12 +103,8 @@ python main.py
 ![selfie from a Potensic Atom SE](<src/assets/app-icon256.png> "Atom SE selfie")
 
 
-# Additional Info
-Check [here](<https://koenaerts.ca/micro-drones/parsing-potensic-flight-data-files/> "Parsing Potensic Flight Data Files").
-
-
 # Problems or have questions?
-Join the [Potensic Atom Flight Log Viewer](<https://www.facebook.com/groups/2607329356109479>) Facebook group.
+You can [leave a comment here](<https://koenaerts.ca/micro-drones/parsing-potensic-flight-data-files/> "Parsing Potensic Flight Data Files").
 
 
 # Acknowledgements

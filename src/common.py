@@ -1,3 +1,6 @@
+'''
+Functions commonly used in the app - Developer: Koen Aerts
+'''
 import locale
 
 class Common():

@@ -14,7 +14,7 @@ a = Analysis(
     ['main.py'],
     pathex=[path],
     binaries=[],
-    datas=[('main.kv', '.'), ('./assets/*.png', 'assets'), ('./languages', 'languages')],
+    datas=[('main.kv', '.'), ('assets/*.png', 'assets'), ('languages', 'languages')],
     hiddenimports=['kivymd.icon_definitions', 'plyer.platforms.macosx.filechooser'],
     hookspath=[kivymd_hooks_path],
     hooksconfig={},
@@ -58,6 +58,6 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='FlightLogViewer.app',
-    icon='./assets/app-icon256.png',
+    icon='assets/app-icon256.png',
     bundle_identifier=None,
 )

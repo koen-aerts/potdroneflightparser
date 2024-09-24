@@ -1,3 +1,6 @@
+'''
+Main app with UI logic - Developer: Koen Aerts
+'''
 import os
 import glob
 import shutil
@@ -26,7 +29,7 @@ from PIL import Image as PILImage
 from kivy.core.window import Window
 Window.allow_screensaver = False
 
-from kivy.clock import mainthread
+from kivy.clock import mainthread, Clock
 from kivy.config import Config
 from kivy.metrics import dp
 from kivy.uix.widget import Widget
@@ -50,6 +53,7 @@ if platform == 'android': # Android
 elif platform == 'ios': # iOS
     from plyer import storagepath
 else: # Windows, MacOS, Linux
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
     Window.maximize()
     from plyer import filechooser
     from platformdirs import user_config_dir, user_data_dir, user_cache_dir
@@ -226,6 +230,7 @@ class MainApp(MDApp):
 
 
     def open_file_import_dialog(self):
+        print(f"I AM {platform}")
         '''
         Open a file import dialog (import zip file).
         '''
@@ -616,12 +621,19 @@ class MainApp(MDApp):
         self.app_view = "log"
 
 
+    def entered_screen_loading(self):
+        '''
+        Called when loading screen is opened.
+        '''
+        self.app_view = "loading"
+
+
     def close_map_screen(self):
         '''
         Called when map screen is closed.
         '''
         self.reset()
-        self.root.ids.screen_manager.current = "Screen_Log_Files"
+        self.open_view("Screen_Log_Files")
 
 
     def set_markers(self, updateSlider=True):
@@ -1160,8 +1172,6 @@ class MainApp(MDApp):
         Config.write()
 
 
-
-
     def language_selection(self, item):
         '''
         Change Language (Preferences).
@@ -1560,8 +1570,8 @@ class MainApp(MDApp):
         self.flightStats = None
         self.playStartTs = None
         self.currentRowIdx = None
-        if self.root:
-            self.root.ids.screen_manager.current = "Screen_Log_Files"
+        if self.root and self.root.ids.screen_manager.current != "Screen_Loading":
+            self.open_view("Screen_Log_Files")
             self.center_map()
 
 
@@ -1735,6 +1745,17 @@ class MainApp(MDApp):
         webbrowser.open(f"https://htmlpreview.github.io/?https://github.com/koen-aerts/potdroneflightparser/blob/{self.appVersion}/docs/guide.html")
 
 
+    def allow_app_interaction(self, dt):
+        '''
+        Bring the app out of the Loading page. Loading page is to work around a KivyMD issue related to the appbar not rendered correctly
+        at its encompassing window width on whatever is the first BaseScreen shown. Seems to be less of a problem on desktops where you
+        can use the Window.maximize() function to force re-rendering of the entire app, but on mobile devices that function does not apply.
+        Older KivyMD versions did not have a problem with this, it seemed to have been introduced after April 2024 in the platform.
+        '''
+        self.open_view("Screen_Log_Files")
+        self.center_map()
+
+
     def events(self, instance, keyboard, keycode, text, modifiers):
         '''
         Capture keyboard input. Called when buttons are pressed on the mobile device.
@@ -1749,6 +1770,7 @@ class MainApp(MDApp):
         Constructor
         '''
         super().__init__(**kwargs)
+        self.ts_init = datetime.datetime.now()
         self.common = Common(self)
         self.is_ios = platform == 'ios'
         self.is_android = platform == 'android'
@@ -1841,14 +1863,15 @@ class MainApp(MDApp):
         self.cleanup_orphaned_refs()
         threading.Thread(target=self.check_for_updates).start() # No need to hold up the app while checking for updates.
         if self.is_desktop:
-            if Config.getboolean('preferences', 'splash') == 0:
+            if not Config.getboolean('preferences', 'splash'):
                 self.splash = SplashScreen(text=self.appVersion, window=self.root_window)
                 self.splash.show()
         self.root.ids.selected_path.text = '--'
         self.reset()
         self.select_map_source()
         self.list_log_files()
-        self.app_view = "log"
+        self.app_view = "loading"
+        Clock.schedule_once(self.allow_app_interaction)
         return super().on_start()
 
 
@@ -1863,6 +1886,7 @@ class MainApp(MDApp):
         '''
         self.stop_flight(True)
         return super().on_stop()
+
 
 if __name__ == "__main__":
     MainApp().run()
