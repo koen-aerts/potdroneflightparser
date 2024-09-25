@@ -230,7 +230,6 @@ class MainApp(MDApp):
 
 
     def open_file_import_dialog(self):
-        print(f"I AM {platform}")
         '''
         Open a file import dialog (import zip file).
         '''
@@ -1745,6 +1744,23 @@ class MainApp(MDApp):
         webbrowser.open(f"https://htmlpreview.github.io/?https://github.com/koen-aerts/potdroneflightparser/blob/{self.appVersion}/docs/guide.html")
 
 
+    def on_file_drop(self, widget, importfilename, x, y, *args):
+        '''
+        If called multiple times because more than 1 file is dragged, subsequent calls will be ignored. File drop is ignored
+        if we're not on the log list screen or file is not a zip file. Maybe in the future allow file drops on map view also.
+        '''
+        now = datetime.datetime.now()
+        filename = importfilename.decode('utf-8')
+        if self.lastdrop and (now - self.lastdrop) < datetime.timedelta(seconds = 5):
+            print(f"Ignored concurrent filedrop: {filename}")
+            return
+        self.lastdrop = now
+        if self.root.ids.screen_manager.current == "Screen_Log_Files" and filename.lower().endswith(".zip"):
+            mainthread(self.initiate_import_file)(filename)
+        else:
+            print(f"Ignored invalid filedrop: {filename}")
+
+
     def allow_app_interaction(self, dt):
         '''
         Bring the app out of the Loading page. Loading page is to work around a KivyMD issue related to the appbar not rendered correctly
@@ -1770,6 +1786,7 @@ class MainApp(MDApp):
         Constructor
         '''
         super().__init__(**kwargs)
+        self.lastdrop = None
         self.ts_init = datetime.datetime.now()
         self.common = Common(self)
         self.is_ios = platform == 'ios'
@@ -1863,6 +1880,7 @@ class MainApp(MDApp):
         self.cleanup_orphaned_refs()
         threading.Thread(target=self.check_for_updates).start() # No need to hold up the app while checking for updates.
         if self.is_desktop:
+            Window.bind(on_drop_file = self.on_file_drop)
             if not Config.getboolean('preferences', 'splash'):
                 self.splash = SplashScreen(text=self.appVersion, window=self.root_window)
                 self.splash.show()
