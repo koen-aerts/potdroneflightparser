@@ -86,9 +86,10 @@ MDGridLayout:
             on_enter: app.entered_screen_loading()
             MDGridLayout:
                 cols: 1
-                size: root.width, root.height
+                size_hint: (1, 1)
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
+                    size_hint_x: 1
                     height: dp(40)
                     MDTopAppBarTitle:
                         text: f"{app.appName}"
@@ -106,12 +107,12 @@ MDGridLayout:
             on_enter: app.entered_screen_log()
             MDGridLayout:
                 cols: 1
-                size: root.width, root.height
+                size_hint: (1, 1)
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
-                    size: root.width, dp(40)
+                    size_hint_x: 1
+                    height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
-                        id: screen_log_appbar_lead
                         MDActionTopAppBarButton:
                             icon: "folder-download-outline"
                             on_release: app.open_file_import_dialog()
@@ -125,11 +126,17 @@ MDGridLayout:
                             icon: "help-circle-outline"
                             on_release: app.show_help()                              
                     MDTopAppBarTitle:
-                        id: screen_log_appbar_title
                         text: f"{app.appName} - {_('title_logs')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
-                        id: screen_log_appbar_tail
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
+                        MDActionTopAppBarButton:
+                            icon: "chart-line"
+                            on_release: root.ids.screen_manager.current = "Screen_Global_Stats"
                         MDActionTopAppBarButton:
                             icon: "wrench-cog-outline"
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"
@@ -166,11 +173,44 @@ MDGridLayout:
                     MDGridLayout:
                         cols: 9
                         id: log_files
-                        padding: [0, dp(14), 0, 0]
                         md_bg_color: self.theme_cls.backgroundColor
                         row_default_height: dp(22) if app.is_desktop else dp(14)
                         size_hint: (1, None)
                         height: self.minimum_height
+                        padding: [0, 0, dp(15), 0]
+        BaseScreen:
+            name: "Screen_Global_Stats"
+            on_enter: app.entered_screen_gstats()
+            MDGridLayout:
+                cols: 1
+                size_hint: (1, 1)
+                md_bg_color: self.theme_cls.backgroundColor
+                TopNavBar:
+                    size_hint_x: 1
+                    height: dp(40)
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "close"
+                            on_release: app.close_gstats_screen()
+                    MDTopAppBarTitle:
+                        text: f"{app.appName} - {_('title_logs')}"
+                        pos_hint: {"center_x": .5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
+                MDScrollView:
+                    scroll_type: ["bars", "content"]
+                    bar_width: dp(15)
+                    MDGridLayout:
+                        cols: 1
+                        id: gstat_graphs
+                        md_bg_color: self.theme_cls.backgroundColor
+                        row_default_height: dp(300)
+                        height: self.minimum_height
+                        size_hint: (None, None)
                         padding: [0, 0, dp(15), 0]
         BaseScreen:
             name: "Screen_Map"
@@ -178,9 +218,10 @@ MDGridLayout:
             on_leave: app.left_screen_map()
             MDGridLayout:
                 cols: 1
-                size: root.width, root.height
+                size_hint: (1, 1)
                 TopNavBar:
-                    size: root.width, dp(40)
+                    size_hint_x: 1
+                    height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "close"
@@ -189,6 +230,11 @@ MDGridLayout:
                         text: f"{app.appName} - {_('title_map')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
                         MDActionTopAppBarButton:
                             icon: "speedometer"
                             on_release: theapp.show_nav_section = not theapp.show_nav_section
@@ -686,10 +732,11 @@ MDGridLayout:
             on_enter: app.entered_screen_summary()
             MDGridLayout:
                 cols: 1
-                size: root.width, root.height
+                size_hint: (1, 1)
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
-                    size: root.width, dp(40)
+                    size_hint_x: 1
+                    height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "close"
@@ -698,6 +745,11 @@ MDGridLayout:
                         text: f"{app.appName} - {_('title_flights')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
                         MDActionTopAppBarButton:
                             icon: "microsoft-excel"
                             on_release: app.open_csv_file_export_dialog()
@@ -721,10 +773,11 @@ MDGridLayout:
             name: "Screen_Preferences"
             MDGridLayout:
                 cols: 1
-                size: root.width, root.height
+                size_hint: (1, 1)
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
-                    size: root.width, dp(40)
+                    size_hint_x: 1
+                    height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "close"
@@ -733,6 +786,11 @@ MDGridLayout:
                         text: f"{app.appName} - {_('title_preferences')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
                         MDActionTopAppBarButton:
                             icon: "delete"
                             on_release: app.clear_cache()
@@ -906,4 +964,5 @@ MDGridLayout:
                         id: selected_splashscreen
                         active: True
                         height: dp(34)
+                        disabled: False if app.is_desktop else True
                         opacity: 1 if app.is_desktop else 0

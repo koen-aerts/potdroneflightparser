@@ -1,3 +1,7 @@
+'''
+Custom Widgets - Developers: Chris Raynak, Koen Aerts
+'''
+import math
 from kivy.clock import Clock
 from kivy.metrics import dp
 from kivy.properties import NumericProperty, BoundedNumericProperty, StringProperty
@@ -5,6 +9,122 @@ from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.scatter import Scatter
 from kivy.uix.widget import Widget
+
+import kivy_garden.graph
+from kivy_garden.graph import BarPlot
+
+
+# monkey patch to change axis label behaviour
+import inspect
+__ylabels__ = None
+__xlabels__ = None
+def __identity__(value):
+    curframe = inspect.currentframe()
+    callerframe = inspect.getouterframes(curframe, 2)
+    callerlineno = callerframe[1][2]
+    if callerlineno in [367, 380]:
+        i = int(value)
+        if __ylabels__ and len(__ylabels__) > 0:
+            return "" if i >= len(__ylabels__) else __ylabels__[i] # Return label name instead of tick value
+        else:
+            return str(i)
+    if callerlineno in [395, 407]:
+        i = int(value)
+        if __xlabels__ and len(__xlabels__) > 0:
+            return "" if i >= len(__xlabels__) else __xlabels__[i] # Return label name instead of tick value
+        else:
+            return str(i)
+    return value # Return tick value
+kivy_garden.graph.identity = __identity__
+
+
+def dist_val(uom, num):
+    if num is None:
+        return None
+    return num if uom == 'm' else num * 3.28084
+
+
+# Override Graph to change axis labels.
+class CustGraph(kivy_garden.graph.Graph):
+    def __init__(self, ylabels, xlabels, **kwargs):
+        global __ylabels__
+        global __xlabels__
+        super().__init__(**kwargs)
+        __ylabels__ = ylabels
+        __xlabels__ = xlabels
+        self.precision = "%s"
+    def _update_labels(self):
+        return super()._update_labels()
+
+
+class MaxDistGraph():
+    def __init__(self, imports):
+        self.imports = imports
+    def buildGraph(self, uom):
+        distplot = BarPlot(color=[.5, .7, 0, 1], bar_spacing=.8, bar_width=dp(30))
+        counter = 0
+        maxdist = None
+        xlabels = []
+        for importRef in self.imports:
+            dist = 0 if importRef[5] is None else int(dist_val(uom, importRef[5]))
+            xlabels.append(f"[size=12dp][i]{importRef[1][4:]}[/i][/size]")
+            if maxdist is None or dist > maxdist:
+                maxdist = dist
+            distplot.points.append([counter, dist])
+            counter = counter + 1
+        topdist = math.ceil(maxdist / 100) * 100 # round up to nearest 100.
+        ticks = topdist / 10
+        graph = CustGraph(ylabels=[], xlabels=xlabels, draw_border=True, label_options={"color":[0,0,0,1],"bold":True,"markup":True}, xlabel='Date', ylabel=f'Max Distance ({uom})', x_ticks_major=1, x_ticks_minor=2, y_ticks_major=ticks, y_ticks_minor=2, ymin=0, ymax=topdist, xmin=0, xmax=counter, y_grid_label=True, x_grid_label=True, x_grid=False, y_grid=True)
+        graph.height = dp(50)
+        graph.add_plot(distplot)
+        #distplot.bind_to_graph(graph)
+        return graph
+
+
+class TotDistGraph():
+    def __init__(self, imports):
+        self.imports = imports
+    def buildGraph(self, uom):
+        distplot = BarPlot(color=[.5, 0, .7, 1], bar_spacing=.8, bar_width=dp(30))
+        counter = 0
+        maxdist = None
+        xlabels = []
+        for importRef in self.imports:
+            dist = 0 if importRef[9] is None else int(dist_val(uom, importRef[9]))
+            xlabels.append(f"[size=12dp][i]{importRef[1][4:]}[/i][/size]")
+            if maxdist is None or dist > maxdist:
+                maxdist = dist
+            distplot.points.append([counter, dist])
+            counter = counter + 1
+        topdist = math.ceil(maxdist / 100) * 100 # round up to nearest 100.
+        ticks = topdist / 10
+        graph = CustGraph(ylabels=[], xlabels=xlabels, draw_border=True, label_options={"color":[0,0,0,1],"bold":True,"markup":True}, xlabel='Date', ylabel=f'Total Distance ({uom})', x_ticks_major=1, x_ticks_minor=2, y_ticks_major=ticks, y_ticks_minor=2, ymin=0, ymax=topdist, xmin=0, xmax=counter, y_grid_label=True, x_grid_label=True, x_grid=False, y_grid=True)
+        graph.height = dp(50)
+        graph.add_plot(distplot)
+        return graph
+
+
+class TotDurationGraph():
+    def __init__(self, imports):
+        self.imports = imports
+    def buildGraph(self, uom):
+        durplot = BarPlot(color=[0, .5, .7, 1], bar_spacing=.8, bar_width=dp(30))
+        counter = 0
+        maxdur = None
+        xlabels = []
+        for importRef in self.imports:
+            dur = 0 if importRef[5] is None else int(round(dist_val(uom, importRef[3])/60))
+            xlabels.append(f"[size=12dp][i]{importRef[1][4:]}[/i][/size]")
+            if maxdur is None or dur > maxdur:
+                maxdur = dur
+            durplot.points.append([counter, dur])
+            counter = counter + 1
+        topdur = math.ceil(maxdur / 10) * 10 # round up to nearest 10.
+        ticks = topdur / 10
+        graph = CustGraph(ylabels=[], xlabels=xlabels, draw_border=True, label_options={"color":[0,0,0,1],"bold":True,"markup":True}, xlabel='Date', ylabel='Total Flight Minutes', x_ticks_major=1, x_ticks_minor=2, y_ticks_major=ticks, y_ticks_minor=2, ymin=0, ymax=topdur, xmin=0, xmax=counter, y_grid_label=True, x_grid_label=True, x_grid=False, y_grid=True)
+        graph.add_plot(durplot)
+        return graph
+
 
 class SplashScreen():
     def __init__(self, window=None, text=None):
@@ -23,7 +143,7 @@ class SplashScreen():
             Clock.schedule_once(self.remove_splash_image, seconds)
     def remove_splash_image(self, dt):
         '''
-        Close the spash screen.
+        Close the splash screen.
         '''
         if self.splash_win:
             self.splash_win.remove_widget(self.splash_img)

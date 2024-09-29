@@ -1,5 +1,5 @@
 '''
-Main app with UI logic - Developer: Koen Aerts
+Main app with UI logic - Developers: Koen Aerts, Rob Pritt
 '''
 import os
 import glob
@@ -18,7 +18,7 @@ import webbrowser
 
 from enums import DroneStatus, FlightMode, SelectableTileServer
 from exports import ExportCsv, ExportKml
-from widgets import SplashScreen
+from widgets import SplashScreen, MaxDistGraph, TotDistGraph, TotDurationGraph
 from common import Common
 from parser import AtomBaseLogParser, DreamerBaseLogParser
 from db import Db
@@ -49,6 +49,13 @@ from kivy_garden.mapview.geojson import GeoJsonMapLayer
 if platform == 'android': # Android
     from android.permissions import request_permissions, Permission
     from androidstorage4kivy import SharedStorage, Chooser, ShareSheet
+    class MyChooser(Chooser): # override chooser to fix black screen issue when cancelling the dialog.
+        def __init__(self, callback = None, **kwargs):
+            super().__init__(callback, **kwargs)
+        def intent_callback(self, requestCode, resultCode, intent):
+            super().intent_callback(requestCode, resultCode, intent)
+            if resultCode == 0: # on_resume event not triggered when the dialog is cancelled without selecting a file.
+                self.callback([])
     from platformdirs import user_config_dir, user_data_dir, user_cache_dir
 elif platform == 'ios': # iOS
     from plyer import storagepath
@@ -618,6 +625,22 @@ class MainApp(MDApp):
         Called when log file screen is opened.
         '''
         self.app_view = "log"
+
+
+    def entered_screen_gstats(self):
+        '''
+        Called when global stats screen is opened.
+        '''
+        self.app_view = "gstats"
+        self.generate_gstat_graphs()
+
+
+    def close_gstats_screen(self):
+        '''
+        Called when global stats screen is closed.
+        '''
+        self.open_view("Screen_Log_Files")
+        self.destroy_gstat_graphs()
 
 
     def entered_screen_loading(self):
@@ -1261,6 +1284,29 @@ class MainApp(MDApp):
             self.root.ids.log_files.add_widget(button2)
 
 
+    def generate_gstat_graphs(self):
+        '''
+        Generate global statistics from the displayed log files.
+        '''
+        imports = self.db.execute("""
+            SELECT i.importref, i.dateref, count(s.flight_number), sum(duration), max(duration), max(max_distance), max(max_altitude), max(max_h_speed), max(max_v_speed), sum(traveled)
+            FROM imports i
+            LEFT OUTER JOIN flight_stats s ON s.importref = i.importref
+            WHERE modelref = ?
+            GROUP BY i.importref, i.dateref
+            ORDER BY i.dateref DESC
+            """, (self.root.ids.selected_model.text,)
+        )
+        self.root.ids.gstat_graphs.width = (dp(40) * len(imports)) + dp(100)
+        self.root.ids.gstat_graphs.add_widget(MaxDistGraph(imports).buildGraph(self.common.dist_unit()))
+        self.root.ids.gstat_graphs.add_widget(TotDistGraph(imports).buildGraph(self.common.dist_unit()))
+        self.root.ids.gstat_graphs.add_widget(TotDurationGraph(imports).buildGraph(self.common.dist_unit()))
+
+
+    def destroy_gstat_graphs(self):
+        self.root.ids.gstat_graphs.clear_widgets()
+
+
     def initiate_log_file(self, buttonObj):
         '''
         Called when a log file has been selected. It will be opened, parsed and displayed on the map screen.
@@ -1763,21 +1809,25 @@ class MainApp(MDApp):
 
     def allow_app_interaction(self, dt):
         '''
-        Bring the app out of the Loading page. Loading page is to work around a KivyMD issue related to the appbar not rendered correctly
-        at its encompassing window width on whatever is the first BaseScreen shown. Seems to be less of a problem on desktops where you
-        can use the Window.maximize() function to force re-rendering of the entire app, but on mobile devices that function does not apply.
-        Older KivyMD versions did not have a problem with this, it seemed to have been introduced after April 2024 in the platform.
+        Bring the app out of the Loading page.
         '''
         self.open_view("Screen_Log_Files")
         self.center_map()
 
 
-    def events(self, instance, keyboard, keycode, text, modifiers):
+    def swap_fullscreen_mode(self):
+        self.root_window.fullscreen = not self.root_window.fullscreen
+
+
+    def keyboard_event(self, instance, keyboard, keycode, text, modifiers):
         '''
         Capture keyboard input. Called when buttons are pressed on the mobile device.
         '''
         if keyboard in (1001, 27):
-            self.stop()
+            if Window.fullscreen:
+                Window.fullscreen = False
+            else:
+                self.stop()
         return True
 
 
@@ -1810,7 +1860,7 @@ class MainApp(MDApp):
             self.shared_storage = SharedStorage()
             self.chosenFile = None
             self.chooser_open = False # To track Android File Manager (Chooser)
-            self.chooser = Chooser(self.import_android_chooser_callback)
+            self.chooser = MyChooser(self.import_android_chooser_callback)
         Config.read(self.configFile)
         Config.set('kivy', 'window_icon', 'assets/app-icon256.png')
         Config.setdefaults('preferences', {
@@ -1840,7 +1890,7 @@ class MainApp(MDApp):
             print(f"Using fallback locale. Unsupported: {langcode}")
             locale.setlocale(locale.LC_ALL, '') # Fallback
         lang.install()
-        Window.bind(on_keyboard=self.events)
+        Window.bind(on_keyboard=self.keyboard_event)
         self.flightPaths = None
         self.pathCoords = None
         self.flightOptions = None
