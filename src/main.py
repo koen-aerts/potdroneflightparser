@@ -54,7 +54,7 @@ if platform == 'android': # Android
             super().__init__(callback, **kwargs)
         def intent_callback(self, requestCode, resultCode, intent):
             super().intent_callback(requestCode, resultCode, intent)
-            if resultCode == 0: # on_resume event not triggered when the dialog is cancelled without selecting a file.
+            if resultCode != -1: # on_resume event not triggered when the dialog is cancelled without selecting a file.
                 self.callback([])
     from platformdirs import user_config_dir, user_data_dir, user_cache_dir
 elif platform == 'ios': # iOS
@@ -698,10 +698,11 @@ class MainApp(MDApp):
         self.root.ids.drone_action.icon = "airplane-marker" if record[self.columns.index('rth')] == 1 else "airplane-takeoff" if dronestatus == DroneStatus.LIFT.value else "airplane-landing" if dronestatus == DroneStatus.LANDING.value else "airplane" if dronestatus == DroneStatus.FLYING.value else "car-break-parking" if dronestatus == DroneStatus.IDLE.value else "crosshairs-question"
         self.root.ids.drone_action.icon_color = "red" if record[self.columns.index('rth')] == 1 else "orange" if dronestatus == DroneStatus.LIFT.value else "orange" if dronestatus == DroneStatus.LANDING.value else "green" if dronestatus == DroneStatus.FLYING.value else "blue" if dronestatus == DroneStatus.IDLE.value else "red"
 
-        self.root.ids.map_img_roll.source = self.get_roll_icon_source()
-        self.root.ids.map_img_wind.source = self.get_wind_icon_source()
+        # TODO - Implement later, need new widgets
+        #self.root.ids.map_img_roll.source = self.get_roll_icon_source()
+        #self.root.ids.map_img_wind.source = self.get_wind_icon_source()
 
-        if self.is_desktop: # Gauges are turned off on mobile devices.
+        if self.root.ids.selected_gauges.active:
             # Set horizontal, vertical and altitude gauge values. Use rounded values.
             self.root.ids.HSPDgauge.value = round(locale.atof(record[self.columns.index('speed2')]))
             # "peg out" the gauge if beyond the vertical limits

@@ -164,42 +164,41 @@ class DistGauge(Widget):
         self.file_gauge = "assets/Distance_Background.png"
         self.file_needle_long = "assets/LongNeedleAltimeter1a.png"
         self.file_needle_short = "assets/SmallNeedleAltimeter1a.png"
-        self.size_gauge = dp(150)
         self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
-        _img_gauge = Image(
+        self._img_gauge = Image(
             source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
+            size=self.size,
         )
         self._needleL = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
         self._needleS = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
-        _img_needle_short = Image(
+        self._img_needle_short = Image(
             source=self.file_needle_short,
-            size=(dp(self.size_gauge), dp(self.size_gauge))
+            size=self.size,
         )
-        _img_needle_long = Image(
+        self._img_needle_long = Image(
             source=self.file_needle_long,
-            size=(dp(self.size_gauge), dp(self.size_gauge))
+            size=self.size,
         )
-        self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
+        self._glab = Label(font_size=dp(14), markup=True, color=[1, 1, 1, 1])
         self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
-        self._gauge.add_widget(_img_gauge)
-        self._needleS.add_widget(_img_needle_short)
-        self._needleL.add_widget(_img_needle_long)
+        self._gauge.add_widget(self._img_gauge)
+        self._needleS.add_widget(self._img_needle_short)
+        self._needleL.add_widget(self._img_needle_long)
         self.add_widget(self._gauge)
         self.add_widget(self._needleS)
         self.add_widget(self._needleL)
@@ -210,15 +209,23 @@ class DistGauge(Widget):
         self.bind(value=self._turn)
 
     def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
+        self._glab.font_size = dp(14) if self.height > dp(100) else dp(12) if self.height > dp(75) else dp(10)
+        self._glab2.font_size = dp(12) if self.height > dp(75) else dp(10)
+        self._gauge.size = self.size
+        self._img_gauge.size = self.size
+        self._needleL.size = self.size
+        self._needleS.size = self.size
+        self._img_needle_short.size = self.size
+        self._img_needle_long.size = self.size
         self._gauge.pos = self.pos
         self._needleL.pos = (self.x, self.y)
         self._needleL.center = self._gauge.center
         self._needleS.pos = (self.x, self.y)
         self._needleS.center = self._gauge.center
-        self._glab.center_x = self._gauge.center_x - dp(28)
-        self._glab.center_y = self._gauge.center_y + dp(1)
+        self._glab.center_x = self._gauge.center_x - dp(28)/dp(150)*self.size[0]
+        self._glab.center_y = self._gauge.center_y + dp(1)/dp(150)*self.size[1]
         self._glab2.center_x = self._gauge.center_x
-        self._glab2.center_y = self._gauge.center_y - dp(20)
+        self._glab2.center_y = self._gauge.center_y - dp(15)/dp(150)*self.size[1]
 
     def _turn(self, *args): # Turn needle
         self._needleS.center_x = self._gauge.center_x
@@ -245,42 +252,41 @@ class AltGauge(Widget):
         self.file_gauge = "assets/Altimeter_Background2.png"
         self.file_needle_long = "assets/LongNeedleAltimeter1a.png"
         self.file_needle_short = "assets/SmallNeedleAltimeter1a.png"
-        self.size_gauge = dp(150)
         self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
-        _img_gauge = Image(
+        self._img_gauge = Image(
             source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
+            size=self.size,
         )
         self._needleL = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
         self._needleS = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
-        )        
-        _img_needle_short = Image(
+        )
+        self._img_needle_short = Image(
             source=self.file_needle_short,
-            size=(dp(self.size_gauge), dp(self.size_gauge))
+            size=self.size
         )
-        _img_needle_long = Image(
+        self._img_needle_long = Image(
             source=self.file_needle_long,
-            size=(dp(self.size_gauge), dp(self.size_gauge))
+            size=self.size
         )
-        self._glab = Label(font_size=dp(14), markup=True, color=[0.41, 0.42, 0.74, 1])
+        self._glab = Label(font_size=dp(14), markup=True, color=[1, 1, 1, 1])
         self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
-        self._gauge.add_widget(_img_gauge)
-        self._needleS.add_widget(_img_needle_short)
-        self._needleL.add_widget(_img_needle_long)
+        self._gauge.add_widget(self._img_gauge)
+        self._needleS.add_widget(self._img_needle_short)
+        self._needleL.add_widget(self._img_needle_long)
         self.add_widget(self._gauge)
         self.add_widget(self._needleS)
         self.add_widget(self._needleL)
@@ -292,15 +298,23 @@ class AltGauge(Widget):
         self.bind(display_unit=self._turn)
 
     def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
+        self._glab.font_size = dp(14) if self.height > dp(100) else dp(12) if self.height > dp(75) else dp(10)
+        self._glab2.font_size = dp(12) if self.height > dp(75) else dp(10)
+        self._gauge.size = self.size
+        self._img_gauge.size = self.size
+        self._needleL.size = self.size
+        self._needleS.size = self.size
+        self._img_needle_short.size = self.size
+        self._img_needle_long.size = self.size
         self._gauge.pos = self.pos
         self._needleL.pos = (self.x, self.y)
         self._needleL.center = self._gauge.center
         self._needleS.pos = (self.x, self.y)
         self._needleS.center = self._gauge.center
-        self._glab.center_x = self._gauge.center_x - dp(28)
-        self._glab.center_y = self._gauge.center_y + dp(1)
+        self._glab.center_x = self._gauge.center_x - dp(28)/dp(150)*self.size[0]
+        self._glab.center_y = self._gauge.center_y + dp(1)/dp(150)*self.size[1]
         self._glab2.center_x = self._gauge.center_x
-        self._glab2.center_y = self._gauge.center_y - dp(20)
+        self._glab2.center_y = self._gauge.center_y - dp(16)/dp(150)*self.size[1]
 
     def _turn(self, *args): # Turn needle
         self._needleS.center_x = self._gauge.center_x
@@ -326,31 +340,30 @@ class HGauge(Widget):
         super(HGauge, self).__init__(**kwargs)
         self.file_gauge = "assets/AirSpeedIndicator_Background_H.png"
         self.file_needle = "assets/needle.png"
-        self.size_gauge = dp(150)
         self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
-        _img_gauge = Image(
+        self._img_gauge = Image(
             source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
+            size=self.size
         )
         self._needle = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
-        _img_needle = Image(
+        self._img_needle = Image(
             source=self.file_needle,
-            size=(self.size_gauge, self.size_gauge)
+            size=self.size
         )
         self._glab = Label(font_size=dp(14), markup=True)
         self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
-        self._gauge.add_widget(_img_gauge)
-        self._needle.add_widget(_img_needle)
+        self._gauge.add_widget(self._img_gauge)
+        self._needle.add_widget(self._img_needle)
         self.add_widget(self._gauge)
         self.add_widget(self._needle)
         self.add_widget(self._glab2)
@@ -359,13 +372,18 @@ class HGauge(Widget):
         self.bind(value=self._turn)
 
     def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
+        self._glab2.font_size = dp(12) if self.height > dp(75) else dp(10)
+        self._gauge.size = self.size
+        self._img_gauge.size = self.size
+        self._needle.size = self.size
+        self._img_needle.size = self.size
         self._gauge.pos = self.pos
         self._needle.pos = (self.x, self.y)
         self._needle.center = self._gauge.center
         self._glab.center_x = self._gauge.center_x
         self._glab.center_y = self._gauge.center_y
         self._glab2.center_x = self._gauge.center_x
-        self._glab2.center_y = self._gauge.center_y - dp(20)
+        self._glab2.center_y = self._gauge.center_y - dp(20)/dp(150)*self.size[1]
 
     def _turn(self, *args): # Turn needle
         self._needle.center_x = self._gauge.center_x
@@ -387,31 +405,30 @@ class VGauge(Widget):
         super(VGauge, self).__init__(**kwargs)
         self.file_gauge = "assets/AirSpeedIndicator_Background_V.png"
         self.file_needle = "assets/needle.png"
-        self.size_gauge = dp(150)
         self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
-        _img_gauge = Image(
+        self._img_gauge = Image(
             source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
+            size=self.size
         )
         self._needle = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
-        _img_needle = Image(
+        self._img_needle = Image(
             source=self.file_needle,
-            size=(self.size_gauge, self.size_gauge)
+            size=self.size
         )
         self._glab = Label(font_size=dp(14), markup=True)
         self._glab2 = Label(font_size=dp(12), markup=True, color=[1, 1, 1, 1])
-        self._gauge.add_widget(_img_gauge)
-        self._needle.add_widget(_img_needle)
+        self._gauge.add_widget(self._img_gauge)
+        self._needle.add_widget(self._img_needle)
         self.add_widget(self._gauge)
         self.add_widget(self._needle)
         self.add_widget(self._glab2)
@@ -420,13 +437,18 @@ class VGauge(Widget):
         self.bind(value=self._turn)
 
     def _update(self, *args): # Update gauge and needle positions after sizing or positioning.
+        self._glab2.font_size = dp(12) if self.height > dp(75) else dp(10)
+        self._gauge.size = self.size
+        self._img_gauge.size = self.size
+        self._needle.size = self.size
+        self._img_needle.size = self.size
         self._gauge.pos = self.pos
         self._needle.pos = (self.x, self.y)
         self._needle.center = self._gauge.center
         self._glab.center_x = self._gauge.center_x
         self._glab.center_y = self._gauge.center_y
         self._glab2.center_x = self._gauge.center_x
-        self._glab2.center_y = self._gauge.center_y - dp(20)
+        self._glab2.center_y = self._gauge.center_y - dp(20)/dp(150)*self.size[1]
 
     def _turn(self, *args): # Turn needle
         self._needle.center_x = self._gauge.center_x
@@ -451,38 +473,38 @@ class HeadingGauge(Widget):
         self.file_heading_aircraft = "assets/Heading_drone3a.png"
         self.size_gauge = dp(150)
         self._gauge = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
-        _img_gauge = Image(
+        self._img_gauge = Image(
             source=self.file_gauge,
-            size=(self.size_gauge, self.size_gauge)
+            size=self.size
         )
         self._headingR = Scatter(
-            size=(self.size_gauge, self.size_gauge),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
         self._aircrafT = Scatter(
-            size=(dp(self.size_gauge), dp(self.size_gauge)),
+            size=self.size,
             do_rotation=False,
             do_scale=False,
             do_translation=False
         )
-        _img_aircraft = Image(
+        self._img_aircraft = Image(
             source=self.file_heading_aircraft,
-            size=(self.size_gauge, self.size_gauge)  
+            size=self.size
          )
-        _img_heading_ring = Image(
+        self._img_heading_ring = Image(
             source=self.file_heading_ring,
-            size=(self.size_gauge, self.size_gauge)
+            size=self.size
         )
-        self._gauge.add_widget(_img_gauge)
-        self._headingR.add_widget(_img_heading_ring)
-        self._aircrafT.add_widget(_img_aircraft)
+        self._gauge.add_widget(self._img_gauge)
+        self._headingR.add_widget(self._img_heading_ring)
+        self._aircrafT.add_widget(self._img_aircraft)
         self.add_widget(self._gauge)
         self.add_widget(self._headingR)
         self.add_widget(self._aircrafT)        
@@ -491,6 +513,12 @@ class HeadingGauge(Widget):
         self.bind(value=self._turn)
 
     def _update(self, *args): # Update positioning.
+        self._gauge.size = self.size
+        self._img_gauge.size = self.size
+        self._headingR.size = self.size
+        self._aircrafT.size = self.size
+        self._img_aircraft.size = self.size
+        self._img_heading_ring.size = self.size
         self._gauge.pos = self.pos
         self._headingR.pos = (self.x, self.y)
         self._headingR.center = self._gauge.center

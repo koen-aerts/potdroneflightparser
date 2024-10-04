@@ -593,59 +593,54 @@ MDGridLayout:
                                 size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
                         MDBoxLayout:
                             size_hint: (None, None)
+                            pos_hint: {"right": 1, "top": 1}
                             size: self.minimum_size
-                            pos_hint: {"right": 1, "top": .95}
                             cols: 1
-                            padding: 0
+                            padding: [0,dp(40),0,0]
                             spacing: 0
                             orientation: 'vertical'
-                            opacity: 1 if app.is_desktop and selected_gauges.active else 0
+                            opacity: 1 if selected_gauges.active else 0
                             DistGauge:
                                 id: DSgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                             AltGauge:
                                 id: ALgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                             HGauge:
                                 id: HSPDgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                             VGauge:
                                 id: VSPDgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                             HeadingGauge:
                                 id: HDgauge
                                 value: 0
                                 drotation: 0 # Provision to rotate the drone image in the gauge itself
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                         MDSlider:
                             id: flight_progress
                             size_hint: (None, None)
                             x: dp(1)
                             y: dp(55) if app.is_desktop else dp(45)
-                            width: self.parent.width - (dp(152) if app.is_desktop and selected_gauges.active else dp(2))
+                            width: self.parent.width - (HDgauge.width + dp(2) if selected_gauges.active else dp(2))
                             is_updating: True
                             opacity: 0 if selected_path.text == "--" else 1
                             on_value: app.select_flight_progress(*args)
@@ -668,29 +663,25 @@ MDGridLayout:
                             ZoomButton:
                                 icon: "minus"
                                 on_release: app.map_zoom(False)
-                        MDGridLayout:
-                            id: mapnav
-                            size_hint: (None, None)
-                            width: dp(120)
-                            height: dp(50)
-                            pos_hint: {"x": 0.01} if app.is_desktop else {"x": 1}
-                            y: dp(100) if app.is_desktop else dp(90)
-                            #pos_hint: {"x": 0.01, "y": dp(70)} if app.is_desktop else {"x": 0.01, "y": dp(60)}
-                            #padding: [ 0, dp(40), 0, 0 ]
-                            rows: 1
-                            #adaptive_width: True
-                            #row_default_height: dp(50)
-                            md_bg_color: self.theme_cls.backgroundColor
-                            Image:
-                                id: map_img_roll
-                                source: "assets/roll.png"
-                                fit_mode: "contain"
-                            MDLabel:
-                                text: "  "
-                            Image:
-                                id: map_img_wind
-                                source: "assets/wind.png"
-                                fit_mode: "contain"
+                        #MDGridLayout:
+                        #    id: mapnav
+                        #    size_hint: (None, None)
+                        #    width: dp(120)
+                        #    height: dp(50)
+                        #    pos_hint: {"x": 0.01} if app.is_desktop else {"x": 1}
+                        #    y: dp(100) if app.is_desktop else dp(90)
+                        #    rows: 1
+                        #    md_bg_color: self.theme_cls.backgroundColor
+                        #    Image:
+                        #        id: map_img_roll
+                        #        source: "assets/roll.png"
+                        #        fit_mode: "contain"
+                        #    MDLabel:
+                        #        text: "  "
+                        #    Image:
+                        #        id: map_img_wind
+                        #        source: "assets/wind.png"
+                        #        fit_mode: "contain"
                         MDGridLayout:
                             pos_hint: {"right": 1, "top": 1}
                             size_hint: (None, None)
@@ -862,13 +853,11 @@ MDGridLayout:
                             text: ""
                     PrefLabel:
                         text: _('preference_gauges')
-                        opacity: 1 if app.is_desktop else 0
                     PrefCheck:
                         on_release: app.gauges_selection(*args)
                         id: selected_gauges
                         active: True
                         height: dp(34)
-                        opacity: 1 if app.is_desktop else 0
                     # Row 5
                     PrefLabel:
                         text: _('preference_flight_path_width')
