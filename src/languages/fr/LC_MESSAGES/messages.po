@@ -22,6 +22,9 @@ msgstr ""
 msgid "title_logs"
 msgstr "Journaux"
 
+msgid "title_gstats"
+msgstr "Stats"
+
 msgid "title_map"
 msgstr "Carte"
 

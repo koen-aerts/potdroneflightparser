@@ -22,6 +22,9 @@ msgstr ""
 msgid "title_logs"
 msgstr "Pencatatan"
 
+msgid "title_gstats"
+msgstr "Stats"
+
 msgid "title_map"
 msgstr "Peta"
 

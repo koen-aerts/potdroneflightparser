@@ -20,6 +20,9 @@ msgstr ""
 msgid "title_logs"
 msgstr "Logs"
 
+msgid "title_gstats"
+msgstr "Stats"
+
 msgid "title_map"
 msgstr "Map"
 

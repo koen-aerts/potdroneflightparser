@@ -193,7 +193,7 @@ MDGridLayout:
                             icon: "close"
                             on_release: app.close_gstats_screen()
                     MDTopAppBarTitle:
-                        text: f"{app.appName} - {_('title_logs')}"
+                        text: f"{app.appName} - {_('title_gstats')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
                         MDActionTopAppBarButton:
@@ -227,6 +227,7 @@ MDGridLayout:
                             icon: "close"
                             on_release: app.close_map_screen()
                     MDTopAppBarTitle:
+                        id: map_title
                         text: f"{app.appName} - {_('title_map')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
@@ -733,6 +734,7 @@ MDGridLayout:
                             icon: "close"
                             on_release: root.ids.screen_manager.current = "Screen_Map"
                     MDTopAppBarTitle:
+                        id: flights_title
                         text: f"{app.appName} - {_('title_flights')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:

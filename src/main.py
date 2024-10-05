@@ -121,7 +121,8 @@ class MainApp(MDApp):
 
 
     def show_flight_stats(self):
-        self.title = self.appTitle + " - " + self.zipFilename
+        self.root.ids.map_title.text = self.zipFilename
+        self.root.ids.flights_title.text = self.zipFilename
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_flight'), bold=True, max_lines=1, halign="left", valign="center", padding=[dp(10),0,0,0]))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_duration'), bold=True, max_lines=1, halign="right", valign="center"))
         self.root.ids.flight_stats_grid.add_widget(MDLabel(text=_('flight_distance_flown'), bold=True, max_lines=1, halign="right", valign="center"))
@@ -1577,7 +1578,8 @@ class MainApp(MDApp):
         self.playback_speed = 1
         self.map_rebuild_required = True
         if self.root:
-            self.title = self.appTitle
+            self.root.ids.map_title.text = f"{self.appName} - {_('title_map')}"
+            self.root.ids.flights_title.text = f"{self.appName} - {_('title_flights')}"
             self.root.ids.selected_path.text = '--'
             self.zoom = self.defaultMapZoom
             self.clear_map()
