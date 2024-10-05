@@ -1,11 +1,15 @@
 # Flight Log Viewer
 Flight Log Viewer that can read from Potensic flight-log files.
 
-Models confirmed working are the Atom and Atom SE (both first and second generations).
+Models confirmed working are the Atom and Atom SE (all generations).
 
 ![Screenshot Map](<resources/screenshot1.png> "Screenshot Map")
 
-![Screenshot Log Files](<resources/screenshot2.png> "Screenshot Log Files")
+![Screenshot Flight Stats](<resources/screenshot2.png> "Screenshot Flight Stats")
+
+![Screenshot Log Files](<resources/screenshot3.png> "Screenshot Log Files")
+
+![Screenshot Log Stats](<resources/screenshot4.png> "Screenshot Log Stats")
 
 This project is based on reverse engineering of the Potensic flight bin files (mainly based on a first generation Atom SE as well as log files shared by contributors for other Potensic models), and by trial and error. Not all available metrics are currently pulled from this proprietary file format as not everything has been identified yet.
 
