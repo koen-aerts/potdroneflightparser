@@ -1697,12 +1697,15 @@ class MainApp(MDApp):
                 if len(latestVersionParts) != len(currentVersionParts):
                     hasUpdate = True
                 else:
+                    latestVerNum = 0;
+                    currentVerNum = 0;
                     for idx in range(len(latestVersionParts)):
                         latestVerPt = int(re.sub("[^0-9]*", "", latestVersionParts[idx]))
                         currentVerPt = int(re.sub("[^0-9]*", "", currentVersionParts[idx]))
-                        if latestVerPt > currentVerPt:
-                            hasUpdate = True
-                            break
+                        latestVerNum = (latestVerNum * 100) + latestVerPt
+                        currentVerNum = (currentVerNum * 100) + currentVerPt
+                    if latestVerNum > currentVerNum:
+                        hasUpdate = True
                 if hasUpdate:
                     print(f"Current version: {self.appVersion}. Latest version: {latestVersion}")
                     isPreRel = relObj[0]["prerelease"] == "true"
