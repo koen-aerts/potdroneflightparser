@@ -2,6 +2,7 @@
 Main app with UI logic - Developers: Koen Aerts, Rob Pritt
 '''
 import os
+import subprocess
 import glob
 import shutil
 import math
@@ -37,13 +38,16 @@ from kivy.utils import platform
 from kivymd.app import MDApp
 from kivymd.uix.button import MDButton, MDButtonText, MDIconButton
 from kivymd.uix.dialog import MDDialog, MDDialogHeadlineText, MDDialogButtonContainer, MDDialogContentContainer
+from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.progressindicator.progressindicator import MDCircularProgressIndicator
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarText
-from kivy_garden.mapview import MapSource, MapMarker, MarkerMapLayer
+from kivymd.uix.widget import MDWidget
+from kivy_garden.mapview import MapSource, MapMarker, MapMarkerPopup, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
+from kivy_garden.mapview.utils import haversine
 
 # Platform specific imports.
 if platform == 'android': # Android
@@ -168,11 +172,10 @@ class MainApp(MDApp):
         lcDM = droneModel.lower()
         fpvList = []
         # Extract the bin files and copy to the app data directory, then update the DB references.
-        binLog = os.path.join(tempfile.gettempdir(), "flightdata")
-        shutil.rmtree(binLog, ignore_errors=True) # Delete old temp files if they were missed before.
+        shutil.rmtree(self.tempDir, ignore_errors=True) # Delete old temp files if they were missed before.
         with ZipFile(selectedFile, 'r') as unzip:
-            unzip.extractall(path=binLog)
-        for binFile in glob.glob(os.path.join(binLog, '**/*'), recursive=True):
+            unzip.extractall(path=self.tempDir)
+        for binFile in glob.glob(os.path.join(self.tempDir, '**/*'), recursive=True):
             binBaseName = os.path.basename(binFile)
             binType = "FPV" if binBaseName.endswith("-FPV.bin") else (
                 "BIN" if binBaseName.endswith("-FC.bin") else (
@@ -203,7 +206,7 @@ class MainApp(MDApp):
                     "INSERT INTO log_files(filename, importref, bintype) VALUES(?,?,?)",
                     (fpvBaseName, zipBaseName, "FPV")
                 )
-        shutil.rmtree(binLog, ignore_errors=True) # Delete temp files.
+        shutil.rmtree(self.tempDir, ignore_errors=True) # Delete temp files.
         if hasFc:
             self.show_info_message(message=_('log_import_completed'))
             self.map_rebuild_required = False
@@ -642,6 +645,28 @@ class MainApp(MDApp):
         '''
         self.open_view("Screen_Log_Files")
         self.destroy_gstat_graphs()
+
+
+    def entered_screen_waypoints(self):
+        '''
+        Called when map screen is opened.
+        '''
+        self.app_view = "waypoints"
+
+
+    def close_waypoints_screen(self):
+        '''
+        Called when waypoints screen is closed.
+        '''
+        shutil.rmtree(self.tempDir, ignore_errors=True) # Delete temp files.
+        self.potdb = None
+        self.open_view("Screen_Log_Files")
+
+
+    def left_screen_waypoints(self):
+        '''
+        Called when map screen is navigated away from.
+        '''
 
 
     def entered_screen_loading(self):
@@ -1536,6 +1561,287 @@ class MainApp(MDApp):
         shutil.rmtree(resDir, ignore_errors=True) # Delete temp files.
 
 
+    def get_waypoints(self, button):
+        adbexe = self.root.ids.adb_path.text
+        prc = subprocess.run([adbexe, "devices"], capture_output=True, text=True)
+        if len(prc.stderr) > 0:
+            self.root.ids.adb_output.text = prc.stderr
+        else:
+            self.root.ids.adb_output.text = prc.stdout
+            shutil.rmtree(self.tempDir, ignore_errors=True) # Delete temp files.
+            if not os.path.exists(self.tempDir):
+                Path(self.tempDir).mkdir(parents=False, exist_ok=True)
+            dbbasename = "map.db"
+            dbfilelocal = os.path.join(self.tempDir, dbbasename)
+            prc = subprocess.run([adbexe, "pull", f"/data/data/com.ipotensic.potensicpro/databases/{dbbasename}", self.tempDir], capture_output=True, text=True)
+            if len(prc.stderr) > 0:
+                self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
+            if not os.path.exists(dbfilelocal):
+                prc = subprocess.run([
+                    adbexe, "shell", "run-as", "com.ipotensic.potensicpro", "sh", "-c",
+                    f"'mkdir /storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer; cp databases/{dbbasename} /storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer/;'"
+                    ], capture_output=True, text=True)
+                if len(prc.stderr) > 0:
+                    self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
+                prc = subprocess.run([adbexe, "pull", f"/storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer/{dbbasename}", self.tempDir], capture_output=True, text=True)
+                if len(prc.stderr) > 0:
+                    self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
+                prc = subprocess.run([
+                    adbexe, "shell", "run-as", "com.ipotensic.potensicpro", "sh", "-c",
+                    f"'rm /storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer/{dbbasename}; rmdir /storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer;'"
+                    ], capture_output=True, text=True)
+                if not os.path.exists(dbfilelocal):
+                    self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + "Could not download waypoints file from the device."
+                    return
+
+            self.potdb = Db(dbfilelocal, extdb=True) # sqlite DB file.
+            self.waypoints = []
+            for waypointInfo in self.potdb.execute("SELECT id,date,duration,height,mileage,num,speed FROM flightrecordbean ORDER BY id"):
+                if waypointInfo[1] is not None:
+                    markers = []
+                    for marker in self.potdb.execute("SELECT id,lat,lng FROM multipointbean WHERE flightrecordbean_id = ? ORDER BY id", (waypointInfo[0],)):
+                        markers.append({
+                            "lat": marker[1],
+                            "lon": marker[2]
+                        })
+                    self.waypoints.append({
+                        "date": waypointInfo[1],
+                        "duration": waypointInfo[2],
+                        "height": waypointInfo[3],
+                        "mileage": waypointInfo[4],
+                        "num": waypointInfo[5],
+                        "speed": waypointInfo[6],
+                        "markers": markers
+                    })
+
+
+    def waypoint_selection(self, item):
+        menu_items = []
+        if self.waypoints:
+            for idx, waypointInfo in enumerate(self.waypoints):
+                menu_items.append({"text": f"{waypointInfo['date']} - {waypointInfo['num']} - {waypointInfo['mileage']} - {waypointInfo['duration']}", "on_release": lambda x=idx: self.waypoint_selection_callback(x)})
+        if len(menu_items) == 0:
+            menu_items.append({"text": "--", "on_release": lambda x=None: self.waypoint_selection_callback(x)})
+        self.waypoint_selection_menu = MDDropdownMenu(caller = item, items = menu_items)
+        self.waypoint_selection_menu.open()
+    def waypoint_selection_callback(self, waypointidx):
+        self.waypoint_selection_menu.dismiss()
+        if waypointidx is None:
+            self.root.ids.adb_output.text = "Retrieve the waypoints from the device first."
+            self.root.ids.selected_waypoint.text = "--"
+            return
+        wpinfo = self.waypoints[waypointidx]
+        self.root.ids.selected_waypoint.text = f"{wpinfo['date']} - {wpinfo['num']} - {wpinfo['mileage']} - {wpinfo['duration']}"
+        self.reset_waylayer()
+        #if self.waylayer:
+        #    self.root.ids.waymap.remove_layer(self.waylayer)
+        #self.waylayer = MarkerMapLayer()
+        self.waylayer.value = waypointidx
+        #self.root.ids.waymap.add_layer(self.waylayer)
+        minlat = None
+        maxlat = None
+        minlon = None
+        maxlon = None
+        count = 0
+        for waypoint in self.waypoints[waypointidx]['markers']:
+            marker = MapMarkerPopup(lat=waypoint['lat'], lon=waypoint['lon'], popup_size=(dp(180), dp(60)))
+            if minlat is None or marker.lat < minlat:
+                minlat = marker.lat
+            if minlon is None or marker.lon < minlon:
+                minlon = marker.lon
+            if maxlat is None or marker.lat > maxlat:
+                maxlat = marker.lat
+            if maxlon is None or marker.lon > maxlon:
+                maxlon = marker.lon
+            count = count + 1
+            marker.value = count
+            widget = MDGridLayout(size_hint=(1,1), md_bg_color=self.theme_cls.backgroundColor, cols=1)
+            widget.add_widget(MDLabel(text=f"Target: #{count}", bold=True, max_lines=1))
+            #widget.add_widget(MDLabel(text=f"{marker.lat},{marker.lon}", role="small", max_lines=1))
+            widget.add_widget(MDButton(MDButtonText(text="Delete"), style="filled", on_release=self.delete_waypoint_marker))
+            marker.add_widget(widget)
+            self.root.ids.waymap.add_marker(marker, self.waylayer)
+            print(f"Add marker: {marker}")
+        if count > 0:
+            zoom = self.root.ids.waymap.map_source.max_zoom
+            self.root.ids.waymap.zoom = zoom
+            self.root.ids.waymap.center_on((minlat + maxlat) / 2,  (minlon + maxlon) / 2)
+            while zoom > self.root.ids.waymap.map_source.min_zoom:
+                bbox = self.root.ids.waymap.get_bbox()
+                if minlat >= bbox[0] and minlon >= bbox[1] and maxlat <= bbox[2] and maxlon <= bbox[3]:
+                    break
+                zoom = zoom - 1
+                self.root.ids.waymap.zoom = zoom
+
+
+    def waymap_touch(self, mapObj, touch):
+        if mapObj.collide_point(*touch.pos) and self.waylayer and self.wait_for_marker_add_click:
+            lat, lon = mapObj.get_latlon_at(touch.pos[0], touch.pos[1])
+            marker = MapMarkerPopup(lat=lat, lon=lon, popup_size=(dp(180), dp(60)))
+            marker.value = len(self.waylayer.children)+1
+            widget = MDGridLayout(size_hint=(1,1), md_bg_color=self.theme_cls.backgroundColor, cols=1)
+            widget.add_widget(MDLabel(text=f"Target: #{marker.value}", bold=True, max_lines=1))
+            #widget.add_widget(MDLabel(text=f"{marker.lat},{marker.lon}", role="small", max_lines=1))
+            widget.add_widget(MDButton(MDButtonText(text="Delete"), style="filled", on_release=self.delete_waypoint_marker))
+            marker.add_widget(widget)
+            self.root.ids.waymap.add_marker(marker, self.waylayer)
+            self.update_waypoints()
+        self.wait_for_marker_add_click = False
+
+
+    def add_waypoint_marker(self, buttonObj):
+        self.wait_for_marker_add_click = True
+
+
+    def delete_waypoint_marker(self, buttonObj):
+        if not self.waylayer:
+            return
+        deletedmarker = buttonObj.parent.parent.parent
+        deletednumber = deletedmarker.value
+        self.root.ids.waymap.remove_marker(deletedmarker)
+        #self.waylayer.remove_widget(deletedmarker)
+        for marker in self.waylayer.children:
+            if marker.value > deletednumber:
+                marker.value = marker.value - 1
+                marker.placeholder.children[0].children[1].text = f"Target: #{marker.value}"
+        self.update_waypoints()
+
+
+    def add_waypoints(self, buttonObj):
+        self.reset_waylayer()
+        #if self.waylayer:
+        #    self.root.ids.waymap.remove_layer(self.waylayer)
+        #self.waylayer = MarkerMapLayer()
+        self.waylayer.value = len(self.waypoints)
+        #self.root.ids.waymap.add_layer(self.waylayer)
+        self.waypoints.append({
+            "date": None,
+            "duration": None,
+            "height": None,
+            "mileage": None,
+            "num": 0,
+            "speed": None,
+            "markers": []
+        })
+        self.root.ids.selected_waypoint.text = "-- NEW --"
+
+
+    def reset_waylayer(self):
+        if self.waylayer:
+            while len(self.waylayer.children) > 0:
+                print(f"MARKER: {self.waylayer.children[0]}")
+                self.waylayer.children[0].detach()
+            #for marker in self.waylayer.children:
+            #    print(f"MARKER: {marker}")
+            #    marker.detach()
+                #self.root.ids.waymap.remove_marker(marker)
+                #self.waylayer.remove_widget(marker)
+            #self.root.ids.waymap.remove_layer(self.waylayer)
+            self.waylayer.value = None
+        else:
+            self.waylayer = MarkerMapLayer()
+            self.root.ids.waymap.add_layer(self.waylayer)
+
+
+    def delete_waypoints(self, buttonObj):
+        if not self.waylayer:
+            return
+        self.waypoints.pop(self.waylayer.value)
+        self.reset_waylayer()
+        #self.root.ids.waymap.remove_layer(self.waylayer)
+        self.root.ids.selected_waypoint.text = "--"
+
+
+    def waymap_zoom(self, zoomin):
+        '''
+        Zoom in/out when the zoom buttons on the waypoint map are selected.
+        '''
+        if zoomin:
+            if self.root.ids.waymap.zoom < self.root.ids.waymap.map_source.max_zoom:
+                self.root.ids.waymap.zoom = self.root.ids.waymap.zoom + 1
+        else:
+            if self.root.ids.waymap.zoom > self.root.ids.waymap.map_source.min_zoom:
+                self.root.ids.waymap.zoom = self.root.ids.waymap.zoom - 1
+
+
+    def update_waypoints(self):
+        if not self.waylayer:
+            return
+        # Update the current waypoints.
+        markers = None
+        if len(self.waylayer.children) > 0:
+            markers = [None] * len(self.waylayer.children)
+            for marker in self.waylayer.children:
+                markers[marker.value-1] = { "lat": marker.lat, "lon": marker.lon }
+        else:
+            markers = []
+        self.waypoints[self.waylayer.value]['markers'] = markers
+        totdist = 0
+        prevmarker = None
+        for marker in markers:
+            if prevmarker is not None:
+                totdist = totdist + haversine(marker['lon'], marker['lat'], prevmarker['lon'], prevmarker['lat'])
+            prevmarker = marker
+        totdist = int(round(totdist * 1000))
+        duration = int(totdist * 36) # short for distance (m) * 3600 / 100km/h
+        self.waypoints[self.waylayer.value]['date'] = datetime.datetime.now().strftime('%d,%m,%Y')
+        self.waypoints[self.waylayer.value]['duration'] = duration
+        self.waypoints[self.waylayer.value]['height'] = '50m'
+        self.waypoints[self.waylayer.value]['mileage'] = f"{totdist}m"
+        self.waypoints[self.waylayer.value]['num'] = len(self.waypoints[self.waylayer.value]['markers'])
+        self.waypoints[self.waylayer.value]['speed'] = '100km/h'
+
+
+    def save_waypoints(self, button):
+        if not self.waylayer or not self.potdb:
+            return
+        # Replace all waypoint data in the tables.
+        self.potdb.execute("DELETE FROM multipointbean")
+        self.potdb.execute("DELETE FROM flightrecordbean")
+        flightid = 1
+        markerid = 1
+        for waypointInfo in self.waypoints:
+            self.potdb.execute(
+                "INSERT INTO flightrecordbean(id,date,duration,height,mileage,num,speed) VALUES(?,?,?,?,?,?,?)",
+                (flightid, waypointInfo['date'], waypointInfo['duration'], waypointInfo['height'], waypointInfo['mileage'], waypointInfo['num'], waypointInfo['speed'])
+            )
+            for marker in waypointInfo['markers']:
+                self.potdb.execute(
+                    "INSERT INTO multipointbean(id,flightrecordbean_id,lat,lng) VALUES (?,?,?,?)",
+                    (markerid, flightid, marker['lat'], marker['lon'])
+                )
+                markerid = markerid + 1
+            flightid = flightid + 1
+
+        # Push the waypoint db file to the device. If direct file transfer via rooted device does not work, attempt file upload if the potensic app is debuggable.
+        adbexe = self.root.ids.adb_path.text
+        dbbasename = "map.db"
+        prc = subprocess.run([adbexe, "push", self.potdb.dataFile(), f"/data/data/com.ipotensic.potensicpro/databases/"], capture_output=True, text=True)
+        if len(prc.stderr) > 0:
+            self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
+        print(f"RETURNCODE1: {prc.returncode}")
+        if prc.returncode == 0:
+            prc = subprocess.run([adbexe, "push", "shell", "run-as", "com.ipotensic.potensicpro", "sh", "-c", f"chmod 666 /data/data/com.ipotensic.potensicpro/databases/{dbbasename}"], capture_output=True, text=True)
+            if len(prc.stderr) > 0:
+                self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
+        else:
+            prc = subprocess.run([
+                adbexe, "shell", "run-as", "com.ipotensic.potensicpro", "sh", "-c",
+                f"'mkdir /storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer;'"
+                ], capture_output=True, text=True)
+            if len(prc.stderr) > 0:
+                self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
+            prc = subprocess.run([adbexe, "push", self.potdb.dataFile(), f"/storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer/"], capture_output=True, text=True)
+            if len(prc.stderr) > 0:
+                self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
+            prc = subprocess.run([
+                adbexe, "shell", "run-as", "com.ipotensic.potensicpro", "sh", "-c",
+                f"'cp /storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer/{dbbasename} /data/data/com.ipotensic.potensicpro/databases/; rm /storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer/{dbbasename}; rmdir /storage/emulated/0/Android/data/com.ipotensic.potensicpro/files/PotensicPro/transfer;'"
+                ], capture_output=True, text=True)
+            if len(prc.stderr) > 0:
+                self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
+
+
     def close_pref_screen(self):
         '''
         Called when map screen is closed.
@@ -1567,6 +1873,7 @@ class MainApp(MDApp):
         self.root.ids.selected_refresh_rate.text = Config.get('preferences', 'refresh_rate')
         self.root.ids.selected_model.text = Config.get('preferences', 'selected_model')
         self.root.ids.selected_language.text = self.languages.get(Config.get('preferences', 'language'))
+        self.root.ids.adb_path.text = Config.get('preferences', 'adbpath')
 
 
     def reset(self):
@@ -1697,8 +2004,8 @@ class MainApp(MDApp):
                 if len(latestVersionParts) != len(currentVersionParts):
                     hasUpdate = True
                 else:
-                    latestVerNum = 0;
-                    currentVerNum = 0;
+                    latestVerNum = 0
+                    currentVerNum = 0
                     for idx in range(len(latestVersionParts)):
                         latestVerPt = int(re.sub("[^0-9]*", "", latestVersionParts[idx]))
                         currentVerPt = int(re.sub("[^0-9]*", "", currentVersionParts[idx]))
@@ -1852,11 +2159,14 @@ class MainApp(MDApp):
         self.is_linux = platform == 'linux'
         self.is_desktop = self.is_windows or self.is_macos or self.is_linux
         self.title = self.appTitle
+        self.tempDir = os.path.join(tempfile.gettempdir(), "flightdata")
+        print(f"tempDir: {self.tempDir}")
         self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
         if not os.path.exists(self.logfileDir):
             Path(self.logfileDir).mkdir(parents=True, exist_ok=True)
         self.db = Db(os.path.join(self.dataDir, self.dbFilename)) # sqlite DB file.
+        self.potdb = None
         configDir = self.dataDir if self.is_ios else user_config_dir(self.appPathName, self.appPathName) # Place where app ini config file goes.
         if not os.path.exists(configDir):
             Path(configDir).mkdir(parents=True, exist_ok=True)
@@ -1885,7 +2195,8 @@ class MainApp(MDApp):
             'selected_model': '--',
             'language': 'en_US',
             'gauges': True,
-            'splash': False
+            'splash': False,
+            'adbpath': "adb"
         })
         langcode = Config.get('preferences', 'language')
         langpath = os.path.join(os.path.dirname(__file__), 'languages')
@@ -1897,6 +2208,9 @@ class MainApp(MDApp):
             locale.setlocale(locale.LC_ALL, '') # Fallback
         lang.install()
         Window.bind(on_keyboard=self.keyboard_event)
+        self.waypoints = None
+        self.waylayer = None
+        self.wait_for_marker_add_click = None
         self.flightPaths = None
         self.pathCoords = None
         self.flightOptions = None
@@ -1959,6 +2273,7 @@ class MainApp(MDApp):
         Called when the app is exited.
         '''
         self.stop_flight(True)
+        shutil.rmtree(self.tempDir, ignore_errors=True) # Delete temp files.
         return super().on_stop()
 
 

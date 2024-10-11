@@ -135,6 +135,11 @@ MDGridLayout:
                             opacity: 1 if app.is_desktop else 0
                             disabled: False if app.is_desktop else True
                         MDActionTopAppBarButton:
+                            icon: "map-marker-path"
+                            on_release: root.ids.screen_manager.current = "Screen_Waypoints"
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
+                        MDActionTopAppBarButton:
                             icon: "chart-line"
                             on_release: root.ids.screen_manager.current = "Screen_Global_Stats"
                         MDActionTopAppBarButton:
@@ -249,7 +254,6 @@ MDGridLayout:
                     cols: 2
                     md_bg_color: self.theme_cls.backgroundColor
                     MDRelativeLayout:
-                        id: navsection
                         width: (dp(225) if app.is_desktop else dp(175)) if theapp.show_nav_section else 0
                         opacity: 1 if theapp.show_nav_section else 0
                         size_hint: (None, 1)
@@ -762,6 +766,133 @@ MDGridLayout:
                         row_default_height: dp(30)
                         adaptive_height: True
                         padding: [0, 0, dp(15), 0]
+        BaseScreen:
+            name: "Screen_Waypoints"
+            on_enter: app.entered_screen_waypoints()
+            on_leave: app.left_screen_waypoints()
+            MDGridLayout:
+                cols: 1
+                size_hint: (1, 1)
+                TopNavBar:
+                    size_hint_x: 1
+                    height: dp(40)
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "close"
+                            on_release: app.close_waypoints_screen()
+                    MDTopAppBarTitle:
+                        text: f"{app.appName} - {_('title_map')}"
+                        pos_hint: {"center_x": .5}
+                MDGridLayout:
+                    cols: 2
+                    md_bg_color: self.theme_cls.backgroundColor
+                    MDRelativeLayout:
+                        width: dp(350)
+                        #opacity: 1
+                        size_hint: (None, 1)
+                        MDGridLayout:
+                            cols: 1
+                            #width: dp(225)
+                            size_hint: (1, None)
+                            pos_hint: {"top": 1, "right": 1}
+                            md_bg_color: self.theme_cls.backgroundColor
+                            #adaptive_size: True
+                            MDLabel:
+                                text: ""
+                                height: dp(20)
+                                #width: dp(225)
+                                size_hint: (1, None)
+                                role: "large"
+                            MDLabel:
+                                text: "** This feature requires elevated Android permissions."
+                                #height: dp(80)
+                                #width: dp(225)
+                                size_hint: (1-dp(4), None)
+                                padding: dp(2)
+                                role: "small"
+                                bold: True
+                            MDTextField:
+                                id: adb_path
+                                mode: "filled"
+                                MDTextFieldHintText:
+                                    text: "adb path"
+                            MDButton:
+                                style: "filled"
+                                on_release: app.get_waypoints(*args)
+                                MDButtonText:
+                                    text: "Retrieve from Device"
+                            MDTextField:
+                                id: adb_output
+                                mode: "filled"
+                                multiline: True
+                                max_height: "140dp"
+                            MDDivider:
+                            MDDropDownItem:
+                                on_release: app.waypoint_selection(*args)
+                                MDDropDownItemText:
+                                    font_style: "Title"
+                                    id: selected_waypoint
+                                    text: "--"
+                                    role: "medium"
+                                    bold: True
+                            MDDivider:
+                            MDButton:
+                                style: "filled"
+                                on_release: app.add_waypoint_marker(*args)
+                                disabled: app.wait_for_marker_add_click
+                                md_bg_color_disabled: "green"
+                                MDButtonText:
+                                    text: "Add Marker"
+                            MDButton:
+                                style: "filled"
+                                on_release: app.add_waypoints(*args)
+                                MDButtonText:
+                                    text: "Add Waypoints"
+                            MDButton:
+                                style: "filled"
+                                on_release: app.delete_waypoints(*args)
+                                MDButtonText:
+                                    text: "Delete Waypoints"
+                            MDButton:
+                                style: "filled"
+                                on_release: app.save_waypoints(*args)
+                                MDButtonText:
+                                    text: "Save to Device"
+                            MDDivider:
+                            MDLabel:
+                                text: ""
+                                #height: dp(10)
+                                #width: dp(105)
+                                size_hint: (1, None)
+                                role: "large"
+                            MDLabel:
+                                text: ""
+                                #height: dp(10)
+                                #width: dp(90)
+                                size_hint: (1, None)
+                                role: "large"
+                    MDRelativeLayout:
+                        size_hint: (1 - dp(350), 1)
+                        MapView:
+                            id: waymap
+                            size_hint: (1, 1)
+                            pos_hint: {"x": 0, "y": 0}
+                            zoom: 3
+                            lat: 51.50722
+                            lon: -0.1275
+                            on_touch_down: app.waymap_touch(*args)
+                        MDGridLayout:
+                            id: waymapnav
+                            pos_hint: {"x": 0.01, "top": 0.99}
+                            padding: [ 0, dp(40), 0, 0 ]
+                            rows: 2
+                            adaptive_size: True
+                            ZoomButton:
+                                icon: "plus"
+                                on_release: app.waymap_zoom(True)
+                            ZoomButton:
+                                icon: "minus"
+                                on_release: app.waymap_zoom(False)
         BaseScreen:
             name: "Screen_Preferences"
             MDGridLayout:

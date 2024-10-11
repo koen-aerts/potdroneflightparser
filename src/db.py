@@ -23,8 +23,10 @@ class Db():
         con.close()
         return results
 
-    def __init__(self, file):
+    def __init__(self, file, extdb=False):
         self.dbFile = file
+        if extdb:
+            return
 
         '''
         Create the DB and schema.
