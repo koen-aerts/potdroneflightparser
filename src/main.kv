@@ -823,23 +823,28 @@ MDGridLayout:
                                 size_hint: (1, None)
                                 role: "large"
                             MDGridLayout:
-                                cols: 2
+                                cols: 3
                                 size_hint: (1, None)
                                 adaptive_height: True
-                                MDButton:
-                                    style: "filled"
+                                MDFabButton:
+                                    style: "standard"
+                                    icon: "phone-outgoing"
+                                    id: btn_retrieve_waypoints
                                     on_release: app.get_waypoints(*args)
-                                    MDButtonText:
-                                        text: "Retrieve from Device"
-                                MDButton:
-                                    style: "filled"
+                                MDLabel:
+                                    text: ""
+                                    height: dp(10)
+                                    size_hint: (1, None)
+                                    role: "large"
+                                MDFabButton:
+                                    style: "standard"
+                                    icon: "phone-incoming"
+                                    id: btn_save_waypoints
+                                    disabled: True
                                     on_release: app.save_waypoints(*args)
-                                    MDButtonText:
-                                        text: "Save to Device"
-                            #MDDivider:
                             MDLabel:
                                 text: ""
-                                height: dp(10)
+                                height: dp(20)
                                 size_hint: (1, None)
                                 role: "large"
                             MDGridLayout:
@@ -848,8 +853,6 @@ MDGridLayout:
                                 adaptive_height: True
                                 MDLabel:
                                     text: "Path:"
-                                    #height: dp(80)
-                                    #width: dp(225)
                                     role: "medium"
                                     bold: True
                                 MDDropDownItem:
@@ -857,13 +860,13 @@ MDGridLayout:
                                     MDDropDownItemText:
                                         font_style: "Title"
                                         id: selected_waypoint
+                                        disabled: True
                                         text: "--"
                                         role: "medium"
                                         bold: True
-                            #MDDivider:
                             MDLabel:
                                 text: ""
-                                height: dp(10)
+                                height: dp(20)
                                 size_hint: (1, None)
                                 role: "large"
                             MDGridLayout:
@@ -872,40 +875,38 @@ MDGridLayout:
                                 adaptive_height: True
                                 MDButton:
                                     style: "filled"
+                                    id: add_waypoint_marker
                                     on_release: app.add_waypoint_marker(*args)
-                                    disabled: app.wait_for_marker_add_click
-                                    md_bg_color_disabled: "green"
+                                    disabled: True
                                     MDButtonText:
                                         text: "Add Marker"
                                 MDButton:
                                     style: "filled"
+                                    id: add_waypoint_path
                                     on_release: app.add_waypoints(*args)
+                                    disabled: True
                                     MDButtonText:
                                         text: "Add Path"
                                 MDButton:
                                     style: "filled"
+                                    id: delete_waypoint_path
                                     on_release: app.delete_waypoints(*args)
+                                    disabled: True
                                     MDButtonText:
                                         text: "Delete Path"
-                            #MDDivider:
-                            #MDLabel:
-                            #    text: ""
-                            #    height: dp(100)
-                            #    size_hint: (1, None)
-                            #    role: "large"
                             MDGridLayout:
                                 cols: 1
                                 size_hint: (1, None)
                                 #height: dp(200)
                                 #adaptive_height: True
-                                row_default_height: dp(200)
+                                row_default_height: dp(300)
                                 MDTextField:
                                     id: adb_output
                                     mode: "filled"
                                     multiline: True
                                     #size_hint: (1, 1)
                                     #height: dp(200)
-                                    max_height: dp(100)
+                                    max_height: "100dp"
                     MDRelativeLayout:
                         size_hint: (1 - dp(370), 1)
                         MapView:

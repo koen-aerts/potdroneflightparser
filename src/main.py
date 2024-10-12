@@ -447,6 +447,7 @@ class MainApp(MDApp):
         else:
             mapSource = MapSource(cache_key="osm") # OpenStreetMap (default)
         self.root.ids.map.map_source = mapSource
+        self.root.ids.waymap.map_source = mapSource
 
 
     def generate_map_layers(self):
@@ -660,6 +661,17 @@ class MainApp(MDApp):
         '''
         shutil.rmtree(self.tempDir, ignore_errors=True) # Delete temp files.
         self.potdb = None
+        self.waypoints = None
+        self.remove_waylayer()
+        self.root.ids.btn_retrieve_waypoints.disabled = False
+        self.root.ids.btn_save_waypoints.disabled = True
+        self.root.ids.btn_save_waypoints.disabled = True
+        self.root.ids.selected_waypoint.disabled = True
+        self.root.ids.add_waypoint_marker.disabled = True
+        self.root.ids.add_waypoint_path.disabled = True
+        self.root.ids.delete_waypoint_path.disabled = True
+        self.root.ids.adb_output.text = ""
+        self.root.ids.selected_waypoint.text = "--"
         self.open_view("Screen_Log_Files")
 
 
@@ -1595,6 +1607,13 @@ class MainApp(MDApp):
                     return
 
             self.potdb = Db(dbfilelocal, extdb=True) # sqlite DB file.
+            self.root.ids.btn_retrieve_waypoints.disabled = True
+            self.root.ids.btn_save_waypoints.disabled = False
+            self.root.ids.btn_save_waypoints.disabled = False
+            self.root.ids.selected_waypoint.disabled = False
+            self.root.ids.add_waypoint_marker.disabled = False
+            self.root.ids.add_waypoint_path.disabled = False
+            self.root.ids.delete_waypoint_path.disabled = False
             self.waypoints = []
             for waypointInfo in self.potdb.execute("SELECT id,date,duration,height,mileage,num,speed FROM flightrecordbean ORDER BY id"):
                 if waypointInfo[1] is not None:
@@ -1661,7 +1680,6 @@ class MainApp(MDApp):
             widget.add_widget(MDButton(MDButtonText(text="Delete"), style="filled", on_release=self.delete_waypoint_marker))
             marker.add_widget(widget)
             self.root.ids.waymap.add_marker(marker, self.waylayer)
-            print(f"Add marker: {marker}")
         if count > 0:
             zoom = self.root.ids.waymap.map_source.max_zoom
             self.root.ids.waymap.zoom = zoom
@@ -1725,18 +1743,17 @@ class MainApp(MDApp):
         })
         self.root.ids.selected_waypoint.text = "-- NEW --"
 
+    def remove_waylayer(self):
+        if self.waylayer:
+            self.reset_waylayer()
+            self.root.ids.waymap.remove_layer(self.waylayer)
+            self.waylayer = None
+
 
     def reset_waylayer(self):
         if self.waylayer:
             while len(self.waylayer.children) > 0:
-                print(f"MARKER: {self.waylayer.children[0]}")
                 self.waylayer.children[0].detach()
-            #for marker in self.waylayer.children:
-            #    print(f"MARKER: {marker}")
-            #    marker.detach()
-                #self.root.ids.waymap.remove_marker(marker)
-                #self.waylayer.remove_widget(marker)
-            #self.root.ids.waymap.remove_layer(self.waylayer)
             self.waylayer.value = None
         else:
             self.waylayer = MarkerMapLayer()
@@ -1818,7 +1835,9 @@ class MainApp(MDApp):
         dbbasename = "map.db"
         prc = subprocess.run([adbexe, "push", self.potdb.dataFile(), f"/data/data/com.ipotensic.potensicpro/databases/"], capture_output=True, text=True)
         if len(prc.stderr) > 0:
-            self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
+            self.root.ids.adb_output.text = prc.stderr
+        else:
+            self.root.ids.adb_output.text = prc.stdout
         print(f"RETURNCODE1: {prc.returncode}")
         if prc.returncode == 0:
             prc = subprocess.run([adbexe, "push", "shell", "run-as", "com.ipotensic.potensicpro", "sh", "-c", f"chmod 666 /data/data/com.ipotensic.potensicpro/databases/{dbbasename}"], capture_output=True, text=True)
