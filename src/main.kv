@@ -797,11 +797,9 @@ MDGridLayout:
                     md_bg_color: self.theme_cls.backgroundColor
                     MDRelativeLayout:
                         width: dp(370)
-                        #opacity: 1
                         size_hint: (None, 1)
                         MDGridLayout:
                             cols: 1
-                            #width: dp(225)
                             size_hint: (1, None)
                             pos_hint: {"top": 1, "right": 1}
                             md_bg_color: self.theme_cls.backgroundColor
@@ -810,13 +808,10 @@ MDGridLayout:
                             MDLabel:
                                 text: ""
                                 height: dp(20)
-                                #width: dp(225)
                                 size_hint: (1, None)
                                 role: "large"
                             MDLabel:
                                 text: "** This feature requires elevated Android permissions."
-                                #height: dp(80)
-                                #width: dp(225)
                                 size_hint: (1-dp(4), None)
                                 padding: dp(2)
                                 role: "small"

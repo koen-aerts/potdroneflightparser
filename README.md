@@ -114,7 +114,7 @@ You can [leave a comment here](<https://koenaerts.ca/micro-drones/parsing-potens
 
 
 # Acknowledgements
-Many thanks to Rob Pritt and [Chris Raynak](<http://www.imagination-3d.com/>) for their very significant contributions to the project, and the many other users for their feedback and willingness to share their log files that help make this app better with each release.
+Many thanks to Rob Pritt, [Chris Raynak](<http://www.imagination-3d.com/>), and [Carpintonto](<https://github.com/Carpintonto>) for their significant contributions to the project, and the many other users for their feedback and willingness to share their log files that help make this app better with each release.
 
 A special thank-you goes to the following people who kindly provided the following languages for the app:
 

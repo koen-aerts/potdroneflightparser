@@ -1651,11 +1651,7 @@ class MainApp(MDApp):
         wpinfo = self.waypoints[waypointidx]
         self.root.ids.selected_waypoint.text = f"{wpinfo['date']} - {wpinfo['num']} - {wpinfo['mileage']} - {wpinfo['duration']}"
         self.reset_waylayer()
-        #if self.waylayer:
-        #    self.root.ids.waymap.remove_layer(self.waylayer)
-        #self.waylayer = MarkerMapLayer()
         self.waylayer.value = waypointidx
-        #self.root.ids.waymap.add_layer(self.waylayer)
         minlat = None
         maxlat = None
         minlon = None
@@ -1675,7 +1671,6 @@ class MainApp(MDApp):
             marker.value = count
             widget = MDGridLayout(size_hint=(1,1), md_bg_color=self.theme_cls.backgroundColor, cols=1)
             widget.add_widget(MDLabel(text=f"Target: #{count}", bold=True, max_lines=1))
-            #widget.add_widget(MDLabel(text=f"{marker.lat},{marker.lon}", role="small", max_lines=1))
             widget.add_widget(MDButton(MDButtonText(text="Delete"), style="filled", on_release=self.delete_waypoint_marker))
             marker.add_widget(widget)
             self.root.ids.waymap.add_marker(marker, self.waylayer)
@@ -1698,7 +1693,6 @@ class MainApp(MDApp):
             marker.value = len(self.waylayer.children)+1
             widget = MDGridLayout(size_hint=(1,1), md_bg_color=self.theme_cls.backgroundColor, cols=1)
             widget.add_widget(MDLabel(text=f"Target: #{marker.value}", bold=True, max_lines=1))
-            #widget.add_widget(MDLabel(text=f"{marker.lat},{marker.lon}", role="small", max_lines=1))
             widget.add_widget(MDButton(MDButtonText(text="Delete"), style="filled", on_release=self.delete_waypoint_marker))
             marker.add_widget(widget)
             self.root.ids.waymap.add_marker(marker, self.waylayer)
@@ -1716,7 +1710,6 @@ class MainApp(MDApp):
         deletedmarker = buttonObj.parent.parent.parent
         deletednumber = deletedmarker.value
         self.root.ids.waymap.remove_marker(deletedmarker)
-        #self.waylayer.remove_widget(deletedmarker)
         for marker in self.waylayer.children:
             if marker.value > deletednumber:
                 marker.value = marker.value - 1
@@ -1728,11 +1721,7 @@ class MainApp(MDApp):
         if self.potdb is None:
             return
         self.reset_waylayer()
-        #if self.waylayer:
-        #    self.root.ids.waymap.remove_layer(self.waylayer)
-        #self.waylayer = MarkerMapLayer()
         self.waylayer.value = len(self.waypoints)
-        #self.root.ids.waymap.add_layer(self.waylayer)
         self.waypoints.append({
             "date": None,
             "duration": None,
@@ -1766,7 +1755,6 @@ class MainApp(MDApp):
             return
         self.waypoints.pop(self.waylayer.value)
         self.reset_waylayer()
-        #self.root.ids.waymap.remove_layer(self.waylayer)
         self.root.ids.selected_waypoint.text = "--"
 
 
@@ -2182,7 +2170,6 @@ class MainApp(MDApp):
         self.is_desktop = self.is_windows or self.is_macos or self.is_linux
         self.title = self.appTitle
         self.tempDir = os.path.join(tempfile.gettempdir(), "flightdata")
-        print(f"tempDir: {self.tempDir}")
         self.dataDir = os.path.join(self.ios_doc_path(), '.data') if self.is_ios else user_data_dir(self.appPathName, self.appPathName)
         self.logfileDir = os.path.join(self.dataDir, "logfiles") # Place where log bin files go.
         if not os.path.exists(self.logfileDir):
