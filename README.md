@@ -11,6 +11,8 @@ Models confirmed working are the Atom and Atom SE (all generations).
 
 ![Screenshot Log Stats](<resources/screenshot4.png> "Screenshot Log Stats")
 
+![Screenshot Waypoints](<resources/screenshot5.png> "Screenshot Waypoints")
+
 This project is based on reverse engineering of the Potensic flight bin files (mainly based on a first generation Atom SE as well as log files shared by contributors for other Potensic models), and by trial and error. Not all available metrics are currently pulled from this proprietary file format as not everything has been identified yet.
 
 # 1. Using the app
