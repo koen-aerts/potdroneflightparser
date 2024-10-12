@@ -1872,6 +1872,8 @@ class MainApp(MDApp):
             self.open_view("Screen_Day_Summary")
         elif self.app_view == "log":
             self.open_view("Screen_Log_Files")
+        elif self.app_view == "waypoints":
+            self.open_view("Screen_Waypoints")
 
 
     def init_prefs(self):

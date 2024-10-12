@@ -28,6 +28,9 @@ msgstr "Stats"
 msgid "title_map"
 msgstr "Carte"
 
+msgid "title_waypoints"
+msgstr "Waypoints"
+
 msgid "title_flights"
 msgstr "Vols"
 

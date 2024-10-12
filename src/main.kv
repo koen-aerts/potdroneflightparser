@@ -781,8 +781,17 @@ MDGridLayout:
                             icon: "close"
                             on_release: app.close_waypoints_screen()
                     MDTopAppBarTitle:
-                        text: f"{app.appName} - {_('title_map')}"
+                        text: f"{app.appName} - {_('title_waypoints')}"
                         pos_hint: {"center_x": .5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
+                        MDActionTopAppBarButton:
+                            icon: "wrench-cog-outline"
+                            on_release: root.ids.screen_manager.current = "Screen_Preferences"
                 MDGridLayout:
                     cols: 2
                     md_bg_color: self.theme_cls.backgroundColor
