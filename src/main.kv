@@ -894,19 +894,16 @@ MDGridLayout:
                                     disabled: True
                                     MDButtonText:
                                         text: "Delete Path"
-                            MDGridLayout:
-                                cols: 1
+                            MDLabel:
+                                text: ""
+                                height: dp(20)
                                 size_hint: (1, None)
-                                #height: dp(200)
-                                #adaptive_height: True
-                                row_default_height: dp(300)
-                                MDTextField:
-                                    id: adb_output
-                                    mode: "filled"
-                                    multiline: True
-                                    #size_hint: (1, 1)
-                                    #height: dp(200)
-                                    max_height: "100dp"
+                                role: "large"
+                            TextInput:
+                                id: adb_output
+                                multiline: True
+                                size_hint: (1, None)
+                                height: dp(200)
                     MDRelativeLayout:
                         size_hint: (1 - dp(370), 1)
                         MapView:

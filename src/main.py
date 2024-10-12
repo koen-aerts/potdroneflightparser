@@ -44,7 +44,6 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.progressindicator.progressindicator import MDCircularProgressIndicator
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarText
-from kivymd.uix.widget import MDWidget
 from kivy_garden.mapview import MapSource, MapMarker, MapMarkerPopup, MarkerMapLayer
 from kivy_garden.mapview.geojson import GeoJsonMapLayer
 from kivy_garden.mapview.utils import haversine
@@ -1726,6 +1725,8 @@ class MainApp(MDApp):
 
 
     def add_waypoints(self, buttonObj):
+        if self.potdb is None:
+            return
         self.reset_waylayer()
         #if self.waylayer:
         #    self.root.ids.waymap.remove_layer(self.waylayer)
