@@ -32,7 +32,7 @@ Download the zip file and unpack it. Run the .exe installer like you would any o
 
 To uninstall, go to Apps under Settings and use the uninstall feature.
 ![Uninstall](<resources/windows_uninstall.png> "Uninstall")
-If you have an older version of the app, this option may not be there, in which case you can run the uninstall process directly from here: ```C:\Program Files (x86)\Flight Log Viewer\uninstaller.exe```
+If you have an older version of the app, this option may not be there, in which case you can run the uninstall process directly from here: ```C:\Program Files (x86)\Flight Log Viewer\uninstall.exe```
 
 You can also delete the app's configuration and cache, which is usally located at: ```C:\Users\[your_user_name]\AppData\Local\FlightLogViewer```
 
@@ -95,7 +95,7 @@ Once imported, the log file will disappear from the Documents folder. Similarly,
 ![App Documents Folder](<resources/ios_file_browser2.png> "App Documents Folder")
 
 ## 2.2. From Source
-You can run the app directly from source. Use [Python](<https://www.python.org/downloads/> "Download Python") 3.11 or greater. If you can't change the OS provided Python version (for instance Linux), use a tool such as [pyenv](<https://github.com/pyenv/pyenv> "pyenv") which allows you to install multiple versions of Python and easily switch between them.
+You can run the app directly from source. Use [Python](<https://www.python.org/downloads/> "Download Python") 3.11. If you can't change the OS provided Python version (for instance Linux), use a tool such as [pyenv](<https://github.com/pyenv/pyenv> "pyenv") which allows you to install multiple versions of Python and easily switch between them.
 
 cd to the src directory and install the dependencies:
 ```sh
