@@ -1829,7 +1829,7 @@ class MainApp(MDApp):
             self.root.ids.adb_output.text = prc.stdout
         print(f"RETURNCODE1: {prc.returncode}")
         if prc.returncode == 0:
-            prc = subprocess.run([adbexe, "push", "shell", f"chmod 666 /data/data/com.ipotensic.potensicpro/databases/{dbbasename}"], capture_output=True, text=True)
+            prc = subprocess.run([adbexe, "shell", f"chmod 666 /data/data/com.ipotensic.potensicpro/databases/{dbbasename}"], capture_output=True, text=True)
             if len(prc.stderr) > 0:
                 self.root.ids.adb_output.text = self.root.ids.adb_output.text + "\n" + prc.stderr
         else:
