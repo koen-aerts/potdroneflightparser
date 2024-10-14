@@ -1,3 +1,9 @@
+#:import DistGauge widgets.DistGauge
+#:import AltGauge widgets.AltGauge
+#:import HGauge widgets.HGauge
+#:import VGauge widgets.VGauge
+#:import HeadingGauge widgets.HeadingGauge
+
 <TopNavBar@MDTopAppBar>
     type: "small"
 
@@ -76,13 +82,35 @@ MDGridLayout:
     MDScreenManager:
         id: screen_manager
         BaseScreen:
+            name: "Screen_Loading"
+            on_enter: app.entered_screen_loading()
+            MDGridLayout:
+                cols: 1
+                size_hint: (1, 1)
+                md_bg_color: self.theme_cls.backgroundColor
+                TopNavBar:
+                    size_hint_x: 1
+                    height: dp(40)
+                    MDTopAppBarTitle:
+                        text: f"{app.appName}"
+                        pos_hint: {"center_x": .5}
+                MDLabel:
+                    size_hint: (1, 1)
+                    pos_hint: {"center_x": .5, "center_y": .5}
+                    text: "Loading..."
+                    halign: "center"
+                    role: "large"
+                    max_lines: 1
+                    bold: True
+        BaseScreen:
             name: "Screen_Log_Files"
             on_enter: app.entered_screen_log()
             MDGridLayout:
                 cols: 1
-                size: root.width, root.height
+                size_hint: (1, 1)
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
+                    size_hint_x: 1
                     height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
@@ -101,6 +129,19 @@ MDGridLayout:
                         text: f"{app.appName} - {_('title_logs')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
+                        MDActionTopAppBarButton:
+                            icon: "map-marker-path"
+                            on_release: root.ids.screen_manager.current = "Screen_Waypoints"
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
+                        MDActionTopAppBarButton:
+                            icon: "chart-line"
+                            on_release: root.ids.screen_manager.current = "Screen_Global_Stats"
                         MDActionTopAppBarButton:
                             icon: "wrench-cog-outline"
                             on_release: root.ids.screen_manager.current = "Screen_Preferences"
@@ -137,11 +178,44 @@ MDGridLayout:
                     MDGridLayout:
                         cols: 9
                         id: log_files
-                        padding: [0, dp(14), 0, 0]
                         md_bg_color: self.theme_cls.backgroundColor
                         row_default_height: dp(22) if app.is_desktop else dp(14)
                         size_hint: (1, None)
                         height: self.minimum_height
+                        padding: [0, 0, dp(15), 0]
+        BaseScreen:
+            name: "Screen_Global_Stats"
+            on_enter: app.entered_screen_gstats()
+            MDGridLayout:
+                cols: 1
+                size_hint: (1, 1)
+                md_bg_color: self.theme_cls.backgroundColor
+                TopNavBar:
+                    size_hint_x: 1
+                    height: dp(40)
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "close"
+                            on_release: app.close_gstats_screen()
+                    MDTopAppBarTitle:
+                        text: f"{app.appName} - {_('title_gstats')}"
+                        pos_hint: {"center_x": .5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
+                MDScrollView:
+                    scroll_type: ["bars", "content"]
+                    bar_width: dp(15)
+                    MDGridLayout:
+                        cols: 1
+                        id: gstat_graphs
+                        md_bg_color: self.theme_cls.backgroundColor
+                        row_default_height: dp(300)
+                        height: self.minimum_height
+                        size_hint: (None, None)
                         padding: [0, 0, dp(15), 0]
         BaseScreen:
             name: "Screen_Map"
@@ -149,17 +223,24 @@ MDGridLayout:
             on_leave: app.left_screen_map()
             MDGridLayout:
                 cols: 1
-                size: root.width, root.height
+                size_hint: (1, 1)
                 TopNavBar:
+                    size_hint_x: 1
                     height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "close"
                             on_release: app.close_map_screen()
                     MDTopAppBarTitle:
+                        id: map_title
                         text: f"{app.appName} - {_('title_map')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
                         MDActionTopAppBarButton:
                             icon: "speedometer"
                             on_release: theapp.show_nav_section = not theapp.show_nav_section
@@ -173,7 +254,6 @@ MDGridLayout:
                     cols: 2
                     md_bg_color: self.theme_cls.backgroundColor
                     MDRelativeLayout:
-                        id: navsection
                         width: (dp(225) if app.is_desktop else dp(175)) if theapp.show_nav_section else 0
                         opacity: 1 if theapp.show_nav_section else 0
                         size_hint: (None, 1)
@@ -518,59 +598,54 @@ MDGridLayout:
                                 size: [dp(40), dp(40)] if app.is_desktop else [dp(30), dp(30)]
                         MDBoxLayout:
                             size_hint: (None, None)
+                            pos_hint: {"right": 1, "top": 1}
                             size: self.minimum_size
-                            pos_hint: {"right": 1, "top": .95}
                             cols: 1
-                            padding: 0
+                            padding: [0,dp(40),0,0]
                             spacing: 0
                             orientation: 'vertical'
-                            opacity: 1 if app.is_desktop and selected_gauges.active else 0
+                            opacity: 1 if selected_gauges.active else 0
                             DistGauge:
                                 id: DSgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                             AltGauge:
                                 id: ALgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                             HGauge:
                                 id: HSPDgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                             VGauge:
                                 id: VSPDgauge
                                 display_unit: ""
                                 value: 1
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                             HeadingGauge:
                                 id: HDgauge
                                 value: 0
                                 drotation: 0 # Provision to rotate the drone image in the gauge itself
                                 md_bg_color: "black"
                                 size_hint: (None, None)
-                                width: dp(150)
-                                height: dp(146)
+                                size: ((root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150), (root.height-dp(90)) / 5 if (root.height-dp(90))/5 < dp(150) else dp(150))
                         MDSlider:
                             id: flight_progress
                             size_hint: (None, None)
                             x: dp(1)
                             y: dp(55) if app.is_desktop else dp(45)
-                            width: self.parent.width - (dp(152) if app.is_desktop and selected_gauges.active else dp(2))
+                            width: self.parent.width - (HDgauge.width + dp(2) if selected_gauges.active else dp(2))
                             is_updating: True
                             opacity: 0 if selected_path.text == "--" else 1
                             on_value: app.select_flight_progress(*args)
@@ -593,6 +668,25 @@ MDGridLayout:
                             ZoomButton:
                                 icon: "minus"
                                 on_release: app.map_zoom(False)
+                        #MDGridLayout:
+                        #    id: mapnav
+                        #    size_hint: (None, None)
+                        #    width: dp(120)
+                        #    height: dp(50)
+                        #    pos_hint: {"x": 0.01} if app.is_desktop else {"x": 1}
+                        #    y: dp(100) if app.is_desktop else dp(90)
+                        #    rows: 1
+                        #    md_bg_color: self.theme_cls.backgroundColor
+                        #    Image:
+                        #        id: map_img_roll
+                        #        source: "assets/roll.png"
+                        #        fit_mode: "contain"
+                        #    MDLabel:
+                        #        text: "  "
+                        #    Image:
+                        #        id: map_img_wind
+                        #        source: "assets/wind.png"
+                        #        fit_mode: "contain"
                         MDGridLayout:
                             pos_hint: {"right": 1, "top": 1}
                             size_hint: (None, None)
@@ -634,18 +728,25 @@ MDGridLayout:
             on_enter: app.entered_screen_summary()
             MDGridLayout:
                 cols: 1
-                size: root.width, root.height
+                size_hint: (1, 1)
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
+                    size_hint_x: 1
                     height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
                             icon: "close"
                             on_release: root.ids.screen_manager.current = "Screen_Map"
                     MDTopAppBarTitle:
+                        id: flights_title
                         text: f"{app.appName} - {_('title_flights')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
                         MDActionTopAppBarButton:
                             icon: "microsoft-excel"
                             on_release: app.open_csv_file_export_dialog()
@@ -666,12 +767,177 @@ MDGridLayout:
                         adaptive_height: True
                         padding: [0, 0, dp(15), 0]
         BaseScreen:
+            name: "Screen_Waypoints"
+            on_enter: app.entered_screen_waypoints()
+            on_leave: app.left_screen_waypoints()
+            MDGridLayout:
+                cols: 1
+                size_hint: (1, 1)
+                TopNavBar:
+                    size_hint_x: 1
+                    height: dp(40)
+                    MDTopAppBarLeadingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "close"
+                            on_release: app.close_waypoints_screen()
+                    MDTopAppBarTitle:
+                        text: f"{app.appName} - {_('title_waypoints')}"
+                        pos_hint: {"center_x": .5}
+                    MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
+                        MDActionTopAppBarButton:
+                            icon: "wrench-cog-outline"
+                            on_release: root.ids.screen_manager.current = "Screen_Preferences"
+                MDGridLayout:
+                    cols: 2
+                    md_bg_color: self.theme_cls.backgroundColor
+                    MDRelativeLayout:
+                        width: dp(370)
+                        size_hint: (None, 1)
+                        MDGridLayout:
+                            cols: 1
+                            size_hint: (1, None)
+                            pos_hint: {"top": 1, "right": 1}
+                            md_bg_color: self.theme_cls.backgroundColor
+                            adaptive_height: True
+                            padding: dp(4)
+                            MDLabel:
+                                text: ""
+                                height: dp(20)
+                                size_hint: (1, None)
+                                role: "large"
+                            MDLabel:
+                                text: "** This feature requires elevated Android permissions."
+                                size_hint: (1-dp(4), None)
+                                padding: dp(2)
+                                role: "small"
+                                bold: True
+                            MDTextField:
+                                id: adb_path
+                                mode: "filled"
+                                MDTextFieldHintText:
+                                    text: "adb path"
+                            MDLabel:
+                                text: ""
+                                height: dp(10)
+                                size_hint: (1, None)
+                                role: "large"
+                            MDGridLayout:
+                                cols: 3
+                                size_hint: (1, None)
+                                adaptive_height: True
+                                MDFabButton:
+                                    style: "standard"
+                                    icon: "phone-outgoing"
+                                    id: btn_retrieve_waypoints
+                                    on_release: app.get_waypoints(*args)
+                                MDLabel:
+                                    text: ""
+                                    height: dp(10)
+                                    size_hint: (1, None)
+                                    role: "large"
+                                MDFabButton:
+                                    style: "standard"
+                                    icon: "phone-incoming"
+                                    id: btn_save_waypoints
+                                    disabled: True
+                                    on_release: app.save_waypoints(*args)
+                            MDLabel:
+                                text: ""
+                                height: dp(20)
+                                size_hint: (1, None)
+                                role: "large"
+                            MDGridLayout:
+                                cols: 2
+                                size_hint: (1, None)
+                                adaptive_height: True
+                                MDLabel:
+                                    text: "Path:"
+                                    role: "medium"
+                                    bold: True
+                                MDDropDownItem:
+                                    on_release: app.waypoint_selection(*args)
+                                    MDDropDownItemText:
+                                        font_style: "Title"
+                                        id: selected_waypoint
+                                        disabled: True
+                                        text: "--"
+                                        role: "medium"
+                                        bold: True
+                            MDLabel:
+                                text: ""
+                                height: dp(20)
+                                size_hint: (1, None)
+                                role: "large"
+                            MDGridLayout:
+                                cols: 3
+                                size_hint: (1, None)
+                                adaptive_height: True
+                                MDButton:
+                                    style: "filled"
+                                    id: add_waypoint_marker
+                                    on_release: app.add_waypoint_marker(*args)
+                                    disabled: True
+                                    MDButtonText:
+                                        text: "Add Marker"
+                                MDButton:
+                                    style: "filled"
+                                    id: add_waypoint_path
+                                    on_release: app.add_waypoints(*args)
+                                    disabled: True
+                                    MDButtonText:
+                                        text: "Add Path"
+                                MDButton:
+                                    style: "filled"
+                                    id: delete_waypoint_path
+                                    on_release: app.delete_waypoints(*args)
+                                    disabled: True
+                                    MDButtonText:
+                                        text: "Delete Path"
+                            MDLabel:
+                                text: ""
+                                height: dp(20)
+                                size_hint: (1, None)
+                                role: "large"
+                            TextInput:
+                                id: adb_output
+                                multiline: True
+                                size_hint: (1, None)
+                                height: dp(200)
+                    MDRelativeLayout:
+                        size_hint: (1 - dp(370), 1)
+                        MapView:
+                            id: waymap
+                            size_hint: (1, 1)
+                            pos_hint: {"x": 0, "y": 0}
+                            zoom: 3
+                            lat: 51.50722
+                            lon: -0.1275
+                            on_touch_down: app.waymap_touch(*args)
+                        MDGridLayout:
+                            id: waymapnav
+                            pos_hint: {"x": 0.01, "top": 0.99}
+                            padding: [ 0, dp(40), 0, 0 ]
+                            rows: 2
+                            adaptive_size: True
+                            ZoomButton:
+                                icon: "plus"
+                                on_release: app.waymap_zoom(True)
+                            ZoomButton:
+                                icon: "minus"
+                                on_release: app.waymap_zoom(False)
+        BaseScreen:
             name: "Screen_Preferences"
             MDGridLayout:
                 cols: 1
-                size: root.width, root.height
+                size_hint: (1, 1)
                 md_bg_color: self.theme_cls.backgroundColor
                 TopNavBar:
+                    size_hint_x: 1
                     height: dp(40)
                     MDTopAppBarLeadingButtonContainer:
                         MDActionTopAppBarButton:
@@ -681,6 +947,11 @@ MDGridLayout:
                         text: f"{app.appName} - {_('title_preferences')}"
                         pos_hint: {"center_x": .5}
                     MDTopAppBarTrailingButtonContainer:
+                        MDActionTopAppBarButton:
+                            icon: "fullscreen"
+                            on_release: app.swap_fullscreen_mode()
+                            opacity: 1 if app.is_desktop else 0
+                            disabled: False if app.is_desktop else True
                         MDActionTopAppBarButton:
                             icon: "delete"
                             on_release: app.clear_cache()
@@ -752,13 +1023,11 @@ MDGridLayout:
                             text: ""
                     PrefLabel:
                         text: _('preference_gauges')
-                        opacity: 1 if app.is_desktop else 0
                     PrefCheck:
                         on_release: app.gauges_selection(*args)
                         id: selected_gauges
                         active: True
                         height: dp(34)
-                        opacity: 1 if app.is_desktop else 0
                     # Row 5
                     PrefLabel:
                         text: _('preference_flight_path_width')
@@ -854,4 +1123,5 @@ MDGridLayout:
                         id: selected_splashscreen
                         active: True
                         height: dp(34)
+                        disabled: False if app.is_desktop else True
                         opacity: 1 if app.is_desktop else 0

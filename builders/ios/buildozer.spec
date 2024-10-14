@@ -29,7 +29,7 @@ source.include_exts = py,png,jpg,kv,atlas,mo,po,pot
 #source.exclude_patterns = license,images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version = 2.3.1
+version = 2.4.0
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
@@ -37,7 +37,7 @@ version = 2.3.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3==3.11.8,hostpython3==3.11.8,kivy,https://github.com/kivymd/KivyMD/archive/cfe5aac30f50708c6208c8b33b0ef1aa390721e8.zip,pillow,materialyoucolor,exceptiongroup,asyncgui,asynckivy,plyer
+requirements = python3==3.11.10,hostpython3==3.11.10,kivy,https://github.com/kivymd/KivyMD/archive/5ff9d0de78260383fae0737716879781257155a8.zip,kivy_garden.graph==0.4.0,pillow,materialyoucolor,exceptiongroup,asyncgui,asynckivy,plyer
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -66,7 +66,7 @@ orientation = landscape
 # author = © Copyright Info
 
 # change the major version of python used by the app
-osx.python_version = 3.11.8
+osx.python_version = 3.11.10
 
 # Kivy version to use
 osx.kivy_version = 2.3.0

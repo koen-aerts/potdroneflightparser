@@ -22,8 +22,14 @@ msgstr ""
 msgid "title_logs"
 msgstr "Registros"
 
+msgid "title_gstats"
+msgstr "Stats"
+
 msgid "title_map"
 msgstr "Mapa"
+
+msgid "title_waypoints"
+msgstr "Waypoints"
 
 msgid "title_flights"
 msgstr "Vuelos"

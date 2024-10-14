@@ -22,8 +22,14 @@ msgstr ""
 msgid "title_logs"
 msgstr "Logs"
 
+msgid "title_gstats"
+msgstr "Stats"
+
 msgid "title_map"
 msgstr "Kaart"
+
+msgid "title_waypoints"
+msgstr "Waypoints"
 
 msgid "title_flights"
 msgstr "Vluchten"

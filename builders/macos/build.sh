@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PYTHON_VERSION=3.11.8
+PYTHON_VERSION=3.11.10
 
 platform=`uname`
 if [ "${platform}" != 'Darwin' ]; then
@@ -64,7 +64,7 @@ cp ${LOC}/FlightLogViewer.spec ${TRG}/
 echo "Building .app folder..."
 cd ${TRG}
 
-pip install pyinstaller==5.13.2 # Note: version 6 and up, assets are not correctly included in the build.
+pip install pyinstaller==6.10.0 pyobjus==1.2.3
 pip install -r requirements.txt
 
 # Run pyinstaller using the spec file.

@@ -1,11 +1,17 @@
 # Flight Log Viewer
 Flight Log Viewer that can read from Potensic flight-log files.
 
-Models confirmed working are the Atom and Atom SE (both first and second generations).
+Models confirmed working are the Atom and Atom SE (all generations).
 
 ![Screenshot Map](<resources/screenshot1.png> "Screenshot Map")
 
-![Screenshot Log Files](<resources/screenshot2.png> "Screenshot Log Files")
+![Screenshot Flight Stats](<resources/screenshot2.png> "Screenshot Flight Stats")
+
+![Screenshot Log Files](<resources/screenshot3.png> "Screenshot Log Files")
+
+![Screenshot Log Stats](<resources/screenshot4.png> "Screenshot Log Stats")
+
+![Screenshot Waypoints](<resources/screenshot5.png> "Screenshot Waypoints")
 
 This project is based on reverse engineering of the Potensic flight bin files (mainly based on a first generation Atom SE as well as log files shared by contributors for other Potensic models), and by trial and error. Not all available metrics are currently pulled from this proprietary file format as not everything has been identified yet.
 
@@ -26,7 +32,7 @@ Download the zip file and unpack it. Run the .exe installer like you would any o
 
 To uninstall, go to Apps under Settings and use the uninstall feature.
 ![Uninstall](<resources/windows_uninstall.png> "Uninstall")
-If you have an older version of the app, this option may not be there, in which case you can run the uninstall process directly from here: ```C:\Program Files (x86)\Flight Log Viewer\uninstaller.exe```
+If you have an older version of the app, this option may not be there, in which case you can run the uninstall process directly from here: ```C:\Program Files (x86)\Flight Log Viewer\uninstall.exe```
 
 You can also delete the app's configuration and cache, which is usally located at: ```C:\Users\[your_user_name]\AppData\Local\FlightLogViewer```
 
@@ -89,7 +95,7 @@ Once imported, the log file will disappear from the Documents folder. Similarly,
 ![App Documents Folder](<resources/ios_file_browser2.png> "App Documents Folder")
 
 ## 2.2. From Source
-You can run the app directly from source. Use [Python](<https://www.python.org/downloads/> "Download Python") 3.11 or greater. If you can't change the OS provided Python version (for instance Linux), use a tool such as [pyenv](<https://github.com/pyenv/pyenv> "pyenv") which allows you to install multiple versions of Python and easily switch between them.
+You can run the app directly from source. Use [Python](<https://www.python.org/downloads/> "Download Python") 3.11. If you can't change the OS provided Python version (for instance Linux), use a tool such as [pyenv](<https://github.com/pyenv/pyenv> "pyenv") which allows you to install multiple versions of Python and easily switch between them.
 
 cd to the src directory and install the dependencies:
 ```sh
@@ -103,16 +109,12 @@ python main.py
 ![selfie from a Potensic Atom SE](<src/assets/app-icon256.png> "Atom SE selfie")
 
 
-# Additional Info
-Check [here](<https://koenaerts.ca/micro-drones/parsing-potensic-flight-data-files/> "Parsing Potensic Flight Data Files").
-
-
 # Problems or have questions?
-Join the [Potensic Atom Flight Log Viewer](<https://www.facebook.com/groups/2607329356109479>) Facebook group.
+You can [leave a comment here](<https://koenaerts.ca/micro-drones/parsing-potensic-flight-data-files/> "Parsing Potensic Flight Data Files").
 
 
 # Acknowledgements
-Many thanks to Rob Pritt and [Chris Raynak](<http://www.imagination-3d.com/>) for their very significant contributions to the project, and the many other users for their feedback and willingness to share their log files that help make this app better with each release.
+Many thanks to Rob Pritt, [Chris Raynak](<http://www.imagination-3d.com/>), and [Carpintonto](<https://github.com/Carpintonto>) for their significant contributions to the project, and the many other users for their feedback and willingness to share their log files that help make this app better with each release.
 
 A special thank-you goes to the following people who kindly provided the following languages for the app:
 

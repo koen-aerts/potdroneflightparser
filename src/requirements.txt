@@ -1,5 +1,6 @@
-platformdirs==4.2.0
+platformdirs==4.3.6
 kivy==2.3.0
-https://github.com/kivymd/KivyMD/archive/cfe5aac30f50708c6208c8b33b0ef1aa390721e8.zip
+https://github.com/kivymd/KivyMD/archive/5ff9d0de78260383fae0737716879781257155a8.zip
+kivy-garden.graph==0.4.0
 mapview==1.0.6
 plyer==2.1.0

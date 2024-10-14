@@ -7,7 +7,8 @@ rem   Python (3.11.8 or greater): https://www.python.org/downloads/
 rem   NSIS (3.08 or greater): https://nsis.sourceforge.io/Download
 rem   pyenv: this script will show the installation steps when you run it
 
-set PYTHON_VERSION=3.11.8
+rem Note: 3.11.10 not available in pyenv
+set PYTHON_VERSION=3.11.9
 
 IF not "%OS%"=="Windows_NT" (
   echo For Windows Only
@@ -72,8 +73,7 @@ copy "%LOC%\FlightLogViewer.spec" "%TRG%\"
 
 cd "%TRG%"
 
-rem Note: pyinstaller version 6 and up, assets are not correctly included in the build.
-pip install pyinstaller==5.13.2
+pip install pyinstaller==6.10.0
 pip install pyinstaller-versionfile==2.1.1
 pip install -r requirements.txt
 
