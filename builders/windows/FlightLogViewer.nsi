@@ -2,7 +2,7 @@
 
 !define PRODUCT_ID "FlightLogViewer"
 !define PRODUCT_NAME "Flight Log Viewer"
-!define PRODUCT_VERSION "2.4.0"
+!define PRODUCT_VERSION "2.4.1"
 !define EXECUTABLE "FlightLogViewer.exe"
 !define UNINSTALLER "uninstall.exe"
 
