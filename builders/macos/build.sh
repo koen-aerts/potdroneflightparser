@@ -15,6 +15,7 @@ SRC=${LOC}/../../src
 export VIRTUAL_ENV=${LOC}/venv
 BIN=${VIRTUAL_ENV}/bin
 TRG=${VIRTUAL_ENV}/src
+POB=${VIRTUAL_ENV}/pyobjus
 
 # Clean up
 ${LOC}/../remove_build_artifacts.sh
@@ -61,10 +62,19 @@ fi
 cp -R ${SRC} ${VIRTUAL_ENV}
 cp ${LOC}/FlightLogViewer.spec ${TRG}/
 
+cd ${VIRTUAL_ENV}
+
+echo "Installing dependencies..."
+pip install pyinstaller==6.10.0 Cython==3.0.12
+
+echo "Building pyobjus..."
+git clone https://github.com/kivy/pyobjus.git
+cd ${POB}
+make build_ext
+${BIN}/python setup.py install
+
 echo "Building .app folder..."
 cd ${TRG}
-
-pip install pyinstaller==6.10.0 pyobjus==1.2.3
 pip install -r requirements.txt
 
 # Run pyinstaller using the spec file.
