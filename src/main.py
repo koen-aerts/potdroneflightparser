@@ -76,7 +76,7 @@ class BaseScreen(MDScreen):
 class MainApp(MDApp):
 
     # Global variables and constants.
-    appVersion = "v2.4.0"
+    appVersion = "v2.4.1"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -1143,12 +1143,10 @@ class MainApp(MDApp):
             self.zoom_to_fit()
             # Show flight stats.
             self.root.ids.value_maxdist.text = f"{self.common.fmt_num(self.common.dist_val(self.flightStats[flightNum][0]))} {self.common.dist_unit()}"
-            self.root.ids.value_maxdist_short.text = f"({self.common.shorten_dist_val(self.common.fmt_num(self.common.dist_val(self.flightStats[flightNum][0])))} {self.common.dist_unit_km()})"
             self.root.ids.value_maxalt.text = f"{self.common.fmt_num(self.common.dist_val(self.flightStats[flightNum][1]))} {self.common.dist_unit()}"
             self.root.ids.value_maxhspeed.text = f"{self.common.fmt_num(self.common.speed_val(self.flightStats[flightNum][2]))} {self.common.speed_unit()}"
             self.root.ids.value_duration.text = str(self.flightStats[flightNum][3])
             self.root.ids.value_tottraveled.text = f"{self.common.fmt_num(self.common.dist_val(self.flightStats[flightNum][9]))} {self.common.dist_unit()}"
-            self.root.ids.value_tottraveled_short.text = f"({self.common.shorten_dist_val(self.common.dist_val(self.flightStats[flightNum][9]))} {self.common.dist_unit_km()})"
 
 
     def uom_selection(self, item):
@@ -1901,12 +1899,10 @@ class MainApp(MDApp):
             self.clear_map()
             self.root.ids.value_date.text = ""
             self.root.ids.value_maxdist.text = ""
-            self.root.ids.value_maxdist_short.text = ""
             self.root.ids.value_maxalt.text = ""
             self.root.ids.value_maxhspeed.text = ""
             self.root.ids.value_duration.text = ""
             self.root.ids.value_tottraveled.text = ""
-            self.root.ids.value_tottraveled_short.text = ""
             self.root.ids.value1_alt.text = ""
             self.root.ids.value1_traveled.text = ""
             self.root.ids.value1_traveled_short.text = ""
