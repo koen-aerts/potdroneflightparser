@@ -177,8 +177,10 @@ class MainApp(MDApp):
         for binFile in glob.glob(os.path.join(self.tempDir, '**/*'), recursive=True):
             binBaseName = os.path.basename(binFile)
             binType = "FPV" if binBaseName.endswith("-FPV.bin") else (
+                "FPV" if binBaseName.endswith("-FPV2.bin") else (
                 "BIN" if binBaseName.endswith("-FC.bin") else (
-                "FC" if binBaseName.endswith("-FC.fc") else None))
+                "FC" if binBaseName.endswith("-FC.fc") else (
+                "FC" if binBaseName.endswith("-FC.fc2") else None))))
             if binType is not None:
                 if binType == 'FPV':
                     fpvList.append(binFile)
