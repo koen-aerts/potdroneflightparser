@@ -33,6 +33,7 @@ class AtomBaseLogParser():
         # Example filenames:
         #   - 20230819190421-AtomSE-iosSystem-iPhone13Pro-FPV.bin
         #   - 20230826161313-Atom SE-Android-(samsung)-FPV.bin
+        # The Atom 2 includes a lot more fields in this file and is currently not supported here.
         fpvStat = {}
         for fileRef in fpvFiles:
             file = fileRef[0]
@@ -92,14 +93,15 @@ class AtomBaseLogParser():
                     elapsed = struct.unpack('<Q', fcRecord[5:13])[0] # Microseconds elapsed since previous reading.
                     if (elapsed == 0):
                         continue # handle rare case of invalid record
+                    # Default to Atom 1 Legacy offsets.
                     offset1 = 0
                     offset2 = 0
                     offset3 = 0
-                    if isAtom2:
+                    if isAtom2: # Atom 2
                         offset1 = -6
                         offset2 = -15
                         offset3 = -30
-                    else:
+                    else: # Atom 1 series have 2 different formats.
                         isLegacyLog = struct.unpack('<B', fcRecord[509:510])[0] == 0 and struct.unpack('<B', fcRecord[510:511])[0] == 0 and struct.unpack('<B', fcRecord[511:512])[0] == 0
                         if not isLegacyLog: # 0,0,0 = legacy, 3,3,0 = new
                             offset1 = -6

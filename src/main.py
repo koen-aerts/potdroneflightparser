@@ -76,7 +76,7 @@ class BaseScreen(MDScreen):
 class MainApp(MDApp):
 
     # Global variables and constants.
-    appVersion = "v2.4.1"
+    appVersion = "v2.4.2"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
