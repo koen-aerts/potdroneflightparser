@@ -137,7 +137,7 @@ class AtomBaseLogParser():
                     motor3Stat = struct.unpack('<B', fcRecord[316+offset2:317+offset2])[0] # Motor 3 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     motor4Stat = struct.unpack('<B', fcRecord[318+offset2:319+offset2])[0] # Motor 4 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     droneInUse = struct.unpack('<B', fcRecord[295+offset2:296+offset2])[0] # Drone is detected "in action" (0 = flying or in use, 1 = not in use).
-                    droneConnected = struct.unpack('<B', fcRecord[469+offset3:470+offset3])[0] # Drone connected to controller, 1 = Yes, 0 = No.
+                    droneConnected = "" if isAtom2 else struct.unpack('<B', fcRecord[469+offset3:470+offset3])[0] # Drone connected to controller, 1 = Yes, 0 = No.
                     batteryLevel = struct.unpack('<B', fcRecord[481+offset3:482+offset3])[0] # Battery level.
                     batteryTemp = struct.unpack('<B', fcRecord[476+offset3:477+offset3])[0] # Battery temperature (celcius).
                     batteryCurrent = -struct.unpack('<h', fcRecord[474+offset3:476+offset3])[0] # Battery current (mA).
