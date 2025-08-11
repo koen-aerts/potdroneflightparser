@@ -37,7 +37,7 @@ version = 2.4.2
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = sqlite3,python3==3.11.10,hostpython3==3.11.10,kivy,https://github.com/kivymd/KivyMD/archive/5ff9d0de78260383fae0737716879781257155a8.zip,kivy_garden.graph==0.4.0,androidstorage4kivy,pillow,materialyoucolor,exceptiongroup,asyncgui,asynckivy,platformdirs
+requirements = android,sqlite3,python3==3.11.10,hostpython3==3.11.10,kivy,https://github.com/kivymd/KivyMD/archive/5ff9d0de78260383fae0737716879781257155a8.zip,kivy_garden.graph==0.4.0,androidstorage4kivy,pillow,materialyoucolor,exceptiongroup,asyncgui,asynckivy,platformdirs
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -105,10 +105,10 @@ android.permissions = android.permission.INTERNET, android.permission.READ_EXTER
 #android.features = android.hardware.usb.host
 
 # (int) Target Android API, should be as high as possible.
-android.api = 30
+android.api = 32
 
 # (int) Minimum API your APK / AAB will support.
-android.minapi = 29
+android.minapi = 31
 
 # (int) Android SDK version to use
 #android.sdk = 20
