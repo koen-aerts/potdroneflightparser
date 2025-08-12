@@ -7,7 +7,7 @@ RUN useradd -m -U builder; \
 
 USER builder
 WORKDIR /home/builder
-RUN mkdir source
+RUN mkdir source; mkdir out
 
 COPY --chown=builder:builder ./ ./source/
 
@@ -18,7 +18,6 @@ RUN echo "export PATH=$PATH:~/.local/bin/" >> .profile; \
     pip3 install --upgrade Cython==0.29.37 wheel pip setuptools virtualenv; \
     git clone https://github.com/kivy/python-for-android.git; \
     cd source; \
-    yes | buildozer android debug; \
-    sh -c "rm -Rf *";
+    yes | buildozer android debug;
 
-VOLUME /home/builder/source
+VOLUME /home/builder/out

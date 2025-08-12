@@ -22,14 +22,14 @@ source.include_exts = py,png,jpg,kv,atlas,mo,po,pot
 #source.exclude_exts = spec
 
 # (list) List of directory to exclude (let empty to not exclude anything)
-#source.exclude_dirs = tests, bin, venv
+source.exclude_dirs = tests, bin, venv, pyobjus-examples
 
 # (list) List of exclusions using pattern matching
 # Do not prefix with './'
 #source.exclude_patterns = license,images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version = 2.4.1
+version = 2.4.2
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]

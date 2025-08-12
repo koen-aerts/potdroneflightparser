@@ -54,7 +54,7 @@ if [ ${hasPythonVersion} -eq 0 ]; then
 fi
 pyenv local ${PYTHON_VERSION}
 export PATH=${BIN}:${PATH}
-python -m venv venv
+~/.pyenv/versions/${PYTHON_VERSION}/bin/python -m venv venv
 
 # Install mapview and patch, if not done already.
 if [ ! -d "${SRC}/kivy_garden" ]; then
@@ -68,7 +68,7 @@ cp ${LOC}/buildozer.spec ${TRG}/
 echo "Building app..."
 cd ${TRG}
 
-pip install --upgrade pip kivy-ios virtualenv buildozer
+pip install --upgrade pip kivy-ios virtualenv buildozer Cython==0.29.37 packaging
 
 buildozer ios debug
 

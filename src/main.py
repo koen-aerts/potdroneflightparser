@@ -76,7 +76,7 @@ class BaseScreen(MDScreen):
 class MainApp(MDApp):
 
     # Global variables and constants.
-    appVersion = "v2.4.1"
+    appVersion = "v2.4.2"
     appName = "Flight Log Viewer"
     appPathName = "FlightLogViewer"
     appTitle = f"{appName} - {appVersion}"
@@ -177,8 +177,10 @@ class MainApp(MDApp):
         for binFile in glob.glob(os.path.join(self.tempDir, '**/*'), recursive=True):
             binBaseName = os.path.basename(binFile)
             binType = "FPV" if binBaseName.endswith("-FPV.bin") else (
+                "FPV" if binBaseName.endswith("-FPV2.bin") else (
                 "BIN" if binBaseName.endswith("-FC.bin") else (
-                "FC" if binBaseName.endswith("-FC.fc") else None))
+                "FC" if binBaseName.endswith("-FC.fc") else (
+                "FC" if binBaseName.endswith("-FC.fc2") else None))))
             if binType is not None:
                 if binType == 'FPV':
                     fpvList.append(binFile)
@@ -725,13 +727,14 @@ class MainApp(MDApp):
         elapsed = record[5]
         elapsed = elapsed - datetime.timedelta(microseconds=elapsed.microseconds) # truncate to milliseconds
         self.root.ids.value1_elapsed.text = str(elapsed)
+        droneconnected = record[self.columns.index('droneconnected')]
 
         self.root.ids.battery_level.icon = "battery" if batLevelRnd == 100 else f"battery-{batLevelRnd}"
         self.root.ids.battery_level.icon_color = "red" if batteryLevel < 30 else "orange" if batteryLevel < 65 else "green"
         self.root.ids.flight_mode.icon = "alpha-v-box" if flightMode == FlightMode.VIDEO.value else "alpha-s-box" if flightMode == FlightMode.SPORT.value else "alpha-n-box" if flightMode == FlightMode.NORMAL.value else "crosshairs-question"
         self.root.ids.flight_mode.icon_color = "green" if flightMode == FlightMode.VIDEO.value else "orange" if flightMode == FlightMode.SPORT.value else "blue" if flightMode == FlightMode.NORMAL.value else "red"
-        self.root.ids.drone_connection.icon = "signal" if record[self.columns.index('droneconnected')] == 1 else "signal-off"
-        self.root.ids.drone_connection.icon_color = "green" if record[self.columns.index('droneconnected')] == 1 else "red"
+        self.root.ids.drone_connection.icon = "blank" if droneconnected == "" else "signal" if droneconnected == 1 else "signal-off"
+        self.root.ids.drone_connection.icon_color = "gray" if droneconnected == "" else "green" if droneconnected == 1 else "red"
         self.root.ids.drone_action.icon = "airplane-marker" if record[self.columns.index('rth')] == 1 else "airplane-takeoff" if dronestatus == DroneStatus.LIFT.value else "airplane-landing" if dronestatus == DroneStatus.LANDING.value else "airplane" if dronestatus == DroneStatus.FLYING.value else "car-break-parking" if dronestatus == DroneStatus.IDLE.value else "crosshairs-question"
         self.root.ids.drone_action.icon_color = "red" if record[self.columns.index('rth')] == 1 else "orange" if dronestatus == DroneStatus.LIFT.value else "orange" if dronestatus == DroneStatus.LANDING.value else "green" if dronestatus == DroneStatus.FLYING.value else "blue" if dronestatus == DroneStatus.IDLE.value else "red"
 

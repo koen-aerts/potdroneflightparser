@@ -33,6 +33,7 @@ class AtomBaseLogParser():
         # Example filenames:
         #   - 20230819190421-AtomSE-iosSystem-iPhone13Pro-FPV.bin
         #   - 20230826161313-Atom SE-Android-(samsung)-FPV.bin
+        # The Atom 2 includes a lot more fields in this file and is currently not supported here.
         fpvStat = {}
         for fileRef in fpvFiles:
             file = fileRef[0]
@@ -53,10 +54,12 @@ class AtomBaseLogParser():
             fpvFile.close()
 
         timestampMarkers = []
+        isAtom2 = False
 
         # First grab timestamps from the filenames. Those are used to calculate the real timestamps with the elapsed time from each record.
         for fileRef in binFiles:
             file = fileRef[0]
+            isAtom2 = file.endswith(".fc2") # Somewhat a hack, probably better to determine from the records themselves if I can find the version field(s).
             timestampMarkers.append(datetime.datetime.strptime(re.sub("-.*", "", file), '%Y%m%d%H%M%S'))
 
         if len(timestampMarkers) == 0:
@@ -90,14 +93,20 @@ class AtomBaseLogParser():
                     elapsed = struct.unpack('<Q', fcRecord[5:13])[0] # Microseconds elapsed since previous reading.
                     if (elapsed == 0):
                         continue # handle rare case of invalid record
-                    isLegacyLog = struct.unpack('<B', fcRecord[509:510])[0] == 0 and struct.unpack('<B', fcRecord[510:511])[0] == 0 and struct.unpack('<B', fcRecord[511:512])[0] == 0
+                    # Default to Atom 1 Legacy offsets.
                     offset1 = 0
                     offset2 = 0
                     offset3 = 0
-                    if not isLegacyLog: # 0,0,0 = legacy, 3,3,0 = new
+                    if isAtom2: # Atom 2
                         offset1 = -6
-                        offset2 = -10
-                        offset3 = -14
+                        offset2 = -15
+                        offset3 = -30
+                    else: # Atom 1 series have 2 different formats.
+                        isLegacyLog = struct.unpack('<B', fcRecord[509:510])[0] == 0 and struct.unpack('<B', fcRecord[510:511])[0] == 0 and struct.unpack('<B', fcRecord[511:512])[0] == 0
+                        if not isLegacyLog: # 0,0,0 = legacy, 3,3,0 = new
+                            offset1 = -6
+                            offset2 = -10
+                            offset3 = -14
                     flightCounter = struct.unpack('<H', fcRecord[17:19])[0] # Drone's flight counter. Increments each time it initiates a new flight.
                     satellites = struct.unpack('<B', fcRecord[46:47])[0] # Number of satellites.
                     dronelat = struct.unpack('<i', fcRecord[53+offset1:57+offset1])[0]/10000000 # Drone coords.
@@ -128,7 +137,7 @@ class AtomBaseLogParser():
                     motor3Stat = struct.unpack('<B', fcRecord[316+offset2:317+offset2])[0] # Motor 3 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     motor4Stat = struct.unpack('<B', fcRecord[318+offset2:319+offset2])[0] # Motor 4 speed (3 = off, 4 = idle, 5 = low, 6 = medium, 7 = high)
                     droneInUse = struct.unpack('<B', fcRecord[295+offset2:296+offset2])[0] # Drone is detected "in action" (0 = flying or in use, 1 = not in use).
-                    droneConnected = struct.unpack('<B', fcRecord[469+offset3:470+offset3])[0] # Drone connected to controller, 1 = Yes, 0 = No.
+                    droneConnected = "" if isAtom2 else struct.unpack('<B', fcRecord[469+offset3:470+offset3])[0] # Drone connected to controller, 1 = Yes, 0 = No.
                     batteryLevel = struct.unpack('<B', fcRecord[481+offset3:482+offset3])[0] # Battery level.
                     batteryTemp = struct.unpack('<B', fcRecord[476+offset3:477+offset3])[0] # Battery temperature (celcius).
                     batteryCurrent = -struct.unpack('<h', fcRecord[474+offset3:476+offset3])[0] # Battery current (mA).

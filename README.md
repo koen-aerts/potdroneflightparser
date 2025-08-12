@@ -1,7 +1,7 @@
 # Flight Log Viewer
 Flight Log Viewer that can read from Potensic flight-log files.
 
-Models confirmed working are the Atom and Atom SE (all generations).
+Models confirmed working are all generations of the Atom (1 and 2), and Atom SE.
 
 ![Screenshot Map](<resources/screenshot1.png> "Screenshot Map")
 
@@ -16,10 +16,19 @@ Models confirmed working are the Atom and Atom SE (all generations).
 This project is based on reverse engineering of the Potensic flight bin files (mainly based on a first generation Atom SE as well as log files shared by contributors for other Potensic models), and by trial and error. Not all available metrics are currently pulled from this proprietary file format as not everything has been identified yet.
 
 # 1. Using the app
-
+## 1.1. Navigation Buttons
 ![App Log Buttons](<resources/buttons2.png> "App Log Buttons")
 
 ![App File Buttons](<resources/buttons1.png> "App File Buttons")
+
+## 1.2. Log File Retrieval From Mobile Device
+On the original Atom series (Atom, Atom SE, Atom LT) you can easily get the log files in a zip file that you can send to yourself via the Potensic App on your mobile device. You can then import these zip files into the Viewer.
+
+![Atom Log Files](<resources/potlog1.jpg> "Atom Log Files")
+
+As of the Atom 2, the Potensic App is different and it does not have an option to send the log files to yourself. You can still get the files by connecting the mobile device to your computer and then copy the individual files to your computer. Before you can import those into the Viewer, you will have to zip the binaries. After that, they can be imported into the Viewer. You will have to make sure that the zip files are named correctly (i.e. YYYYMMDD-Atom2-Drone.zip) and that each zip file includes only the log files for the same dates, which is denoted by the first 8 digits of the file names.
+
+![Atom 2 Log Files](<resources/atom2logfiles.png> "Atom 2 Log Files")
 
 # 2. Installing the app
 ## 2.1. Pre-Built
