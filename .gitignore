@@ -132,3 +132,6 @@ kivy_garden
 *.apk
 *.dmg
 *.exe
+
+# MacOS
+.DS_Store
