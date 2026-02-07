@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PYTHON_VERSION=3.11.13
+PYTHON_VERSION=3.13.12
 APPNAME="FlightLogViewer"
 
 platform=`uname`
@@ -78,82 +78,17 @@ build_for_arch() {
   fi
 }
 
-is_macho() {
-  # Return 0 if file is a Mach-O binary (dylib, bundle, executable)
-  local f="$1"
-  [[ -f "$f" ]] || return 1
-  file "$f" | grep -q "Mach-O"
-}
-
-merge_macho() {
-  # lipo merge two binaries into a universal2 output
-  local arm="$1"
-  local x86="$2"
-  local out="$3"
-
-  # Strip existing signatures (codesigning breaks when merging)
-  codesign --remove-signature "$arm" >/dev/null 2>&1 || true
-  codesign --remove-signature "$x86" >/dev/null 2>&1 || true
-
-  mkdir -p "$(dirname "$out")"
-  lipo -create -output "$out" "$arm" "$x86"
-
-  # Optional: ad-hoc sign to keep Gatekeeper happy in dev workflows
-  codesign -s - --force --timestamp=none "$out" >/dev/null 2>&1 || true
-}
-
-copy_if_absent() {
-  local src="$1"
-  local dst="$2"
-  mkdir -p "$(dirname "$dst")"
-  cp -p "$src" "$dst"
-}
-
 # Build for both ARM and x86.
-build_for_arch arm64 "/opt/homebrew/bin/python3.11"
-build_for_arch x86_64 "/usr/local/bin/python3.11"
+build_for_arch arm64 "/opt/homebrew/bin/python3.13"
 
-echo "############################"
-echo "# MERGING BINARIES TO UNIVERSAL ..."
-echo "############################"
+DIST="${LOC}/dist"
+mkdir -p ${DIST}
+mv ./dist/* ${DIST}
 
 cd ${LOC}
-DIST="${LOC}/dist"
 APPDIR="${DIST}/${APPNAME}.app"
 TMPDMG="${DIST}/${APPNAME}-tmp.dmg"
 IMG="${LOC}/background.png"
-
-# Merge both builds into 1 for universal.
-mkdir -p ${APPDIR}
-out_root="${APPDIR}"
-arm_root="${LOC}/build/venv_arm64/src/dist/${APPNAME}.app"
-x86_root="${LOC}/build/venv_x86_64/src/dist/${APPNAME}.app"
-rsync -a --delete --exclude '*.DS_Store' "$arm_root/" "$out_root/"
-
-# Walk the arm tree; for each Mach-O find counterpart in x86 tree and merge
-while IFS= read -r -d '' arm_path; do
-  rel="${arm_path#$arm_root/}"
-  x86_path="${x86_root}/${rel}"
-  out_path="${out_root}/${rel}"
-
-  if [[ -f "$x86_path" ]] && is_macho "$arm_path" && is_macho "$x86_path"; then
-    merge_macho "$arm_path" "$x86_path" "$out_path"
-  fi
-done < <(find "$arm_root" -type f -print0)
-
-# Sometimes x86 package contains Mach-Os that arm didn’t have (rare but possible).
-# Walk x86 tree to catch those.
-while IFS= read -r -d '' x86_path; do
-  rel="${x86_path#$x86_root/}"
-  arm_path="${arm_root}/${rel}"
-  out_path="${out_root}/${rel}"
-
-  if [[ ! -e "$arm_path" ]] && is_macho "$x86_path"; then
-    # Single-arch Mach-O exists only on x86 side; include it (can still run under Rosetta).
-    copy_if_absent "$x86_path" "$out_path"
-  fi
-done < <(find "$x86_root" -type f -print0)
-
 
 echo "############################"
 echo "# BUILDING DMG ..."
